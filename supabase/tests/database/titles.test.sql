@@ -2,6 +2,15 @@
 begin;
 select plan(12);
 
+-- Start from an empty slate so local sign-ins and cached titles can't collide with the fixtures.
+-- Everything here is rolled back at the end.
+delete from public.list_items;
+delete from public.couples;
+delete from auth.users;
+delete from public.titles;
+delete from public.availability;
+delete from public.availability_checks;
+
 insert into public.titles (media_type, tmdb_id, original_title) values ('movie', 603, 'The Matrix');
 insert into public.title_texts (media_type, tmdb_id, locale, title) values ('movie', 603, 'en-GB', 'The Matrix');
 insert into public.availability (media_type, tmdb_id, country, provider_id, kind, provider_name)

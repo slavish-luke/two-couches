@@ -2,6 +2,15 @@
 begin;
 select plan(23);
 
+-- Start from an empty slate so local sign-ins and cached titles can't collide with the fixtures.
+-- Everything here is rolled back at the end.
+delete from public.list_items;
+delete from public.couples;
+delete from auth.users;
+delete from public.titles;
+delete from public.availability;
+delete from public.availability_checks;
+
 -- Test users. The allowlist is seeded with one@ and two@; add a third for the "outsider" cases.
 insert into public.signup_allowlist (email) values ('third@example.com') on conflict do nothing;
 

@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { AddButton } from "@/components/add-button";
+import { AvailabilityBadge } from "@/components/availability-badge";
+import { ListSync } from "@/components/list-sync";
 import { Poster } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
-import { WatchBadge } from "@/components/watch-badge";
+import { getListKeys } from "@/lib/list";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, searchTitles, type SearchResult } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
-import { titleHref, titleKey, whoCanWatch, type Availability, type Watcher } from "@/lib/watch";
+import { titleHref, titleKey, type Watcher } from "@/lib/watch";
 
 export const metadata = { title: "Search · Two Couches" };
 
@@ -35,6 +38,7 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
     }
   }
 
+  const onList = profile.couple_id && results.length > 0 ? await getListKeys(profile.couple_id) : null;
   const me: Watcher = { country: profile.country, services: profile.services };
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
   // Started now, awaited by each badge, so results render before availability is known.
@@ -44,6 +48,7 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
     <div className="grid gap-6">
       <h1 className="font-display text-3xl font-bold tracking-tight">Search</h1>
       <SearchBox query={query} autoFocus={!query} />
+      {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
 
       {failed ? (
         <p className="text-danger">Search isn&apos;t working right now. Try again in a minute.</p>
@@ -52,8 +57,8 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
       ) : (
         <ul className="grid gap-3">
           {results.map((r) => (
-            <li key={titleKey(r)}>
-              <Link href={titleHref(r)} className="card flex gap-4 p-3 transition hover:border-muted">
+            <li key={titleKey(r)} className="card flex items-start gap-3 p-3 transition hover:border-muted">
+              <Link href={titleHref(r)} className="flex min-w-0 flex-1 gap-4">
                 <Poster path={r.poster_path} title={r.title} size="sm" />
                 <div className="grid min-w-0 content-start gap-1">
                   <div className="flex flex-wrap items-baseline gap-x-2">
@@ -64,36 +69,28 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
                   </div>
                   <p className="line-clamp-2 text-sm text-muted">{r.overview}</p>
                   <Suspense>
-                    <ResultBadge
-                      availability={availability}
-                      resultKey={titleKey(r)}
-                      me={me}
-                      partner={them}
-                      partnerName={partner?.display_name ?? null}
-                    />
+                    <div>
+                      <AvailabilityBadge
+                        availability={availability}
+                        titleKey={titleKey(r)}
+                        me={me}
+                        partner={them}
+                        partnerName={partner?.display_name ?? null}
+                      />
+                    </div>
                   </Suspense>
                 </div>
               </Link>
+              {onList && (
+                <AddButton
+                  titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }}
+                  onList={onList.has(titleKey(r))}
+                />
+              )}
             </li>
           ))}
         </ul>
       )}
-    </div>
-  );
-}
-
-async function ResultBadge(props: {
-  availability: Promise<Record<string, Availability>>;
-  resultKey: string;
-  me: Watcher;
-  partner: Watcher | null;
-  partnerName: string | null;
-}) {
-  const availability = (await props.availability)[props.resultKey] ?? {};
-  const { verdict } = whoCanWatch(props.me, props.partner, availability);
-  return (
-    <div>
-      <WatchBadge verdict={verdict} partnerName={props.partnerName} />
     </div>
   );
 }

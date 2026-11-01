@@ -7,8 +7,17 @@ This repo is public. Never commit personal details: real names, emails, which co
 ## Status
 
 - Sprint 0 (Foundations): finished 2026-11-01. Live on Vercel with a hosted Supabase project (Singapore); both users signed in and paired. Auth emails go through custom SMTP, so the templates in `supabase/templates` are pasted into the hosted project by hand.
-- Sprint 1 (Search and where to watch): in progress. Search page, title page, both countries' providers, "available in both" badge, Supabase caching.
-- Update this section as sprints finish.
+- Sprint 1 (Search and where to watch): finished 2026-11-01 and live. `/search` (badge per result), `/title/[type]/[id]` (both countries side by side, "available in both" banner), Supabase caches for titles and availability, custom not-found page.
+- Sprint 2 (Shared list): finished 2026-11-01. Home page is the list (tabs Up next / Watched / Dropped; filters for type, category and "we can both watch"; badge per item). Title page has an "On our list" panel (status, TV progress, watched date, both ratings, categories, shared note, remove). Search results have "+ Add". Changes sync live between the two screens via Supabase Realtime.
+- Next: Sprint 3 (Browse).
+- Known issues: `next dev` logs a `Date.now()` prerender warning from `AccountNav` in `layout.tsx` (pre-dates Sprint 1; build and production are fine). UI text is English only until Sprint 3; TMDB data already follows each viewer's language. List titles show in the viewer's language when it's cached (both partners' locales are cached on add); otherwise the partner's or the original title until the title page is opened. TV progress is a plain season/episode counter (no per-season episode counts from TMDB yet).
+- Local test data: `npm run db:reset` wipes local users. Recreate them by signing in as `one@example.com` / `two@example.com` (Mailpit) and pairing with an invite code.
+
+### End of every sprint (each sprint runs in a fresh session)
+1. `npm run typecheck`, `npm run lint`, `npm run build`, `npm run db:test` all pass.
+2. With the user's go-ahead: `npx supabase db push` first, then commit and push to `main` (Vercel deploys from it).
+3. Update this Status section: mark the sprint finished with the date, set "Next", record known issues and anything done by hand outside the repo. Update the data model table and conventions if they changed.
+4. Tell the user the sprint is ready to hand off, so they can start the next one in a new session.
 
 ## Stack (decided)
 
@@ -49,7 +58,8 @@ Don't add other frameworks or services without discussing it first. Everything m
 | `profiles` | Each user | display name, country (ISO code), language, time zone, subscribed services |
 | `couples` | The pair | invite code (8 chars). Members are the `profiles` rows whose `couple_id` points here (max 2). |
 | `titles` | Cached TMDB data | tmdb_id, media type (movie/tv), title, poster, genres, runtime, refreshed_at |
-| `list_items` | Shared list | title, added_by, status (want/watching/watched/dropped), categories, notes, rating per person, watched_on, TV progress |
+| `list_items` | Shared list | couple, title (FK to `titles`, once per couple), added_by, status (want/watching/watched/dropped), categories (free text, max 10 × 30 chars), one shared note, season/episode (last watched), watched_on (local date) |
+| `list_ratings` | Each person's rating of a list item | list item, couple (copied for Realtime filters), profile, rating 1–5 |
 | `title_texts` | Cached TMDB text per locale | title, locale (`en-GB`), title text, overview, tagline, genre names, trailer key, refreshed_at |
 | `availability` | Latest provider list per title and country | media type, tmdb_id, country, provider, kind (flatrate/free/ads/rent/buy). No FK to `titles`, so search results can be checked before they're opened. |
 | `availability_checks` | When each title was last checked in each country | media type, tmdb_id, country, TMDB watch link, checked_at. Records "checked, nothing there" too. |
@@ -57,7 +67,7 @@ Don't add other frameworks or services without discussing it first. Everything m
 | `services` | Cached TMDB provider list per country | country, provider_id (TMDB), name, logo, display_priority, refreshed_at |
 | `signup_allowlist` | Emails allowed to sign up | email. No RLS policies: managed only from the SQL editor. |
 
-Built so far: `profiles`, `couples`, `services`, `signup_allowlist` (migration `20261101000000_foundations.sql`); `titles`, `title_texts`, `availability`, `availability_checks` (`20261101093123_titles_and_availability.sql`). The four Sprint 1 tables are shared caches like `services`: signed-in users read, only the server writes. `profiles.services` holds TMDB provider IDs. Users can update only their own settings columns; `couple_id` changes only through the `create_couple()` / `join_couple(code)` functions.
+Built so far: `profiles`, `couples`, `services`, `signup_allowlist` (migration `20261101000000_foundations.sql`); `titles`, `title_texts`, `availability`, `availability_checks` (`20261101093123_titles_and_availability.sql`); `list_items`, `list_ratings` (`20261101100346_shared_list.sql`). The four Sprint 1 tables are shared caches like `services`: signed-in users read, only the server writes. `profiles.services` holds TMDB provider IDs. Users can update only their own settings columns; `couple_id` changes only through the `create_couple()` / `join_couple(code)` functions. Both members read and edit their couple's `list_items` (couple, title and added_by are fixed); each person writes only their own `list_ratings` row. Both list tables are in the `supabase_realtime` publication.
 
 Manage schema changes as Supabase migrations in the repo, not by editing tables in the dashboard.
 
@@ -93,6 +103,9 @@ Two-week sprints, each ending with something both users can use.
 - TMDB calls go through `tmdbGet()` in `src/lib/tmdb.ts` (server only). Titles and availability are cached in Supabase by `getTitle()` / `getAvailability()` in `src/lib/titles.ts`; search results are throwaway, so `searchTitles()` uses Next's fetch cache (`revalidate`) instead.
 - "Who can watch it" rules live in `whoCanWatch()` in `src/lib/watch.ts` (pure, client-safe). Use it rather than re-deriving "available in both".
 - TMDB images (posters, logos) use `next/image` with `unoptimized` and TMDB's own sizes (`tmdbImage()`), to stay clear of Vercel's image-optimisation quota.
+- List rules (statuses, category limits, progress, local dates) live in `src/lib/list-rules.ts` (pure, client-safe); list queries in `src/lib/list.ts`; list mutations are the Server Actions in `src/app/list/actions.ts`, which run as the user and call `refresh()`.
+- Live updates: render `<ListSync coupleId>` on any page that shows list data. It subscribes to Realtime as the signed-in user (must `realtime.setAuth()` first, or RLS hides every insert/update) and calls `router.refresh()`. Realtime can't filter deletes, so those are subscribed unfiltered.
+- pgTAP tests start by clearing users and caches inside their transaction (rolled back), so they pass with local sign-ins present.
 - Colours: ochre `me`, teal `partner`, green `both` only where the two overlap (see `globals.css`).
 
 @AGENTS.md

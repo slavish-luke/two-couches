@@ -2,7 +2,9 @@ import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CountryChip } from "@/components/country-chip";
+import { ListSync } from "@/components/list-sync";
 import { Poster } from "@/components/poster";
+import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, getTitle } from "@/lib/titles";
@@ -18,6 +20,7 @@ import {
   type TitleRef,
   type Watcher,
 } from "@/lib/watch";
+import { ListPanel } from "./list-panel";
 
 export const metadata = { title: "Where to watch · Two Couches" };
 
@@ -78,10 +81,36 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
         </div>
       </div>
 
+      {profile.couple_id && (
+        <Suspense>
+          <OnOurList titleRef={ref} seasons={title.seasons} />
+          <ListSync coupleId={profile.couple_id} />
+        </Suspense>
+      )}
+
       <Suspense fallback={<p className="text-muted">Checking where you can watch it…</p>}>
         <WhereToWatch titleRef={ref} />
       </Suspense>
     </div>
+  );
+}
+
+async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: number | null }) {
+  const [profile, partner] = await Promise.all([requireProfile(), getPartner()]);
+  const coupleId = profile.couple_id!;
+  const [item, categories] = await Promise.all([getListItem(coupleId, titleRef), getCategories(coupleId)]);
+
+  return (
+    <ListPanel
+      titleRef={titleRef}
+      seasons={seasons}
+      item={item}
+      categories={categories}
+      me={{ id: profile.id, name: profile.display_name || "You" }}
+      partner={partner && { id: partner.id, name: partner.display_name || "Your partner" }}
+      language={profile.language}
+      timeZone={profile.time_zone}
+    />
   );
 }
 

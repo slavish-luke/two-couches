@@ -65,6 +65,64 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"list_items": {
+                  Row: {
+                    "added_by": string | null,"categories": (string)[],"couple_id": string,"created_at": string,"episode": number | null,"id": string,"media_type": string,"notes": string,"season": number | null,"status": string,"tmdb_id": number,"updated_at": string,"watched_on": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "added_by"?: string | null,"categories"?: (string)[],"couple_id": string,"created_at"?: string,"episode"?: number | null,"id"?: string,"media_type": string,"notes"?: string,"season"?: number | null,"status"?: string,"tmdb_id": number,"updated_at"?: string,"watched_on"?: string | null
+                  }
+                  Update: {
+                    "added_by"?: string | null,"categories"?: (string)[],"couple_id"?: string,"created_at"?: string,"episode"?: number | null,"id"?: string,"media_type"?: string,"notes"?: string,"season"?: number | null,"status"?: string,"tmdb_id"?: number,"updated_at"?: string,"watched_on"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "list_items_added_by_fkey"
+      columns: ["added_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "list_items_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "list_items_media_type_tmdb_id_fkey"
+      columns: ["media_type","tmdb_id"]
+isOneToOne: false
+      referencedRelation: "titles"
+      referencedColumns: ["media_type","tmdb_id"]
+    }
+                  ]
+                },"list_ratings": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"list_item_id": string,"profile_id": string,"rating": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"list_item_id": string,"profile_id": string,"rating": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"list_item_id"?: string,"profile_id"?: string,"rating"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "list_ratings_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "list_ratings_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "country": string | null,"couple_id": string | null,"created_at": string,"display_name": string,"id": string,"language": string,"services": (number)[],"time_zone": string,"updated_at": string
@@ -167,6 +225,9 @@ isOneToOne: false
                            },
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"valid_categories":
+{ Args: { "categories": (string)[] }; Returns: boolean
                            }
           }
           Enums: {
