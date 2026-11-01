@@ -1,12 +1,22 @@
+import { getMessages } from "@/lib/i18n";
 import type { Verdict } from "@/lib/watch";
 
 /** Short "who can stream this" label for lists. Renders nothing when neither of you can. */
-export function WatchBadge({ verdict, partnerName }: { verdict: Verdict; partnerName: string | null }) {
+export function WatchBadge({
+  verdict,
+  partnerName,
+  language,
+}: {
+  verdict: Verdict;
+  partnerName: string | null;
+  language: string;
+}) {
+  const t = getMessages(language).common.watchBadge;
   const label = {
-    both: "You can both watch",
-    me: partnerName ? "Only you" : "On your services",
-    partner: `Only ${partnerName}`,
-    free: "Free to watch",
+    both: t.both,
+    me: partnerName ? t.meOnly : t.me,
+    partner: t.partner(partnerName ?? ""),
+    free: t.free,
     none: null,
   }[verdict];
   if (!label) return null;

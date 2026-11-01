@@ -1,7 +1,9 @@
+import { getMessages } from "@/lib/i18n";
+
 /** A 1-5 rating as stars, read-only. */
-export function Stars({ rating, who }: { rating: number; who: string }) {
+export function Stars({ rating, who, language }: { rating: number; who: string; language: string }) {
   return (
-    <span role="img" aria-label={`${who}: ${rating} out of 5 stars`} title={`${who}: ${rating}/5`}>
+    <span role="img" aria-label={getMessages(language).common.stars(who, rating)} title={`${who}: ${rating}/5`}>
       <span aria-hidden className="text-ink">
         {"★".repeat(rating)}
       </span>

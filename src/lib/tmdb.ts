@@ -78,29 +78,34 @@ export async function fetchWatchProviders(country: string) {
   return [...byId.values()];
 }
 
-export type SearchResponse = {
-  results: (
-    | {
-        media_type: "movie";
-        id: number;
-        title: string;
-        original_title: string;
-        release_date?: string;
-        poster_path: string | null;
-        overview: string;
-      }
-    | {
-        media_type: "tv";
-        id: number;
-        name: string;
-        original_name: string;
-        first_air_date?: string;
-        poster_path: string | null;
-        overview: string;
-      }
-    | { media_type: "person"; id: number }
-  )[];
+/** A film in TMDB's search, discover and trending results. */
+export type MovieResult = {
+  id: number;
+  title: string;
+  original_title: string;
+  release_date?: string;
+  poster_path: string | null;
+  overview: string;
 };
+
+/** A series in TMDB's search, discover and trending results. */
+export type TvResult = {
+  id: number;
+  name: string;
+  original_name: string;
+  first_air_date?: string;
+  poster_path: string | null;
+  overview: string;
+};
+
+export type SearchResponse = {
+  results: (({ media_type: "movie" } & MovieResult) | ({ media_type: "tv" } & TvResult) | { media_type: "person"; id: number })[];
+};
+
+/** /discover/{movie|tv} and /trending/{movie|tv}/{window}. TMDB serves at most 500 pages. */
+export type PagedResponse<T> = { page: number; total_pages: number; total_results: number; results: T[] };
+
+export type GenreList = { genres: { id: number; name: string }[] };
 
 type DetailsCommon = {
   id: number;

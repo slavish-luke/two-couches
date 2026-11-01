@@ -1,19 +1,21 @@
 "use client";
 
 import { useActionState } from "react";
+import { getMessages } from "@/lib/i18n";
 import { sendSignInEmail, verifySignInCode, type LoginState } from "./actions";
 
 const initialState: LoginState = { step: "email", email: "" };
 
-export function LoginForm() {
+export function LoginForm({ language }: { language: string }) {
   const [emailState, sendEmail, sending] = useActionState(sendSignInEmail, initialState);
   const [codeState, verifyCode, verifying] = useActionState(verifySignInCode, {});
+  const t = getMessages(language).account.login;
 
   if (emailState.step === "email") {
     return (
       <form action={sendEmail} className="grid gap-3">
         <label className="grid gap-1">
-          <span className="text-sm font-semibold">Email</span>
+          <span className="text-sm font-semibold">{t.email}</span>
           <input
             name="email"
             type="email"
@@ -25,7 +27,7 @@ export function LoginForm() {
         </label>
         {emailState.error && <p className="text-sm text-danger">{emailState.error}</p>}
         <button className="btn" disabled={sending}>
-          {sending ? "Sending…" : "Email me a sign-in link"}
+          {sending ? t.sending : t.sendLink}
         </button>
       </form>
     );
@@ -35,11 +37,12 @@ export function LoginForm() {
     <form action={verifyCode} className="grid gap-3">
       <input type="hidden" name="email" value={emailState.email} />
       <p className="text-muted">
-        We sent a link to <strong className="text-ink">{emailState.email}</strong>. Open it on this device, or type
-        the 6-digit code from the email here.
+        {t.codeSent.before}
+        <strong className="text-ink">{emailState.email}</strong>
+        {t.codeSent.after}
       </p>
       <label className="grid gap-1">
-        <span className="text-sm font-semibold">Code</span>
+        <span className="text-sm font-semibold">{t.code}</span>
         <input
           name="code"
           inputMode="numeric"
@@ -52,7 +55,7 @@ export function LoginForm() {
       </label>
       {codeState.error && <p className="text-sm text-danger">{codeState.error}</p>}
       <button className="btn" disabled={verifying}>
-        {verifying ? "Checking…" : "Sign in"}
+        {verifying ? t.checking : t.signIn}
       </button>
     </form>
   );

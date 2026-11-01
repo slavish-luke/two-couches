@@ -8,9 +8,11 @@ import {
   tmdbGet,
   TmdbError,
   type MovieDetails,
+  type MovieResult,
   type SearchResponse,
   type TitleProviders,
   type TvDetails,
+  type TvResult,
 } from "./tmdb";
 import { titleKey, type Availability, type MediaType, type Provider, type TitleRef } from "./watch";
 
@@ -18,6 +20,24 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function isFresh(refreshedAt: string) {
   return Date.now() - Date.parse(refreshedAt) < MAX_AGE_MS;
+}
+
+/** Like Promise.allSettled over `items.map(fn)`, with at most `limit` calls in flight. TMDB rate-limits bursts. */
+async function settleLimited<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>) {
+  const results: PromiseSettledResult<R>[] = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      try {
+        results[i] = { status: "fulfilled", value: await fn(items[i]) };
+      } catch (reason) {
+        results[i] = { status: "rejected", reason };
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
 }
 
 function dateOrNull(value: string | undefined) {
@@ -32,6 +52,31 @@ export type SearchResult = TitleRef & {
   overview: string;
 };
 
+/** A film or series from TMDB's search, discover or trending results, in our shape. */
+export function toSearchResult(
+  item: ({ media_type: "movie" } & MovieResult) | ({ media_type: "tv" } & TvResult),
+): SearchResult {
+  return item.media_type === "movie"
+    ? {
+        media_type: "movie",
+        tmdb_id: item.id,
+        title: item.title,
+        original_title: item.original_title,
+        release_date: dateOrNull(item.release_date),
+        poster_path: item.poster_path,
+        overview: item.overview,
+      }
+    : {
+        media_type: "tv",
+        tmdb_id: item.id,
+        title: item.name,
+        original_title: item.original_name,
+        release_date: dateOrNull(item.first_air_date),
+        poster_path: item.poster_path,
+        overview: item.overview,
+      };
+}
+
 /**
  * Films and series matching a query, in the viewer's locale. Search results are throwaway, so they're
  * kept in Next's fetch cache for a day rather than in Supabase.
@@ -42,32 +87,7 @@ export async function searchTitles(query: string, locale: string): Promise<Searc
     { query, language: locale, include_adult: "false" },
     { revalidate: MAX_AGE_MS / 1000 },
   );
-
-  const results: SearchResult[] = [];
-  for (const r of data.results) {
-    if (r.media_type === "movie") {
-      results.push({
-        media_type: "movie",
-        tmdb_id: r.id,
-        title: r.title,
-        original_title: r.original_title,
-        release_date: dateOrNull(r.release_date),
-        poster_path: r.poster_path,
-        overview: r.overview,
-      });
-    } else if (r.media_type === "tv") {
-      results.push({
-        media_type: "tv",
-        tmdb_id: r.id,
-        title: r.name,
-        original_title: r.original_name,
-        release_date: dateOrNull(r.first_air_date),
-        poster_path: r.poster_path,
-        overview: r.overview,
-      });
-    }
-  }
-  return results;
+  return data.results.flatMap((r) => (r.media_type === "person" ? [] : [toSearchResult(r)]));
 }
 
 type TitleRow = Database["public"]["Tables"]["titles"]["Row"];
@@ -190,7 +210,9 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
  * and refreshed from TMDB when older than a day. One TMDB call per stale title covers every country.
  * Never throws: titles that can't be checked come back with the countries missing.
  */
-export async function getAvailability(refs: TitleRef[], countries: string[]): Promise<Record<string, Availability>> {
+export async function getAvailability(titles: TitleRef[], countries: string[]): Promise<Record<string, Availability>> {
+  // A title twice in one upsert would fail it.
+  const refs = [...new Map(titles.map((ref) => [titleKey(ref), ref])).values()];
   const result: Record<string, Availability> = Object.fromEntries(refs.map((ref) => [titleKey(ref), {}]));
   if (refs.length === 0 || countries.length === 0) return result;
 
@@ -237,8 +259,8 @@ export async function getAvailability(refs: TitleRef[], countries: string[]): Pr
   if (stale.length === 0 || !isTmdbConfigured()) return result;
 
   const checkedAt = new Date().toISOString();
-  const fetched = await Promise.allSettled(
-    stale.map((ref) => tmdbGet<TitleProviders>(`/${ref.media_type}/${ref.tmdb_id}/watch/providers`)),
+  const fetched = await settleLimited(stale, 20, (ref) =>
+    tmdbGet<TitleProviders>(`/${ref.media_type}/${ref.tmdb_id}/watch/providers`),
   );
 
   const refreshed: TitleRef[] = [];

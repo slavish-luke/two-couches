@@ -3,7 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CountryChip } from "@/components/country-chip";
 import { ListSync } from "@/components/list-sync";
+import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
+import { type Messages } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
@@ -26,20 +29,14 @@ export const metadata = { title: "Where to watch · Two Couches" };
 
 export default function TitlePage({ params }: PageProps<"/title/[type]/[id]">) {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
+    <Suspense fallback={<PageLoading />}>
       <TitleView params={params} />
     </Suspense>
   );
 }
 
-function formatRuntime(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return h ? `${h} h${m ? ` ${m} min` : ""}` : `${m} min`;
-}
-
 async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "params">) {
-  const [{ type, id }, profile] = await Promise.all([params, requireProfile()]);
+  const [{ type, id }, profile, { language, t }] = await Promise.all([params, requireProfile(), getI18n()]);
   const tmdbId = Number(id);
   if (!isMediaType(type) || !Number.isSafeInteger(tmdbId) || tmdbId <= 0) notFound();
   if (!profile.country) redirect("/settings?welcome=1");
@@ -50,16 +47,20 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
 
   const facts = [
     title.release_date?.slice(0, 4),
-    type === "movie" ? "Film" : "Series",
-    title.seasons ? `${title.seasons} season${title.seasons === 1 ? "" : "s"}` : null,
-    title.runtime ? formatRuntime(title.runtime) + (type === "tv" ? " episodes" : "") : null,
+    t.common.mediaType[type],
+    title.seasons ? t.title.seasons(title.seasons) : null,
+    title.runtime
+      ? type === "tv"
+        ? t.title.episodeRuntime(t.title.runtime(title.runtime))
+        : t.title.runtime(title.runtime)
+      : null,
     title.genres.join(", ") || null,
   ].filter(Boolean);
 
   return (
     <div className="grid gap-8">
       <div className="flex flex-col gap-5 sm:flex-row">
-        <Poster path={title.poster_path} title={title.title} size="lg" />
+        <Poster path={title.poster_path} title={title.title} size="lg" language={language} />
         <div className="grid content-start gap-3">
           <div className="grid gap-1">
             <h1 className="font-display text-3xl font-bold leading-tight tracking-tight">{title.title}</h1>
@@ -75,7 +76,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
               rel="noopener noreferrer"
               className="btn-quiet justify-self-start"
             >
-              Watch the trailer ↗
+              {t.title.trailer}
             </a>
           )}
         </div>
@@ -88,7 +89,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
         </Suspense>
       )}
 
-      <Suspense fallback={<p className="text-muted">Checking where you can watch it…</p>}>
+      <Suspense fallback={<p className="text-muted">{t.title.checking}</p>}>
         <WhereToWatch titleRef={ref} />
       </Suspense>
     </div>
@@ -96,7 +97,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
 }
 
 async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: number | null }) {
-  const [profile, partner] = await Promise.all([requireProfile(), getPartner()]);
+  const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
   const coupleId = profile.couple_id!;
   const [item, categories] = await Promise.all([getListItem(coupleId, titleRef), getCategories(coupleId)]);
 
@@ -106,8 +107,8 @@ async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: n
       seasons={seasons}
       item={item}
       categories={categories}
-      me={{ id: profile.id, name: profile.display_name || "You" }}
-      partner={partner && { id: partner.id, name: partner.display_name || "Your partner" }}
+      me={{ id: profile.id, name: profile.display_name || t.common.you }}
+      partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
       language={profile.language}
       timeZone={profile.time_zone}
     />
@@ -115,10 +116,10 @@ async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: n
 }
 
 async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
-  const [profile, partner] = await Promise.all([requireProfile(), getPartner()]);
+  const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
   const me: Watcher = { country: profile.country!, services: profile.services };
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
-  const partnerName = partner?.display_name || "Your partner";
+  const partnerName = partner?.display_name || t.common.yourPartner;
 
   const availability =
     (await getAvailability([titleRef], them ? [me.country, them.country] : [me.country]))[titleKey(titleRef)] ?? {};
@@ -126,39 +127,38 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
   const names = (providers: Provider[]) => providers.map((p) => p.name).join(", ");
   const theirCountry = them ? countryName(them.country, profile.language) : "";
 
+  const text = t.title.banner;
   const banner = {
     both: {
-      heading: "You can both watch this",
-      detail: `You on ${names(mine)}, ${partnerName} on ${names(theirs)}.`,
+      heading: text.both.heading,
+      detail: text.both.detail(names(mine), partnerName, names(theirs)),
       style: "border-both bg-both-soft",
     },
     me: {
-      heading: them ? "Only you can stream this" : "You can stream this",
-      detail: them
-        ? `You have it on ${names(mine)}. None of ${partnerName}'s services carry it in ${theirCountry}.`
-        : `On ${names(mine)}.`,
+      heading: them ? text.me.heading : text.me.headingAlone,
+      detail: them ? text.me.detail(names(mine), partnerName, theirCountry) : text.me.detailAlone(names(mine)),
       style: "border-me bg-me-soft",
     },
     partner: {
-      heading: `Only ${partnerName} can stream this`,
-      detail: `${partnerName} has it on ${names(theirs)}. None of your services carry it in ${countryName(me.country, profile.language)}.`,
+      heading: text.partner.heading(partnerName),
+      detail: text.partner.detail(partnerName, names(theirs), countryName(me.country, profile.language)),
       style: "border-partner bg-partner-soft",
     },
     free: {
-      heading: "Free to watch",
-      detail: them ? "Neither of you pays for a service with it, but it's free in both countries." : "It's free to stream.",
+      heading: t.common.watchBadge.free,
+      detail: them ? text.free.detail : text.free.detailAlone,
       style: "border-line bg-surface",
     },
     none: {
-      heading: them ? "Neither of you can stream this yet" : "Not on your services",
-      detail: "It isn't on a service you pay for. Renting or buying it may still be an option below.",
+      heading: them ? text.none.heading : text.none.headingAlone,
+      detail: text.none.detail,
       style: "border-line bg-surface",
     },
   }[verdict];
 
   return (
     <section className="grid gap-4">
-      <h2 className="font-display text-2xl font-bold tracking-tight">Where to watch</h2>
+      <h2 className="font-display text-2xl font-bold tracking-tight">{t.title.whereToWatch}</h2>
       <div className={`grid gap-1 rounded-xl border-2 p-4 ${banner.style}`}>
         <p className="font-display text-lg font-semibold">
           {verdict === "both" && (
@@ -172,12 +172,13 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <CountryColumn
-          who="You"
+          who={t.common.you}
           isMe
           watcher={me}
           availability={availability[me.country]}
           language={profile.language}
           timeZone={profile.time_zone}
+          t={t}
         />
         {them && (
           <CountryColumn
@@ -187,6 +188,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
             availability={availability[them.country]}
             language={profile.language}
             timeZone={profile.time_zone}
+            t={t}
           />
         )}
       </div>
@@ -194,13 +196,8 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
   );
 }
 
-const KIND_LABELS: Record<ProviderKind, string> = {
-  flatrate: "Subscription",
-  free: "Free",
-  ads: "Free with ads",
-  rent: "Rent",
-  buy: "Buy",
-};
+/** Provider kinds in the order they're listed. */
+const KINDS: ProviderKind[] = ["flatrate", "free", "ads", "rent", "buy"];
 
 function CountryColumn(props: {
   who: string;
@@ -209,12 +206,14 @@ function CountryColumn(props: {
   availability: CountryAvailability | undefined;
   language: string;
   timeZone: string;
+  t: Messages;
 }) {
-  const { watcher, availability, isMe } = props;
+  const { watcher, availability, isMe, t } = props;
   const country = countryName(watcher.country, props.language);
-  const groups = (Object.keys(KIND_LABELS) as ProviderKind[])
-    .map((kind) => ({ kind, providers: availability?.providers.filter((p) => p.kind === kind) ?? [] }))
-    .filter((g) => g.providers.length > 0);
+  const groups = KINDS.map((kind) => ({
+    kind,
+    providers: availability?.providers.filter((p) => p.kind === kind) ?? [],
+  })).filter((g) => g.providers.length > 0);
   const paidStyle = isMe ? "border-me bg-me-soft" : "border-partner bg-partner-soft";
 
   return (
@@ -226,13 +225,13 @@ function CountryColumn(props: {
       </div>
 
       {!availability ? (
-        <p className="text-sm text-muted">Couldn&apos;t check {country} right now. Try again shortly.</p>
+        <p className="text-sm text-muted">{t.title.couldntCheck(country)}</p>
       ) : groups.length === 0 ? (
-        <p className="text-sm text-muted">Not available to stream, rent or buy in {country}.</p>
+        <p className="text-sm text-muted">{t.title.notAvailable(country)}</p>
       ) : (
         groups.map(({ kind, providers }) => (
           <div key={kind} className="grid gap-2">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{KIND_LABELS[kind]}</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{t.title.kinds[kind]}</h4>
             <ul className="flex flex-wrap gap-2">
               {providers.map((p) => {
                 const pays = kind === "flatrate" && watcher.services.includes(p.provider_id);
@@ -240,7 +239,7 @@ function CountryColumn(props: {
                   <li
                     key={p.provider_id}
                     className={`flex items-center gap-2 rounded-lg border p-1.5 pr-2.5 text-sm ${pays ? `${paidStyle} font-semibold` : "border-line"}`}
-                    title={pays ? `${isMe ? "You pay" : `${props.who} pays`} for ${p.name}` : undefined}
+                    title={pays ? (isMe ? t.title.youPay(p.name) : t.title.theyPay(props.who, p.name)) : undefined}
                   >
                     {p.logo_path && (
                       <Image
@@ -253,7 +252,7 @@ function CountryColumn(props: {
                       />
                     )}
                     {p.name}
-                    {pays && <span aria-label={isMe ? "you pay for this" : "they pay for this"}>✓</span>}
+                    {pays && <span aria-label={isMe ? t.title.youPayLabel : t.title.theyPayLabel}>✓</span>}
                   </li>
                 );
               })}
@@ -264,19 +263,20 @@ function CountryColumn(props: {
 
       {availability && (
         <p className="text-xs text-muted">
-          Checked{" "}
-          {new Intl.DateTimeFormat(props.language, {
-            day: "numeric",
-            month: "short",
-            hour: "numeric",
-            minute: "2-digit",
-            timeZone: props.timeZone,
-          }).format(new Date(availability.checked_at))}
+          {t.title.checked(
+            new Intl.DateTimeFormat(props.language, {
+              day: "numeric",
+              month: "short",
+              hour: "numeric",
+              minute: "2-digit",
+              timeZone: props.timeZone,
+            }).format(new Date(availability.checked_at)),
+          )}
           {availability.link && (
             <>
               {" · "}
               <a href={availability.link} target="_blank" rel="noopener noreferrer" className="underline">
-                Data from JustWatch via TMDB
+                {t.title.justWatch}
               </a>
             </>
           )}

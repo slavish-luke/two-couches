@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Source_Sans_3 } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
+import { HtmlLang } from "@/components/html-lang";
+import { getMessages } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/session";
 import { signOut } from "./auth/actions";
 import "./globals.css";
@@ -38,8 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
         <footer className="border-t border-line px-4 py-5 text-center text-sm text-muted">
-          Film and TV data from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.
-          Streaming availability from JustWatch.
+          <Suspense fallback={getMessages("en").common.footer}>
+            <Attribution />
+          </Suspense>
         </footer>
       </body>
     </html>
@@ -47,17 +51,28 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 
 async function AccountNav() {
-  const profile = await getCurrentProfile();
-  if (!profile) return null;
+  const [profile, { language, t }] = await Promise.all([getCurrentProfile(), getI18n()]);
 
   return (
-    <nav className="flex items-center gap-4 text-sm font-semibold">
-      <Link href="/" className="text-muted hover:text-ink">Our list</Link>
-      <Link href="/search" className="text-muted hover:text-ink">Search</Link>
-      <Link href="/settings" className="text-muted hover:text-ink">Settings</Link>
-      <form action={signOut}>
-        <button className="text-muted hover:text-ink">Sign out</button>
-      </form>
-    </nav>
+    <>
+      <HtmlLang language={language} />
+      {profile && (
+        <nav className="flex items-center gap-4 text-sm font-semibold">
+          <Link href="/" className="text-muted hover:text-ink">{t.common.nav.list}</Link>
+          <Link href="/browse" className="text-muted hover:text-ink">{t.common.nav.browse}</Link>
+          <Link href="/search" className="text-muted hover:text-ink">{t.common.nav.search}</Link>
+          <Link href="/settings" className="text-muted hover:text-ink">{t.common.nav.settings}</Link>
+          <form action={signOut}>
+            <button className="text-muted hover:text-ink">{t.common.nav.signOut}</button>
+          </form>
+        </nav>
+      )}
+    </>
   );
+}
+
+/** TMDB and JustWatch credit, which their terms require, in the viewer's language. */
+async function Attribution() {
+  const { t } = await getI18n();
+  return t.common.footer;
 }

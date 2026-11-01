@@ -1,0 +1,157 @@
+/** Sign-in, settings, pairing (couple) and their actions' messages. */
+const en = {
+  login: {
+    signIn: "Sign in",
+    tagline: "One watchlist, two couches, two countries.",
+    linkExpired: "That sign-in link has expired or was already used. Send yourself a new one.",
+    email: "Email",
+    sending: "Sending…",
+    sendLink: "Email me a sign-in link",
+    /** Wraps the email address: before + email + after. */
+    codeSent: {
+      before: "We sent a link to ",
+      after: ". Open it on this device, or type the 6-digit code from the email here.",
+    },
+    code: "Code",
+    checking: "Checking…",
+    errors: {
+      invalidEmail: "Enter a valid email address.",
+      notAllowed: "That email isn't on the guest list for Two Couches.",
+      rateLimited: "Too many emails sent. Wait a minute and try again.",
+      sendFailed: "Couldn't send the email. Try again shortly.",
+      codeFormat: "The code is the 6 digits from the email.",
+      codeFailed: "That code didn't work. It may have expired; send a new email.",
+    },
+  },
+  settings: {
+    heading: "Settings",
+    welcome: "Welcome",
+    intro: "Your country, time zone and the services you pay for.",
+    welcomeIntro: "Tell us where you watch from, so we can check what's streaming for you.",
+    name: "Your name",
+    country: "Where you watch from",
+    chooseCountry: "Choose your country…",
+    timeZone: "Time zone",
+    language: "App language",
+    services: (country: string) => `Services you pay for in ${country}`,
+    loadingServices: "Loading services…",
+    noServices: (country: string) =>
+      `No services listed for ${country} yet. The list loads from TMDB once the app's TMDB key is set up.`,
+    showFewer: "Show fewer",
+    showAll: (count: number) => `Show all ${count}`,
+    saved: "Saved.",
+    saving: "Saving…",
+    save: "Save",
+    saveAndContinue: "Save and continue",
+    errors: {
+      name: "Enter a name of up to 50 characters.",
+      country: "Pick your country.",
+      language: "Pick a language.",
+      timeZone: "Pick your time zone.",
+      saveFailed: "Couldn't save. Try again.",
+    },
+  },
+  couple: {
+    pairUp: "Pair up",
+    pairUpIntro: "One of you starts a couple and shares the code. The other joins with it.",
+    start: "Start our couple",
+    startIntro: "You’ll get a code to send to your partner.",
+    getCode: "Get an invite code",
+    haveCode: "I have a code",
+    invite: "Invite your partner",
+    /** Wraps the bold "Pair up" page name: before + pairUp + after. */
+    inviteIntro: {
+      before: "Send them this code. They sign in, open ",
+      after: ", and enter it. Once they’ve joined, you’ll both see the same list.",
+    },
+    inviteCode: "Invite code",
+    joining: "Joining…",
+    join: "Join",
+    /** Keyed by the error code join_couple() raises. */
+    joinErrors: {
+      invite_not_found: "No couple has that code. Check it with your partner.",
+      couple_full: "That couple already has two people.",
+      already_in_couple: "You're already in a couple.",
+    },
+    joinFailed: "Couldn't join. Try again.",
+  },
+};
+
+const tr: typeof en = {
+  login: {
+    signIn: "Giriş yap",
+    tagline: "Tek izleme listesi, iki kanepe, iki ülke.",
+    linkExpired:
+      "Bu giriş bağlantısının süresi dolmuş ya da bağlantı daha önce kullanılmış. Kendine yenisini gönder.",
+    email: "E-posta",
+    sending: "Gönderiliyor…",
+    sendLink: "Bana giriş bağlantısı gönder",
+    codeSent: {
+      before: "Bağlantıyı şu adrese gönderdik: ",
+      after: ". Bu cihazda aç ya da e-postadaki 6 haneli kodu buraya yaz.",
+    },
+    code: "Kod",
+    checking: "Kontrol ediliyor…",
+    errors: {
+      invalidEmail: "Geçerli bir e-posta adresi gir.",
+      notAllowed: "Bu e-posta adresi davetli listesinde yok.",
+      rateLimited: "Çok fazla e-posta gönderildi. Bir dakika bekleyip tekrar dene.",
+      sendFailed: "E-posta gönderilemedi. Birazdan tekrar dene.",
+      codeFormat: "Kod, e-postadaki 6 haneli sayı.",
+      codeFailed: "Bu kod işe yaramadı. Süresi dolmuş olabilir; yeni bir e-posta gönder.",
+    },
+  },
+  settings: {
+    heading: "Ayarlar",
+    welcome: "Hoş geldin",
+    intro: "Ülken, saat dilimin ve abone olduğun platformlar.",
+    welcomeIntro: "Nereden izlediğini söyle, böylece senin için nelerin yayında olduğuna bakabilelim.",
+    name: "Adın",
+    country: "Nereden izliyorsun",
+    chooseCountry: "Ülkeni seç…",
+    timeZone: "Saat dilimi",
+    language: "Uygulama dili",
+    services: (country: string) => `Abone olduğun platformlar (${country})`,
+    loadingServices: "Platformlar yükleniyor…",
+    noServices: (country: string) =>
+      `${country} için henüz listelenmiş platform yok. Uygulamanın TMDB anahtarı ayarlandığında liste TMDB'den yüklenir.`,
+    showFewer: "Daha az göster",
+    showAll: (count: number) => `Tümünü göster (${count})`,
+    saved: "Kaydedildi.",
+    saving: "Kaydediliyor…",
+    save: "Kaydet",
+    saveAndContinue: "Kaydet ve devam et",
+    errors: {
+      name: "En fazla 50 karakterlik bir ad gir.",
+      country: "Ülkeni seç.",
+      language: "Bir dil seç.",
+      timeZone: "Saat dilimini seç.",
+      saveFailed: "Kaydedilemedi. Tekrar dene.",
+    },
+  },
+  couple: {
+    pairUp: "Partnerinle eşleş",
+    pairUpIntro: "Biriniz çifti başlatıp kodu paylaşır, diğeriniz o kodla katılır.",
+    start: "Çiftimizi başlat",
+    startIntro: "Partnerine göndereceğin bir kod alacaksın.",
+    getCode: "Davet kodu al",
+    haveCode: "Kodum var",
+    invite: "Partnerini davet et",
+    inviteIntro: {
+      before: "Bu kodu partnerine gönder. Giriş yapıp ",
+      after: " sayfasını açsın ve kodu girsin. Katıldığında ikiniz de aynı listeyi göreceksiniz.",
+    },
+    inviteCode: "Davet kodu",
+    joining: "Katılınıyor…",
+    join: "Katıl",
+    joinErrors: {
+      invite_not_found: "Bu koda sahip bir çift yok. Kodu partnerinle kontrol et.",
+      couple_full: "Bu çiftte zaten iki kişi var.",
+      already_in_couple: "Zaten bir çifttesin.",
+    },
+    joinFailed: "Katılınamadı. Tekrar dene.",
+  },
+};
+
+const messages = { en, tr };
+export default messages;

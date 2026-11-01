@@ -1,6 +1,8 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { getI18n } from "@/lib/i18n/server";
 import { isCountry, isLanguage, isTimeZone } from "@/lib/places";
 import { getServices, type Service } from "@/lib/services";
 import { requireProfile } from "@/lib/session";
@@ -9,17 +11,18 @@ import { createClient } from "@/lib/supabase/server";
 export type SettingsState = { error?: string; saved?: boolean };
 
 export async function saveSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
-  const profile = await requireProfile();
+  const [profile, { t }] = await Promise.all([requireProfile(), getI18n()]);
+  const errors = t.account.settings.errors;
 
   const displayName = String(formData.get("display_name") ?? "").trim();
   const country = formData.get("country");
   const language = formData.get("language");
   const timeZone = formData.get("time_zone");
 
-  if (!displayName || displayName.length > 50) return { error: "Enter a name of up to 50 characters." };
-  if (!isCountry(country)) return { error: "Pick your country." };
-  if (!isLanguage(language)) return { error: "Pick a language." };
-  if (!isTimeZone(timeZone)) return { error: "Pick your time zone." };
+  if (!displayName || displayName.length > 50) return { error: errors.name };
+  if (!isCountry(country)) return { error: errors.country };
+  if (!isLanguage(language)) return { error: errors.language };
+  if (!isTimeZone(timeZone)) return { error: errors.timeZone };
 
   // Keep only real services for the chosen country.
   const supabase = await createClient();
@@ -33,10 +36,12 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
     .eq("id", profile.id);
   if (error) {
     console.error("Saving settings failed", error);
-    return { error: "Couldn't save. Try again." };
+    return { error: errors.saveFailed };
   }
 
   if (!profile.couple_id) redirect("/couple");
+  // Re-render the page and nav, so a new language takes effect straight away.
+  refresh();
   return { saved: true };
 }
 

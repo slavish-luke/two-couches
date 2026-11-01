@@ -4,11 +4,14 @@ import { Suspense } from "react";
 import { AvailabilityBadge } from "@/components/availability-badge";
 import { CountryChip } from "@/components/country-chip";
 import { ListSync } from "@/components/list-sync";
+import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
 import { Stars } from "@/components/stars";
 import { getList, type ListEntry } from "@/lib/list";
-import { formatDate, formatProgress, localDate, type ListStatus } from "@/lib/list-rules";
+import { getMessages, type Messages } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n/server";
+import { formatDate, localDate, type ListStatus } from "@/lib/list-rules";
 import { countryName, formatLocalTime } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -18,17 +21,17 @@ import { isMediaType, titleHref, titleKey, whoCanWatch, type Availability, type 
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
-    <Suspense fallback={<p className="text-muted">Loading…</p>}>
+    <Suspense fallback={<PageLoading />}>
       <OurList searchParams={searchParams} />
     </Suspense>
   );
 }
 
 const VIEWS = {
-  next: { label: "Up next", statuses: ["watching", "want"] },
-  watched: { label: "Watched", statuses: ["watched"] },
-  dropped: { label: "Dropped", statuses: ["dropped"] },
-} satisfies Record<string, { label: string; statuses: ListStatus[] }>;
+  next: { statuses: ["watching", "want"] },
+  watched: { statuses: ["watched"] },
+  dropped: { statuses: ["dropped"] },
+} satisfies Record<string, { statuses: ListStatus[] }>;
 
 type View = keyof typeof VIEWS;
 
@@ -55,13 +58,20 @@ function sortEntries(view: View, entries: ListEntry[]) {
   });
 }
 
+/** "Added by you on …", "Added by {partner} on …", or just "Added on …" for anyone else. */
+function addedLine(t: Messages, entry: ListEntry, myId: string, partner: { id: string; name: string } | null, date: string) {
+  if (entry.added_by === myId) return t.list.addedByYou(date);
+  if (partner && entry.added_by === partner.id) return t.list.addedBy(partner.name, date);
+  return t.list.addedOn(date);
+}
+
 async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   const profile = await requireProfile();
   if (!profile.country) redirect("/settings?welcome=1");
   if (!profile.couple_id) redirect("/couple");
 
   const supabase = await createClient();
-  const [{ data: members }, partner, params] = await Promise.all([
+  const [{ data: members }, partner, params, { language, t }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, display_name, country, time_zone")
@@ -69,6 +79,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       .order("created_at"),
     getPartner(),
     searchParams,
+    getI18n(),
   ]);
   const now = new Date();
 
@@ -79,7 +90,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
           person ? (
             <div key={person.id} className="card grid gap-1">
               <div className="flex items-center gap-2">
-                <span className="font-display text-lg font-semibold">{person.display_name || "No name yet"}</span>
+                <span className="font-display text-lg font-semibold">{person.display_name || t.list.people.noName}</span>
                 {person.country && (
                   <CountryChip
                     code={person.country}
@@ -90,20 +101,20 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
               </div>
               <span className="text-sm text-muted">
                 {person.country
-                  ? `${formatLocalTime(now, person.time_zone, profile.language)} local time`
-                  : "Still setting up"}
+                  ? t.list.people.localTime(formatLocalTime(now, person.time_zone, profile.language))
+                  : t.list.people.settingUp}
               </span>
             </div>
           ) : (
             <Link key={i} href="/couple" className="card grid gap-1 border-dashed hover:border-partner">
-              <span className="font-display text-lg font-semibold">Waiting for your partner</span>
-              <span className="text-sm text-muted">Share your invite code →</span>
+              <span className="font-display text-lg font-semibold">{t.list.people.waiting}</span>
+              <span className="text-sm text-muted">{t.list.people.shareInvite}</span>
             </Link>
           ),
         )}
       </div>
 
-      <SearchBox />
+      <SearchBox language={language} />
 
       <ListSync coupleId={profile.couple_id} />
       <ListSection
@@ -116,7 +127,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
           partner?.country
             ? {
                 id: partner.id,
-                name: partner.display_name || "Your partner",
+                name: partner.display_name || t.common.yourPartner,
                 watcher: { country: partner.country, services: partner.services },
                 locale: tmdbLocale(partner.language, partner.country),
               }
@@ -138,6 +149,7 @@ async function ListSection(props: {
   params: Awaited<PageProps<"/">["searchParams"]>;
 }) {
   const { me, partner, params, language } = props;
+  const { t } = await getI18n();
   const entries = await getList(props.coupleId, partner ? [props.locale, partner.locale] : [props.locale]);
   const categories = [...new Set(entries.flatMap((e) => e.categories))].sort((a, b) => a.localeCompare(b));
 
@@ -171,9 +183,9 @@ async function ListSection(props: {
 
   return (
     <section className="grid gap-4">
-      <h1 className="font-display text-3xl font-bold tracking-tight">Our list</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">{t.common.nav.list}</h1>
 
-      <nav aria-label="List views" className="flex gap-1 border-b border-line">
+      <nav aria-label={t.list.viewsLabel} className="flex gap-1 border-b border-line">
         {(Object.keys(VIEWS) as View[]).map((view) => (
           <Link
             key={view}
@@ -183,7 +195,7 @@ async function ListSection(props: {
               filters.view === view ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
             }`}
           >
-            {VIEWS[view].label} <span className="font-normal text-muted">{inView(view).length}</span>
+            {t.list.views[view]} <span className="font-normal text-muted">{inView(view).length}</span>
           </Link>
         ))}
       </nav>
@@ -195,14 +207,14 @@ async function ListSection(props: {
               <span aria-hidden className={filters.both ? "" : "text-both"}>
                 ●{" "}
               </span>
-              We can both watch
+              {t.list.bothFilter}
             </Link>
           )}
           <Link href={filtersHref(filters, { type: filters.type === "movie" ? null : "movie" })} className={chip(filters.type === "movie")}>
-            Films
+            {t.common.mediaTypePlural.movie}
           </Link>
           <Link href={filtersHref(filters, { type: filters.type === "tv" ? null : "tv" })} className={chip(filters.type === "tv")}>
-            Series
+            {t.common.mediaTypePlural.tv}
           </Link>
           {categories.map((name) => (
             <Link
@@ -220,26 +232,18 @@ async function ListSection(props: {
         <div className="card grid justify-items-center gap-1 py-12 text-center">
           {entries.length === 0 ? (
             <>
-              <p className="font-semibold">Nothing here yet</p>
-              <p className="text-sm text-muted">Search for a film or series and add it to your list.</p>
+              <p className="font-semibold">{t.list.empty.heading}</p>
+              <p className="text-sm text-muted">{t.list.empty.body}</p>
             </>
           ) : isFiltered ? (
             <>
-              <p className="font-semibold">Nothing matches these filters</p>
+              <p className="font-semibold">{t.list.empty.noMatches}</p>
               <Link href={filtersHref(filters, { category: null, type: null, both: false })} className="text-sm font-semibold text-partner">
-                Clear filters
+                {t.list.empty.clearFilters}
               </Link>
             </>
           ) : (
-            <p className="text-sm text-muted">
-              {
-                {
-                  next: "Everything's watched or dropped. Search for something new.",
-                  watched: "Nothing watched yet. Mark a title watched from its page.",
-                  dropped: "Nothing dropped.",
-                }[filters.view]
-              }
-            </p>
+            <p className="text-sm text-muted">{t.list.empty[filters.view]}</p>
           )}
         </div>
       ) : (
@@ -247,21 +251,21 @@ async function ListSection(props: {
           {shown.map((entry) => (
             <li key={entry.id}>
               <Link href={titleHref(entry)} className="card flex gap-4 p-3 transition hover:border-muted">
-                <Poster path={entry.poster_path} title={entry.title} size="sm" />
+                <Poster path={entry.poster_path} title={entry.title} size="sm" language={language} />
                 <div className="grid min-w-0 content-start gap-1.5">
                   <div className="flex flex-wrap items-baseline gap-x-2">
                     <span className="font-display text-lg font-semibold leading-snug">{entry.title}</span>
                     <span className="text-sm text-muted">
-                      {entry.release_date?.slice(0, 4)} {entry.media_type === "movie" ? "Film" : "Series"}
+                      {entry.release_date?.slice(0, 4)} {t.common.mediaType[entry.media_type]}
                     </span>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     {entry.status === "watching" && (
                       <span className="font-semibold">
-                        Watching
+                        {t.common.statuses.watching}
                         {entry.season && entry.episode
-                          ? ` · up to ${formatProgress({ season: entry.season, episode: entry.episode })}`
+                          ? ` · ${t.list.upTo(t.common.progress(entry.season, entry.episode))}`
                           : ""}
                       </span>
                     )}
@@ -276,6 +280,7 @@ async function ListSection(props: {
                           me={me}
                           partner={partner?.watcher ?? null}
                           partnerName={partner?.name ?? null}
+                          language={language}
                         />
                       </Suspense>
                     )}
@@ -288,9 +293,7 @@ async function ListSection(props: {
 
                   {entry.notes && <p className="line-clamp-2 text-sm">{entry.notes}</p>}
                   <p className="text-xs text-muted">
-                    Added{" "}
-                    {entry.added_by === me.id ? "by you " : entry.added_by === partner?.id ? `by ${partner.name} ` : ""}
-                    on {formatDate(localDate(props.timeZone, new Date(entry.created_at)), language)}
+                    {addedLine(t, entry, me.id, partner, formatDate(localDate(props.timeZone, new Date(entry.created_at)), language))}
                   </p>
                 </div>
               </Link>
@@ -313,6 +316,7 @@ function WatchedLine({
   partner: { id: string; name: string } | null;
   language: string;
 }) {
+  const t = getMessages(language);
   const mine = entry.ratings[me.id];
   const theirs = partner ? entry.ratings[partner.id] : undefined;
   return (
@@ -320,15 +324,15 @@ function WatchedLine({
       {entry.watched_on && <span className="font-semibold">{formatDate(entry.watched_on, language)}</span>}
       {mine && (
         <span>
-          You <Stars rating={mine} who="You" />
+          {t.common.you} <Stars rating={mine} who={t.common.you} language={language} />
         </span>
       )}
       {partner && theirs && (
         <span>
-          {partner.name} <Stars rating={theirs} who={partner.name} />
+          {partner.name} <Stars rating={theirs} who={partner.name} language={language} />
         </span>
       )}
-      {!mine && !theirs && <span className="text-muted">Not rated</span>}
+      {!mine && !theirs && <span className="text-muted">{t.list.notRated}</span>}
     </>
   );
 }

@@ -11,8 +11,9 @@ export async function AvailabilityBadge(props: {
   me: Watcher;
   partner: Watcher | null;
   partnerName: string | null;
+  language: string;
 }) {
   const availability = (await props.availability)[props.titleKey] ?? {};
   const { verdict } = whoCanWatch(props.me, props.partner, availability);
-  return <WatchBadge verdict={verdict} partnerName={props.partnerName} />;
+  return <WatchBadge verdict={verdict} partnerName={props.partnerName} language={props.language} />;
 }

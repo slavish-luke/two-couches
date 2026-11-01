@@ -1,12 +1,15 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { getI18n } from "@/lib/i18n/server";
 import {
   cleanCategories,
   isDateString,
   isListStatus,
   isProgress,
   localDate,
+  MAX_CATEGORIES,
+  MAX_CATEGORY_LENGTH,
   MAX_NOTES_LENGTH,
   type ListStatus,
   type Progress,
@@ -37,11 +40,12 @@ function cleanNotes(value: unknown) {
 
 export async function addToList(ref: TitleRef, notes: string = ""): Promise<ListResult> {
   const profile = await requireCouple();
+  const { t } = await getI18n();
   if (!isMediaType(ref?.media_type) || !Number.isSafeInteger(ref.tmdb_id) || ref.tmdb_id <= 0) {
-    return { error: "That isn't a film or series." };
+    return { error: t.title.errors.notATitle };
   }
   const note = cleanNotes(notes);
-  if (note === null) return { error: `Keep the note under ${MAX_NOTES_LENGTH} characters.` };
+  if (note === null) return { error: t.title.errors.noteTooLong(MAX_NOTES_LENGTH) };
 
   // Cache the title in both people's languages, so it shows up named on both screens straight away.
   const partner = await getPartner();
@@ -50,10 +54,10 @@ export async function addToList(ref: TitleRef, notes: string = ""): Promise<List
   const key = { media_type: ref.media_type, tmdb_id: ref.tmdb_id };
   try {
     const titles = await Promise.all([...locales].map((locale) => getTitle(key, locale)));
-    if (titles.some((t) => !t)) return { error: "TMDB doesn't know that title." };
+    if (titles.some((t) => !t)) return { error: t.title.errors.unknownTitle };
   } catch (error) {
     console.error("Loading a title to add failed", error);
-    return { error: "Couldn't reach TMDB. Try again." };
+    return { error: t.title.errors.tmdbDown };
   }
 
   const supabase = await createClient();
@@ -63,7 +67,7 @@ export async function addToList(ref: TitleRef, notes: string = ""): Promise<List
   // 23505: already on the list, perhaps added by the other person a moment ago.
   if (error && error.code !== "23505") {
     console.error("Adding to the list failed", error);
-    return { error: "Couldn't add it. Try again." };
+    return { error: t.title.errors.addFailed };
   }
   refresh();
   return {};
@@ -80,30 +84,31 @@ export type ListChanges = {
 
 export async function updateListItem(id: string, changes: ListChanges): Promise<ListResult> {
   const profile = await requireCouple();
-  if (!UUID.test(id)) return { error: "That list item doesn't exist." };
+  const { t } = await getI18n();
+  if (!UUID.test(id)) return { error: t.title.errors.noSuchItem };
 
   const update: Database["public"]["Tables"]["list_items"]["Update"] = {};
   if (changes.status !== undefined) {
-    if (!isListStatus(changes.status)) return { error: "Pick a status." };
+    if (!isListStatus(changes.status)) return { error: t.title.errors.pickStatus };
     update.status = changes.status;
   }
   if (changes.categories !== undefined) {
     const categories = cleanCategories(changes.categories);
-    if (!categories) return { error: "Use up to 10 categories of up to 30 characters each." };
+    if (!categories) return { error: t.title.errors.badCategories(MAX_CATEGORIES, MAX_CATEGORY_LENGTH) };
     update.categories = categories;
   }
   if (changes.notes !== undefined) {
     const notes = cleanNotes(changes.notes);
-    if (notes === null) return { error: `Keep the note under ${MAX_NOTES_LENGTH} characters.` };
+    if (notes === null) return { error: t.title.errors.noteTooLong(MAX_NOTES_LENGTH) };
     update.notes = notes;
   }
   if (changes.progress !== undefined) {
-    if (changes.progress !== null && !isProgress(changes.progress)) return { error: "Enter a season and episode." };
+    if (changes.progress !== null && !isProgress(changes.progress)) return { error: t.title.errors.enterProgress };
     update.season = changes.progress?.season ?? null;
     update.episode = changes.progress?.episode ?? null;
   }
   if (changes.watched_on !== undefined) {
-    if (changes.watched_on !== null && !isDateString(changes.watched_on)) return { error: "Enter a date." };
+    if (changes.watched_on !== null && !isDateString(changes.watched_on)) return { error: t.title.errors.enterDate };
     update.watched_on = changes.watched_on;
   }
 
@@ -117,21 +122,22 @@ export async function updateListItem(id: string, changes: ListChanges): Promise<
   const { data, error } = await supabase.from("list_items").update(update).eq("id", id).select("id");
   if (error) {
     console.error("Updating a list item failed", error);
-    return { error: "Couldn't save. Try again." };
+    return { error: t.title.errors.saveFailed };
   }
   refresh();
-  return data.length ? {} : { error: "It's no longer on your list." };
+  return data.length ? {} : { error: t.title.errors.gone };
 }
 
 export async function removeFromList(id: string): Promise<ListResult> {
   await requireCouple();
-  if (!UUID.test(id)) return { error: "That list item doesn't exist." };
+  const { t } = await getI18n();
+  if (!UUID.test(id)) return { error: t.title.errors.noSuchItem };
 
   const supabase = await createClient();
   const { error } = await supabase.from("list_items").delete().eq("id", id);
   if (error) {
     console.error("Removing a list item failed", error);
-    return { error: "Couldn't remove it. Try again." };
+    return { error: t.title.errors.removeFailed };
   }
   refresh();
   return {};
@@ -140,9 +146,10 @@ export async function removeFromList(id: string): Promise<ListResult> {
 /** Sets or (with null) clears the signed-in person's own rating. */
 export async function rateListItem(id: string, rating: number | null): Promise<ListResult> {
   const profile = await requireCouple();
-  if (!UUID.test(id)) return { error: "That list item doesn't exist." };
+  const { t } = await getI18n();
+  if (!UUID.test(id)) return { error: t.title.errors.noSuchItem };
   if (rating !== null && !(Number.isInteger(rating) && rating >= 1 && rating <= 5)) {
-    return { error: "Ratings are 1 to 5 stars." };
+    return { error: t.title.errors.ratingRange };
   }
 
   const supabase = await createClient();
@@ -160,7 +167,7 @@ export async function rateListItem(id: string, rating: number | null): Promise<L
   }
   if (error) {
     console.error("Rating a list item failed", error);
-    return { error: "Couldn't save your rating. Try again." };
+    return { error: t.title.errors.rateFailed };
   }
   refresh();
   return {};

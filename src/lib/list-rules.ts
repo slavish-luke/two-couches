@@ -8,13 +8,6 @@ export function isListStatus(value: unknown): value is ListStatus {
   return typeof value === "string" && (LIST_STATUSES as readonly string[]).includes(value);
 }
 
-export const STATUS_LABELS: Record<ListStatus, string> = {
-  want: "Want to watch",
-  watching: "Watching",
-  watched: "Watched",
-  dropped: "Dropped",
-};
-
 export const MAX_CATEGORIES = 10;
 export const MAX_CATEGORY_LENGTH = 30;
 export const MAX_NOTES_LENGTH = 1000;
@@ -44,11 +37,6 @@ export function isProgress(value: unknown): value is Progress {
   return (
     Number.isSafeInteger(season) && Number.isSafeInteger(episode) && (season as number) > 0 && (episode as number) > 0
   );
-}
-
-/** "S2 E5" */
-export function formatProgress({ season, episode }: Progress) {
-  return `S${season} E${episode}`;
 }
 
 /** A calendar date ("2026-11-01") in the given time zone. */

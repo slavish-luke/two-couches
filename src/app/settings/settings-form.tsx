@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useActionState, useRef, useState, useTransition } from "react";
+import { getMessages } from "@/lib/i18n";
 import { isLanguage, LANGUAGES } from "@/lib/places";
 import type { Service } from "@/lib/services";
 import { loadServices, saveSettings } from "./actions";
@@ -20,9 +21,18 @@ type Props = {
   countries: { code: string; name: string }[];
   timeZones: string[];
   isOnboarding: boolean;
+  /** The saved UI language, not the one picked in the form. */
+  language: string;
 };
 
-export function SettingsForm({ initial, initialServices, countries, timeZones, isOnboarding }: Props) {
+export function SettingsForm({
+  initial,
+  initialServices,
+  countries,
+  timeZones,
+  isOnboarding,
+  language: uiLanguage,
+}: Props) {
   const [state, save, saving] = useActionState(saveSettings, {});
   const [country, setCountry] = useState(initial.country ?? "");
   const [language, setLanguage] = useState(initial.language);
@@ -32,6 +42,7 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
   const [showAll, setShowAll] = useState(false);
   const [loadingServices, startLoadingServices] = useTransition();
   const latestCountry = useRef(country);
+  const t = getMessages(uiLanguage).account.settings;
 
   function chooseCountry(next: string) {
     setCountry(next);
@@ -66,12 +77,12 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
   return (
     <form action={save} className="grid gap-6">
       <label className="grid gap-1">
-        <span className="text-sm font-semibold">Your name</span>
+        <span className="text-sm font-semibold">{t.name}</span>
         <input name="display_name" required maxLength={50} defaultValue={initial.display_name} className="field" />
       </label>
 
       <label className="grid gap-1">
-        <span className="text-sm font-semibold">Where you watch from</span>
+        <span className="text-sm font-semibold">{t.country}</span>
         <select
           name="country"
           required
@@ -80,7 +91,7 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
           className="field"
         >
           <option value="" disabled>
-            Choose your country…
+            {t.chooseCountry}
           </option>
           {countries.map((c) => (
             <option key={c.code} value={c.code}>
@@ -94,7 +105,7 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1">
-              <span className="text-sm font-semibold">Time zone</span>
+              <span className="text-sm font-semibold">{t.timeZone}</span>
               <select name="time_zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="field">
                 {zoneOptions.map((zone) => (
                   <option key={zone} value={zone}>
@@ -104,7 +115,7 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
               </select>
             </label>
             <label className="grid gap-1">
-              <span className="text-sm font-semibold">App language</span>
+              <span className="text-sm font-semibold">{t.language}</span>
               <select name="language" value={language} onChange={(e) => setLanguage(e.target.value)} className="field">
                 {Object.entries(LANGUAGES).map(([code, name]) => (
                   <option key={code} value={code}>
@@ -116,14 +127,11 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
           </div>
 
           <fieldset className="grid gap-2" aria-busy={loadingServices}>
-            <legend className="mb-1 text-sm font-semibold">Services you pay for in {countryLabel}</legend>
+            <legend className="mb-1 text-sm font-semibold">{t.services(countryLabel)}</legend>
             {loadingServices ? (
-              <p className="text-sm text-muted">Loading services…</p>
+              <p className="text-sm text-muted">{t.loadingServices}</p>
             ) : services.length === 0 ? (
-              <p className="text-sm text-muted">
-                No services listed for {countryLabel} yet. The list loads from TMDB once the app&apos;s TMDB key is
-                set up.
-              </p>
+              <p className="text-sm text-muted">{t.noServices(countryLabel)}</p>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -159,7 +167,7 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
                     onClick={() => setShowAll(!showAll)}
                     className="justify-self-start text-sm font-semibold text-partner"
                   >
-                    {showAll ? "Show fewer" : `Show all ${services.length}`}
+                    {showAll ? t.showFewer : t.showAll(services.length)}
                   </button>
                 )}
               </>
@@ -169,9 +177,9 @@ export function SettingsForm({ initial, initialServices, countries, timeZones, i
       )}
 
       {state.error && <p className="text-sm text-danger">{state.error}</p>}
-      {state.saved && <p className="text-sm text-both">Saved.</p>}
+      {state.saved && <p className="text-sm text-both">{t.saved}</p>}
       <button className="btn justify-self-start" disabled={saving || !country || loadingServices}>
-        {saving ? "Saving…" : isOnboarding ? "Save and continue" : "Save"}
+        {saving ? t.saving : isOnboarding ? t.saveAndContinue : t.save}
       </button>
     </form>
   );

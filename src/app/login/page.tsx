@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getI18n } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in · Two Couches" };
@@ -6,24 +7,25 @@ export const metadata = { title: "Sign in · Two Couches" };
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <div className="mx-auto grid max-w-sm gap-6">
-      <div className="grid gap-2">
-        <h1 className="font-display text-3xl font-bold tracking-tight">Sign in</h1>
-        <p className="text-muted">One watchlist, two couches, two countries.</p>
-      </div>
       <Suspense>
-        <LinkError searchParams={searchParams} />
+        <Login searchParams={searchParams} />
       </Suspense>
-      <LoginForm />
     </div>
   );
 }
 
-async function LinkError({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
-  const { error } = await searchParams;
-  if (error !== "link") return null;
+async function Login({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
+  const [{ language, t }, { error }] = await Promise.all([getI18n(), searchParams]);
   return (
-    <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
-      That sign-in link has expired or was already used. Send yourself a new one.
-    </p>
+    <>
+      <div className="grid gap-2">
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t.account.login.signIn}</h1>
+        <p className="text-muted">{t.account.login.tagline}</p>
+      </div>
+      {error === "link" && (
+        <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{t.account.login.linkExpired}</p>
+      )}
+      <LoginForm language={language} />
+    </>
   );
 }
