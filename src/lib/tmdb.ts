@@ -1,14 +1,30 @@
 import "server-only";
+import type { ProviderKind } from "./watch";
 
 const TMDB_API = "https://api.themoviedb.org/3";
-export const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 export function isTmdbConfigured() {
   return Boolean(process.env.TMDB_API_TOKEN);
 }
 
-/** GET a TMDB v3 endpoint with the server-side read token. Never import this from client code. */
-export async function tmdbGet<T>(path: string, params: Record<string, string> = {}): Promise<T> {
+export class TmdbError extends Error {
+  constructor(
+    path: string,
+    readonly status: number,
+  ) {
+    super(`TMDB ${path} responded ${status}`);
+  }
+}
+
+/**
+ * GET a TMDB v3 endpoint with the server-side read token. Never import this from client code.
+ * Pass `revalidate` (seconds) to keep the response in Next's fetch cache; otherwise it isn't cached.
+ */
+export async function tmdbGet<T>(
+  path: string,
+  params: Record<string, string> = {},
+  { revalidate }: { revalidate?: number } = {},
+): Promise<T> {
   const token = process.env.TMDB_API_TOKEN;
   if (!token) throw new Error("TMDB_API_TOKEN is not set");
 
@@ -17,9 +33,15 @@ export async function tmdbGet<T>(path: string, params: Record<string, string> = 
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    ...(revalidate && { next: { revalidate } }),
   });
-  if (!res.ok) throw new Error(`TMDB ${path} responded ${res.status}`);
+  if (!res.ok) throw new TmdbError(path, res.status);
   return res.json() as Promise<T>;
+}
+
+/** TMDB's language parameter for a viewer, e.g. "en-GB": their UI language and their country. */
+export function tmdbLocale(language: string, country: string) {
+  return `${language}-${country}`;
 }
 
 type WatchProviderList = {
@@ -55,3 +77,65 @@ export async function fetchWatchProviders(country: string) {
   }
   return [...byId.values()];
 }
+
+export type SearchResponse = {
+  results: (
+    | {
+        media_type: "movie";
+        id: number;
+        title: string;
+        original_title: string;
+        release_date?: string;
+        poster_path: string | null;
+        overview: string;
+      }
+    | {
+        media_type: "tv";
+        id: number;
+        name: string;
+        original_name: string;
+        first_air_date?: string;
+        poster_path: string | null;
+        overview: string;
+      }
+    | { media_type: "person"; id: number }
+  )[];
+};
+
+type DetailsCommon = {
+  id: number;
+  original_language: string;
+  overview: string;
+  tagline: string | null;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  genres: { id: number; name: string }[];
+  vote_average: number;
+  videos?: {
+    results: { key: string; site: string; type: string; official: boolean; iso_639_1: string }[];
+  };
+};
+
+export type MovieDetails = DetailsCommon & {
+  title: string;
+  original_title: string;
+  release_date: string;
+  runtime: number | null;
+};
+
+export type TvDetails = DetailsCommon & {
+  name: string;
+  original_name: string;
+  first_air_date: string;
+  episode_run_time: number[];
+  number_of_seasons: number;
+};
+
+export const PROVIDER_KINDS: ProviderKind[] = ["flatrate", "free", "ads", "rent", "buy"];
+
+type ProviderEntry = { provider_id: number; provider_name: string; logo_path: string | null; display_priority: number };
+
+/** /{movie|tv}/{id}/watch/providers: every country at once. */
+export type TitleProviders = {
+  results: Record<string, { link?: string } & Partial<Record<ProviderKind, ProviderEntry[]>>>;
+};

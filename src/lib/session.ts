@@ -24,4 +24,19 @@ export async function requireProfile() {
   return profile;
 }
 
+/** The other member of the signed-in user's couple, or null until they've joined. Memoised per request. */
+export const getPartner = cache(async () => {
+  const profile = await getCurrentProfile();
+  if (!profile?.couple_id) return null;
+
+  const supabase = await createClient();
+  const { data: partner } = await supabase
+    .from("profiles")
+    .select("id, display_name, country, language, time_zone, services")
+    .eq("couple_id", profile.couple_id)
+    .neq("id", profile.id)
+    .maybeSingle();
+  return partner;
+});
+
 export type Profile = NonNullable<Awaited<ReturnType<typeof getCurrentProfile>>>;

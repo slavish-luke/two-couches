@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { CountryChip } from "@/components/country-chip";
+import { SearchBox } from "@/components/search-box";
 import { countryName, formatLocalTime } from "@/lib/places";
 import { requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -58,22 +60,17 @@ async function OurList() {
         )}
       </div>
 
+      <SearchBox />
+
       <section className="grid gap-3">
         <h1 className="font-display text-3xl font-bold tracking-tight">Our list</h1>
         <div className="card grid justify-items-center gap-1 py-12 text-center">
           <p className="font-semibold">Nothing here yet</p>
-          <p className="text-sm text-muted">Searching for films and shows to add is coming next.</p>
+          <p className="text-sm text-muted">
+            Search for a film or series to see where you can both watch it. Saving titles here is coming next.
+          </p>
         </div>
       </section>
     </div>
-  );
-}
-
-function CountryChip({ code, name, isMe }: { code: string; name: string; isMe: boolean }) {
-  const style = isMe ? "bg-me-soft text-me" : "bg-partner-soft text-partner";
-  return (
-    <span className={`rounded-full px-2 py-0.5 font-mono text-xs font-medium ${style}`} title={name}>
-      {code}
-    </span>
   );
 }

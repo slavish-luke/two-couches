@@ -23,7 +23,35 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "couples": {
+            "availability": {
+                  Row: {
+                    "country": string,"display_priority": number,"kind": string,"logo_path": string | null,"media_type": string,"provider_id": number,"provider_name": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "country": string,"display_priority"?: number,"kind": string,"logo_path"?: string | null,"media_type": string,"provider_id": number,"provider_name": string,"tmdb_id": number
+                  }
+                  Update: {
+                    "country"?: string,"display_priority"?: number,"kind"?: string,"logo_path"?: string | null,"media_type"?: string,"provider_id"?: number,"provider_name"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"availability_checks": {
+                  Row: {
+                    "checked_at": string,"country": string,"link": string | null,"media_type": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "checked_at"?: string,"country": string,"link"?: string | null,"media_type": string,"tmdb_id": number
+                  }
+                  Update: {
+                    "checked_at"?: string,"country"?: string,"link"?: string | null,"media_type"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"couples": {
                   Row: {
                     "created_at": string,"created_by": string | null,"id": string,"invite_code": string
                   }
@@ -81,6 +109,40 @@ isOneToOne: false
                   }
                   Update: {
                     "email"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"title_texts": {
+                  Row: {
+                    "genres": (string)[],"locale": string,"media_type": string,"overview": string,"refreshed_at": string,"tagline": string,"title": string,"tmdb_id": number,"trailer_key": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "genres"?: (string)[],"locale": string,"media_type": string,"overview"?: string,"refreshed_at"?: string,"tagline"?: string,"title": string,"tmdb_id": number,"trailer_key"?: string | null
+                  }
+                  Update: {
+                    "genres"?: (string)[],"locale"?: string,"media_type"?: string,"overview"?: string,"refreshed_at"?: string,"tagline"?: string,"title"?: string,"tmdb_id"?: number,"trailer_key"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "title_texts_media_type_tmdb_id_fkey"
+      columns: ["media_type","tmdb_id"]
+isOneToOne: false
+      referencedRelation: "titles"
+      referencedColumns: ["media_type","tmdb_id"]
+    }
+                  ]
+                },"titles": {
+                  Row: {
+                    "backdrop_path": string | null,"genre_ids": (number)[],"media_type": string,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "backdrop_path"?: string | null,"genre_ids"?: (number)[],"media_type": string,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
+                  }
+                  Update: {
+                    "backdrop_path"?: string | null,"genre_ids"?: (number)[],"media_type"?: string,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
                   }
                   Relationships: [
                     

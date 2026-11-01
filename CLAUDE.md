@@ -6,8 +6,8 @@ This repo is public. Never commit personal details: real names, emails, which co
 
 ## Status
 
-- Sprint 0 (Foundations): code done and tested locally (2026-11-01). Still to do by hand: hosted Supabase project, Vercel deploy, TMDB key (steps in `README.md`). Sprint 0 is finished when both users sign in on the live site and see the same list.
-- Next: Sprint 1 (Search and where to watch).
+- Sprint 0 (Foundations): finished 2026-11-01. Live on Vercel with a hosted Supabase project (Singapore); both users signed in and paired. Auth emails go through custom SMTP, so the templates in `supabase/templates` are pasted into the hosted project by hand.
+- Sprint 1 (Search and where to watch): in progress. Search page, title page, both countries' providers, "available in both" badge, Supabase caching.
 - Update this section as sprints finish.
 
 ## Stack (decided)
@@ -50,12 +50,14 @@ Don't add other frameworks or services without discussing it first. Everything m
 | `couples` | The pair | invite code (8 chars). Members are the `profiles` rows whose `couple_id` points here (max 2). |
 | `titles` | Cached TMDB data | tmdb_id, media type (movie/tv), title, poster, genres, runtime, refreshed_at |
 | `list_items` | Shared list | title, added_by, status (want/watching/watched/dropped), categories, notes, rating per person, watched_on, TV progress |
-| `availability` | Daily provider snapshots | title, country, service, kind (flatrate/rent/buy/free/ads), checked_on |
+| `title_texts` | Cached TMDB text per locale | title, locale (`en-GB`), title text, overview, tagline, genre names, trailer key, refreshed_at |
+| `availability` | Latest provider list per title and country | media type, tmdb_id, country, provider, kind (flatrate/free/ads/rent/buy). No FK to `titles`, so search results can be checked before they're opened. |
+| `availability_checks` | When each title was last checked in each country | media type, tmdb_id, country, TMDB watch link, checked_at. Records "checked, nothing there" too. |
 | `watch_nights` | Scheduled sessions | title, starts_at (UTC), method (teleparty/syncplay), ready flag per person, room/link |
 | `services` | Cached TMDB provider list per country | country, provider_id (TMDB), name, logo, display_priority, refreshed_at |
 | `signup_allowlist` | Emails allowed to sign up | email. No RLS policies: managed only from the SQL editor. |
 
-Built so far: `profiles`, `couples`, `services`, `signup_allowlist` (migration `20261101000000_foundations.sql`). `profiles.services` holds TMDB provider IDs. Users can update only their own settings columns; `couple_id` changes only through the `create_couple()` / `join_couple(code)` functions.
+Built so far: `profiles`, `couples`, `services`, `signup_allowlist` (migration `20261101000000_foundations.sql`); `titles`, `title_texts`, `availability`, `availability_checks` (`20261101093123_titles_and_availability.sql`). The four Sprint 1 tables are shared caches like `services`: signed-in users read, only the server writes. `profiles.services` holds TMDB provider IDs. Users can update only their own settings columns; `couple_id` changes only through the `create_couple()` / `join_couple(code)` functions.
 
 Manage schema changes as Supabase migrations in the repo, not by editing tables in the dashboard.
 
@@ -88,7 +90,10 @@ Two-week sprints, each ending with something both users can use.
 - Auth middleware lives in `src/proxy.ts` (Next 16 renamed `middleware` to `proxy`).
 - Server-side Supabase: `createClient()` from `src/lib/supabase/server.ts` (acts as the user, RLS applies). `createAdminClient()` bypasses RLS and is only for shared caches like `services`.
 - Get the current user with `getCurrentProfile()` / `requireProfile()` from `src/lib/session.ts`.
-- TMDB calls go through `tmdbGet()` in `src/lib/tmdb.ts` (server only).
+- TMDB calls go through `tmdbGet()` in `src/lib/tmdb.ts` (server only). Titles and availability are cached in Supabase by `getTitle()` / `getAvailability()` in `src/lib/titles.ts`; search results are throwaway, so `searchTitles()` uses Next's fetch cache (`revalidate`) instead.
+- "Who can watch it" rules live in `whoCanWatch()` in `src/lib/watch.ts` (pure, client-safe). Use it rather than re-deriving "available in both".
+- TMDB images (posters, logos) use `next/image` with `unoptimized` and TMDB's own sizes (`tmdbImage()`), to stay clear of Vercel's image-optimisation quota.
+- Colours: ochre `me`, teal `partner`, green `both` only where the two overlap (see `globals.css`).
 
 @AGENTS.md
 @CLAUDE.local.md

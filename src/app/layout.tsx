@@ -53,6 +53,7 @@ async function AccountNav() {
   return (
     <nav className="flex items-center gap-4 text-sm font-semibold">
       <Link href="/" className="text-muted hover:text-ink">Our list</Link>
+      <Link href="/search" className="text-muted hover:text-ink">Search</Link>
       <Link href="/settings" className="text-muted hover:text-ink">Settings</Link>
       <form action={signOut}>
         <button className="text-muted hover:text-ink">Sign out</button>
