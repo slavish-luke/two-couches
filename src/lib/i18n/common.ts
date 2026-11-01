@@ -8,6 +8,7 @@ const en = {
     list: "Our list",
     browse: "Browse",
     comingSoon: "Coming soon",
+    watchNights: "Watch nights",
     /** Screen-reader text for the dot on Coming soon. */
     newAlerts: (count: number) => (count === 1 ? "1 new alert" : `${count} new alerts`),
     search: "Search",
@@ -37,6 +38,13 @@ const en = {
   } satisfies Record<Exclude<Verdict, "none"> | "meOnly", unknown>,
   stars: (who: string, rating: number) => `${who}: ${rating} out of 5 stars`,
   add: { add: "+ Add", adding: "Adding…", onList: "✓ On our list" },
+  dismiss: {
+    notInterested: "Not interested",
+    dismissed: "✓ Not interested",
+    saving: "Saving…",
+    undo: "Tap to see it in suggestions again",
+    failed: "Couldn't save that. Try again.",
+  },
   searchBox: { placeholder: "Search films and series", button: "Search" },
   poster: (title: string) => `Poster for ${title}`,
   notFound: {
@@ -51,6 +59,7 @@ const tr: typeof en = {
     list: "Listemiz",
     browse: "Keşfet",
     comingSoon: "Yakında",
+    watchNights: "İzleme geceleri",
     newAlerts: (count: number) => `${count} yeni bildirim`,
     search: "Ara",
     settings: "Ayarlar",
@@ -78,6 +87,13 @@ const tr: typeof en = {
   },
   stars: (who: string, rating: number) => `${who}: 5 üzerinden ${rating} yıldız`,
   add: { add: "+ Ekle", adding: "Ekleniyor…", onList: "✓ Listemizde" },
+  dismiss: {
+    notInterested: "İlgilenmiyoruz",
+    dismissed: "✓ İlgilenmiyoruz",
+    saving: "Kaydediliyor…",
+    undo: "Önerilerde yeniden görmek için dokun",
+    failed: "Kaydedilemedi. Tekrar dene.",
+  },
   searchBox: { placeholder: "Film ve dizi ara", button: "Ara" },
   poster: (title: string) => `${title} afişi`,
   notFound: {

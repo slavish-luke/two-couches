@@ -1,7 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CountryChip } from "@/components/country-chip";
+import { DismissButton } from "@/components/dismiss-button";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
@@ -11,6 +13,7 @@ import { type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
+import { getDismissedKeys } from "@/lib/recommend";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, getTitle } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
@@ -71,15 +74,24 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
           </div>
           {title.tagline && <p className="italic text-muted">{title.tagline}</p>}
           {title.overview && <p>{title.overview}</p>}
-          {title.trailer_key && (
-            <a
-              href={`https://www.youtube.com/watch?v=${title.trailer_key}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-quiet justify-self-start"
-            >
-              {t.title.trailer}
-            </a>
+          {(title.trailer_key || profile.couple_id) && (
+            <div className="flex flex-wrap gap-2">
+              {title.trailer_key && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${title.trailer_key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-quiet"
+                >
+                  {t.title.trailer}
+                </a>
+              )}
+              {profile.couple_id && (
+                <Link href={`/watch-nights/new?type=${type}&id=${tmdbId}`} className="btn-quiet">
+                  {t.nights.plan}
+                </Link>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -101,19 +113,28 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
 async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: number | null }) {
   const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
   const coupleId = profile.couple_id!;
-  const [item, categories] = await Promise.all([getListItem(coupleId, titleRef), getCategories(coupleId)]);
+  const [item, categories, dismissed] = await Promise.all([
+    getListItem(coupleId, titleRef),
+    getCategories(coupleId),
+    getDismissedKeys(coupleId),
+  ]);
 
   return (
-    <ListPanel
-      titleRef={titleRef}
-      seasons={seasons}
-      item={item}
-      categories={categories}
-      me={{ id: profile.id, name: profile.display_name || t.common.you }}
-      partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
-      language={profile.language}
-      timeZone={profile.time_zone}
-    />
+    <div className="grid gap-3">
+      <ListPanel
+        titleRef={titleRef}
+        seasons={seasons}
+        item={item}
+        categories={categories}
+        me={{ id: profile.id, name: profile.display_name || t.common.you }}
+        partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
+        language={profile.language}
+        timeZone={profile.time_zone}
+      />
+      {!item && (
+        <DismissButton titleRef={titleRef} dismissed={dismissed.has(titleKey(titleRef))} language={profile.language} long />
+      )}
+    </div>
   );
 }
 

@@ -105,6 +105,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"dismissed_titles": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"dismissed_by": string | null,"media_type": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"dismissed_by"?: string | null,"media_type": string,"tmdb_id": number
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"dismissed_by"?: string | null,"media_type"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dismissed_titles_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "dismissed_titles_dismissed_by_fkey"
+      columns: ["dismissed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"list_items": {
                   Row: {
                     "added_by": string | null,"categories": (string)[],"couple_id": string,"created_at": string,"episode": number | null,"id": string,"media_type": string,"notes": string,"season": number | null,"status": string,"tmdb_id": number,"updated_at": string,"watched_on": string | null
@@ -296,6 +322,38 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"watch_nights": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"created_by": string | null,"id": string,"link": string | null,"media_type": string | null,"method": string | null,"notes": string,"starts_at": string,"syncplay_room": string | null,"syncplay_server": string | null,"tmdb_id": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"link"?: string | null,"media_type"?: string | null,"method"?: string | null,"notes"?: string,"starts_at": string,"syncplay_room"?: string | null,"syncplay_server"?: string | null,"tmdb_id"?: number | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"link"?: string | null,"media_type"?: string | null,"method"?: string | null,"notes"?: string,"starts_at"?: string,"syncplay_room"?: string | null,"syncplay_server"?: string | null,"tmdb_id"?: number | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "watch_nights_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "watch_nights_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "watch_nights_media_type_tmdb_id_fkey"
+      columns: ["media_type","tmdb_id"]
+isOneToOne: false
+      referencedRelation: "titles"
+      referencedColumns: ["media_type","tmdb_id"]
+    }
                   ]
                 }
           }

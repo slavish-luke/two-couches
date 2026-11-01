@@ -23,6 +23,7 @@ import {
 } from "@/lib/browse";
 import { getI18n } from "@/lib/i18n/server";
 import { getListKeys } from "@/lib/list";
+import { localDate } from "@/lib/list-rules";
 import { countryName, isCountry } from "@/lib/places";
 import { getServices, type Service } from "@/lib/services";
 import { getPartner, requireProfile } from "@/lib/session";
@@ -37,6 +38,7 @@ import {
   type MediaType,
   type Watcher,
 } from "@/lib/watch";
+import { ForYouLoading, ForYouRow } from "./for-you";
 
 export const metadata = { title: "Browse · Two Couches" };
 
@@ -268,6 +270,19 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
         </nav>
       </div>
       {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
+
+      {showRows && profile.couple_id && (
+        <Suspense fallback={<ForYouLoading />}>
+          <ForYouRow
+            coupleId={profile.couple_id}
+            type={type}
+            locales={partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale]}
+            countries={them ? [me.country, them.country] : [me.country]}
+            today={localDate(profile.time_zone)}
+            card={{ language, me, them, partnerName, onList }}
+          />
+        </Suspense>
+      )}
 
       {rows.map((row) => (
         <section key={row.key} className="grid gap-3">

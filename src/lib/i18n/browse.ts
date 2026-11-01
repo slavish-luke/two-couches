@@ -8,6 +8,16 @@ const en = {
   trendingNote: "Worldwide",
   popularIn: "Popular on streaming",
   streamingNow: "Streaming now",
+  forYou: {
+    heading: "For you",
+    note: "Picked from what you've both rated",
+    /** Which liked title led to the suggestion. */
+    like: (title: string) => `Like ${title}`,
+    noSeeds: "Rate a few things you've watched, or add some to your list, and suggestions will show up here.",
+    toWatched: "Go to Watched",
+    nothingNew: "No new suggestions right now. Rate a few more titles to get some.",
+    failed: "Couldn't load suggestions from TMDB. Try again in a minute.",
+  },
   scope: {
     both: "On a service each of you pays for, in your own country.",
     mine: "On the services you pay for.",
@@ -60,6 +70,15 @@ const tr: typeof en = {
   trendingNote: "Dünya genelinde",
   popularIn: "Platformlarda popüler",
   streamingNow: "Şu an yayında",
+  forYou: {
+    heading: "Size özel",
+    note: "İkinizin puanlarına göre seçildi",
+    like: (title: string) => `Şuna benzer: ${title}`,
+    noSeeds: "İzlediklerinizden birkaçını puanlayın ya da listenize bir şeyler ekleyin; öneriler burada görünsün.",
+    toWatched: "İzlenenlere git",
+    nothingNew: "Şu an yeni öneri yok. Birkaç yapım daha puanlayın.",
+    failed: "Öneriler TMDB'den yüklenemedi. Bir dakika sonra tekrar dene.",
+  },
   scope: {
     both: "Her biriniz kendi ülkesinde, abone olduğu bir platformda izleyebilir.",
     mine: "Abone olduğun platformlarda.",

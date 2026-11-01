@@ -9,6 +9,7 @@ import { Poster } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
 import { Stars } from "@/components/stars";
 import { getList, type ListEntry } from "@/lib/list";
+import { getWatchNights } from "@/lib/nights";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { formatDate, localDate, type ListStatus } from "@/lib/list-rules";
@@ -18,6 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAvailability } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import { isMediaType, titleHref, titleKey, whoCanWatch, type Availability, type MediaType, type Watcher } from "@/lib/watch";
+import { NightCard } from "./watch-nights/night-card";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -114,6 +116,21 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
         )}
       </div>
 
+      {partner && (
+        <Suspense>
+          <NextNight
+            coupleId={profile.couple_id}
+            me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
+            partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
+            locales={
+              partner.country
+                ? [tmdbLocale(profile.language, profile.country), tmdbLocale(partner.language, partner.country)]
+                : [tmdbLocale(profile.language, profile.country)]
+            }
+          />
+        </Suspense>
+      )}
+
       <SearchBox language={language} />
 
       <ListSync coupleId={profile.couple_id} />
@@ -136,6 +153,33 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
         params={params}
       />
     </div>
+  );
+}
+
+/** The next watch night, or a nudge to plan one. */
+async function NextNight(props: {
+  coupleId: string;
+  me: { id: string; name: string; timeZone: string };
+  partner: { id: string; name: string; timeZone: string };
+  locales: string[];
+}) {
+  const [{ language, t }, [night]] = await Promise.all([getI18n(), getWatchNights(props.coupleId, props.locales, { limit: 1 })]);
+  return (
+    <section className="grid gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display text-lg font-semibold">{t.nights.next.heading}</h2>
+        <Link href={night ? "/watch-nights" : "/watch-nights/new"} className="text-sm font-semibold text-partner">
+          {night ? t.nights.next.all : t.nights.next.planOne}
+        </Link>
+      </div>
+      {night ? (
+        <ul>
+          <NightCard night={night} me={props.me} partner={props.partner} now={new Date()} language={language} t={t} />
+        </ul>
+      ) : (
+        <p className="card py-3 text-sm text-muted">{t.nights.next.none}</p>
+      )}
+    </section>
   );
 }
 

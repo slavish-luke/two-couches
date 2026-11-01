@@ -15,10 +15,15 @@ TMDB API, deployed on Vercel.
 - Streaming-service catalogues cached from TMDB in Postgres and refreshed daily.
 - A daily job (pg_cron → pg_net → a Next.js route) re-checks every saved title and sends web push
   alerts when one becomes watchable for both people.
+- "For you" suggestions scored from TMDB recommendations, weighted by *both* people's ratings and boosted
+  when both can stream them, with "not interested" to keep a title out.
+- A watch-night planner that rates each hour of the day for both time zones (evenings, weekend afternoons,
+  sleep), records how you'll watch (Teleparty link or Syncplay room), notifies the other person and
+  exports to any calendar app (.ics).
 - English and Turkish UI, following each person's settings.
 - pgTAP tests for every security policy.
 
-**Status:** Sprints 0–4 done (foundations, search, shared list, browse, coming soon and alerts). See `CLAUDE.md` for the rules and the sprint roadmap.
+**Status:** Sprints 0–5 done (foundations, search, shared list, browse, coming soon and alerts, for you and watch nights). See `CLAUDE.md` for the rules and the sprint roadmap.
 
 ## Run it locally
 

@@ -25,6 +25,7 @@ export type ListEntry = ListItem & {
   title: string;
   release_date: string | null;
   poster_path: string | null;
+  genre_ids: number[];
 };
 
 function toItem(row: {
@@ -68,7 +69,7 @@ export async function getList(coupleId: string, locales: string[]): Promise<List
   const { data, error } = await supabase
     .from("list_items")
     .select(
-      "*, list_ratings(profile_id, rating), titles(original_title, release_date, poster_path, title_texts(locale, title))",
+      "*, list_ratings(profile_id, rating), titles(original_title, release_date, poster_path, genre_ids, title_texts(locale, title))",
     )
     .eq("couple_id", coupleId)
     .in("titles.title_texts.locale", locales)
@@ -83,6 +84,7 @@ export async function getList(coupleId: string, locales: string[]): Promise<List
       title: text?.title ?? row.titles.original_title,
       release_date: row.titles.release_date,
       poster_path: row.titles.poster_path,
+      genre_ids: row.titles.genre_ids,
     };
   });
 }

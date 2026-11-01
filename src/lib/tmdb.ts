@@ -86,6 +86,9 @@ export type MovieResult = {
   release_date?: string;
   poster_path: string | null;
   overview: string;
+  /** In discover, trending and recommendation results, not search. */
+  genre_ids?: number[];
+  vote_average?: number;
 };
 
 /** A series in TMDB's search, discover and trending results. */
@@ -96,13 +99,15 @@ export type TvResult = {
   first_air_date?: string;
   poster_path: string | null;
   overview: string;
+  genre_ids?: number[];
+  vote_average?: number;
 };
 
 export type SearchResponse = {
   results: (({ media_type: "movie" } & MovieResult) | ({ media_type: "tv" } & TvResult) | { media_type: "person"; id: number })[];
 };
 
-/** /discover/{movie|tv} and /trending/{movie|tv}/{window}. TMDB serves at most 500 pages. */
+/** /discover/{movie|tv}, /trending/{movie|tv}/{window} and /{movie|tv}/{id}/recommendations. TMDB serves at most 500 pages. */
 export type PagedResponse<T> = { page: number; total_pages: number; total_results: number; results: T[] };
 
 export type GenreList = { genres: { id: number; name: string }[] };

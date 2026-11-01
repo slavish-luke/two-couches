@@ -71,6 +71,7 @@ async function AccountNav() {
               </>
             )}
           </Link>
+          <Link href="/watch-nights" className="text-muted hover:text-ink">{t.common.nav.watchNights}</Link>
           <Link href="/search" className="text-muted hover:text-ink">{t.common.nav.search}</Link>
           <Link href="/settings" className="text-muted hover:text-ink">{t.common.nav.settings}</Link>
           <form action={signOut}>
