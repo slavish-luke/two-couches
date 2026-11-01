@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* Ochre marks you, teal marks your partner; "both" green is used only where the two of you overlap. */
+:root {
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --ink: #17212b;
+  --muted: #586674;
+  --line: #dce2e7;
+  --me: #b45f1e;
+  --me-soft: #f6e7da;
+  --partner: #157f86;
+  --partner-soft: #ddeff0;
+  --both: #2e7a4c;
+  --both-soft: #def0e4;
+  --danger: #b3261e;
+  --danger-soft: #fbe4e2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1418;
+    --surface: #161d23;
+    --ink: #e5eaee;
+    --muted: #98a5b1;
+    --line: #28333c;
+    --me: #e59a5e;
+    --me-soft: #3a2718;
+    --partner: #5cc1c6;
+    --partner-soft: #15343a;
+    --both: #72c994;
+    --both-soft: #183526;
+    --danger: #f2b8b5;
+    --danger-soft: #3b1715;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-me: var(--me);
+  --color-me-soft: var(--me-soft);
+  --color-partner: var(--partner);
+  --color-partner-soft: var(--partner-soft);
+  --color-both: var(--both);
+  --color-both-soft: var(--both-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-partner focus:ring-2 focus:ring-partner/30;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg bg-ink px-4 py-2 font-semibold text-bg transition hover:opacity-90 disabled:opacity-50;
+  }
+  .btn-quiet {
+    @apply inline-flex items-center justify-center rounded-lg border border-line bg-surface px-4 py-2 font-semibold text-ink transition hover:bg-bg disabled:opacity-50;
+  }
+  .card {
+    @apply rounded-xl border border-line bg-surface p-5;
+  }
+}
