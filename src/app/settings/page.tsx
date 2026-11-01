@@ -4,6 +4,7 @@ import { getI18n } from "@/lib/i18n/server";
 import { allTimeZones, countryOptions, isCountry } from "@/lib/places";
 import { getServices } from "@/lib/services";
 import { requireProfile } from "@/lib/session";
+import { NotificationSettings } from "./notification-settings";
 import { SettingsForm } from "./settings-form";
 
 export const metadata = { title: "Settings · Two Couches" };
@@ -38,6 +39,13 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
         isOnboarding={!profile.couple_id}
         language={language}
       />
+      {profile.couple_id && (
+        <section className="grid gap-2 border-t border-line pt-6">
+          <h2 className="font-display text-xl font-semibold">{t.account.notifications.heading}</h2>
+          <p className="text-muted">{t.account.notifications.intro}</p>
+          <NotificationSettings vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null} language={language} />
+        </section>
+      )}
     </div>
   );
 }

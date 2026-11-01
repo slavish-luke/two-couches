@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Source_Sans_3 } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 import { HtmlLang } from "@/components/html-lang";
+import { countNewAlerts } from "@/lib/alerts";
 import { getMessages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/session";
@@ -52,14 +53,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 
 async function AccountNav() {
   const [profile, { language, t }] = await Promise.all([getCurrentProfile(), getI18n()]);
+  const newAlerts = profile?.couple_id ? await countNewAlerts(profile.alerts_seen_at) : 0;
 
   return (
     <>
       <HtmlLang language={language} />
       {profile && (
-        <nav className="flex items-center gap-4 text-sm font-semibold">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold">
           <Link href="/" className="text-muted hover:text-ink">{t.common.nav.list}</Link>
           <Link href="/browse" className="text-muted hover:text-ink">{t.common.nav.browse}</Link>
+          <Link href="/coming-soon" className="relative text-muted hover:text-ink">
+            {t.common.nav.comingSoon}
+            {newAlerts > 0 && (
+              <>
+                <span aria-hidden className="absolute -right-2 -top-0.5 size-2 rounded-full bg-both" />
+                <span className="sr-only"> ({t.common.nav.newAlerts(newAlerts)})</span>
+              </>
+            )}
+          </Link>
           <Link href="/search" className="text-muted hover:text-ink">{t.common.nav.search}</Link>
           <Link href="/settings" className="text-muted hover:text-ink">{t.common.nav.settings}</Link>
           <form action={signOut}>

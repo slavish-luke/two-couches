@@ -24,6 +24,13 @@ export async function requireProfile() {
   return profile;
 }
 
+/** Like requireProfile, for actions that need a couple and a country. Throws until setup is finished. */
+export async function requireCoupleProfile() {
+  const profile = await requireProfile();
+  if (!profile.couple_id || !profile.country) throw new Error("Finish setting up before using the list");
+  return { ...profile, couple_id: profile.couple_id, country: profile.country };
+}
+
 /** The other member of the signed-in user's couple, or null until they've joined. Memoised per request. */
 export const getPartner = cache(async () => {
   const profile = await getCurrentProfile();

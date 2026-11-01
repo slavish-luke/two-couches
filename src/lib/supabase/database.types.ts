@@ -23,7 +23,33 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "availability": {
+            "alerts": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"id": string,"kind": string,"media_type": string,"services": NonNullable<Json>,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"id"?: string,"kind": string,"media_type": string,"services"?: NonNullable<Json>,"tmdb_id": number
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"media_type"?: string,"services"?: NonNullable<Json>,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alerts_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alerts_media_type_tmdb_id_fkey"
+      columns: ["media_type","tmdb_id"]
+isOneToOne: false
+      referencedRelation: "titles"
+      referencedColumns: ["media_type","tmdb_id"]
+    }
+                  ]
+                },"availability": {
                   Row: {
                     "country": string,"display_priority": number,"kind": string,"logo_path": string | null,"media_type": string,"provider_id": number,"provider_name": string,"tmdb_id": number
                   }
@@ -47,6 +73,20 @@ export type Database = {
                   }
                   Update: {
                     "checked_at"?: string,"country"?: string,"link"?: string | null,"media_type"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"availability_snapshots": {
+                  Row: {
+                    "country": string,"media_type": string,"provider_ids": (number)[],"recorded_at": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "country": string,"media_type": string,"provider_ids"?: (number)[],"recorded_at"?: string,"tmdb_id": number
+                  }
+                  Update: {
+                    "country"?: string,"media_type"?: string,"provider_ids"?: (number)[],"recorded_at"?: string,"tmdb_id"?: number
                   }
                   Relationships: [
                     
@@ -125,14 +165,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "country": string | null,"couple_id": string | null,"created_at": string,"display_name": string,"id": string,"language": string,"services": (number)[],"time_zone": string,"updated_at": string
+                    "alerts_seen_at": string,"country": string | null,"couple_id": string | null,"created_at": string,"display_name": string,"id": string,"language": string,"services": (number)[],"time_zone": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "country"?: string | null,"couple_id"?: string | null,"created_at"?: string,"display_name"?: string,"id": string,"language"?: string,"services"?: (number)[],"time_zone"?: string,"updated_at"?: string
+                    "alerts_seen_at"?: string,"country"?: string | null,"couple_id"?: string | null,"created_at"?: string,"display_name"?: string,"id": string,"language"?: string,"services"?: (number)[],"time_zone"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "country"?: string | null,"couple_id"?: string | null,"created_at"?: string,"display_name"?: string,"id"?: string,"language"?: string,"services"?: (number)[],"time_zone"?: string,"updated_at"?: string
+                    "alerts_seen_at"?: string,"country"?: string | null,"couple_id"?: string | null,"created_at"?: string,"display_name"?: string,"id"?: string,"language"?: string,"services"?: (number)[],"time_zone"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -141,6 +181,58 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "couples"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"p256dh": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"p256dh": string,"profile_id": string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"p256dh"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "push_subscriptions_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"reminders": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"created_by": string | null,"id": string,"media_type": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"media_type": string,"tmdb_id": number
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"media_type"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reminders_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reminders_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reminders_media_type_tmdb_id_fkey"
+      columns: ["media_type","tmdb_id"]
+isOneToOne: false
+      referencedRelation: "titles"
+      referencedColumns: ["media_type","tmdb_id"]
     }
                   ]
                 },"services": {
@@ -225,6 +317,9 @@ isOneToOne: false
                            },
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"request_daily_check":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "valid_categories":
 { Args: { "categories": (string)[] }; Returns: boolean

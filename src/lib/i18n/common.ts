@@ -7,6 +7,9 @@ const en = {
   nav: {
     list: "Our list",
     browse: "Browse",
+    comingSoon: "Coming soon",
+    /** Screen-reader text for the dot on Coming soon. */
+    newAlerts: (count: number) => (count === 1 ? "1 new alert" : `${count} new alerts`),
     search: "Search",
     settings: "Settings",
     signOut: "Sign out",
@@ -47,6 +50,8 @@ const tr: typeof en = {
   nav: {
     list: "Listemiz",
     browse: "Keşfet",
+    comingSoon: "Yakında",
+    newAlerts: (count: number) => `${count} yeni bildirim`,
     search: "Ara",
     settings: "Ayarlar",
     signOut: "Çıkış yap",

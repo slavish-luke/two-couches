@@ -12,10 +12,11 @@ import browse from "./browse";
 import common from "./common";
 import list from "./list";
 import title from "./title";
+import upcoming from "./upcoming";
 
 const dictionaries = {
-  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en },
-  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr },
+  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en },
+  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr },
 } satisfies Record<Language, unknown>;
 
 export type Messages = (typeof dictionaries)["en"];

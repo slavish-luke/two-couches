@@ -5,6 +5,8 @@ import { CountryChip } from "@/components/country-chip";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
+import { RemindButton } from "@/components/remind-button";
+import { getReminderKeys } from "@/lib/alerts";
 import { type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
@@ -121,8 +123,11 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
   const partnerName = partner?.display_name || t.common.yourPartner;
 
-  const availability =
-    (await getAvailability([titleRef], them ? [me.country, them.country] : [me.country]))[titleKey(titleRef)] ?? {};
+  const [byTitle, reminded] = await Promise.all([
+    getAvailability([titleRef], them ? [me.country, them.country] : [me.country]),
+    profile.couple_id ? getReminderKeys(profile.couple_id) : null,
+  ]);
+  const availability = byTitle[titleKey(titleRef)] ?? {};
   const { verdict, mine, theirs } = whoCanWatch(me, them, availability);
   const names = (providers: Provider[]) => providers.map((p) => p.name).join(", ");
   const theirCountry = them ? countryName(them.country, profile.language) : "";
@@ -170,6 +175,9 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
         </p>
         <p className="text-sm">{banner.detail}</p>
       </div>
+      {reminded && verdict !== "both" && (
+        <RemindButton titleRef={titleRef} reminded={reminded.has(titleKey(titleRef))} language={profile.language} long />
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <CountryColumn
           who={t.common.you}

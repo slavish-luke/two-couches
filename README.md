@@ -13,9 +13,12 @@ TMDB API, deployed on Vercel.
   ever read their own couple's data, enforced in the database, not just the UI.
 - Any country and time zone per person; times stored in UTC and shown in each person's local time.
 - Streaming-service catalogues cached from TMDB in Postgres and refreshed daily.
+- A daily job (pg_cron → pg_net → a Next.js route) re-checks every saved title and sends web push
+  alerts when one becomes watchable for both people.
+- English and Turkish UI, following each person's settings.
 - pgTAP tests for every security policy.
 
-**Status:** Sprint 0 of 7 (foundations) done. See `CLAUDE.md` for the rules and the sprint roadmap.
+**Status:** Sprints 0–4 done (foundations, search, shared list, browse, coming soon and alerts). See `CLAUDE.md` for the rules and the sprint roadmap.
 
 ## Run it locally
 
@@ -76,5 +79,22 @@ Import the GitHub repo at vercel.com/new (Hobby plan), and add these environment
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key |
 | `SUPABASE_SECRET_KEY` | Supabase secret key (server only) |
 | `TMDB_API_TOKEN` | TMDB read access token (server only) |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Web push public key (`npx web-push generate-vapid-keys`) |
+| `VAPID_PRIVATE_KEY` | Web push private key from the same pair (server only) |
+| `CRON_SECRET` | Long random string; the daily job sends it to `/api/cron/daily` (server only) |
 
 Every push to `main` then redeploys.
+
+### 4. The daily check
+`npx supabase db push` schedules it (09:00 UTC), but it does nothing until Supabase knows where to call.
+In the Supabase SQL editor, using your Vercel URL and the same `CRON_SECRET` as in Vercel:
+```sql
+select vault.create_secret('https://two-couches.vercel.app', 'app_url');
+select vault.create_secret('<CRON_SECRET>', 'cron_secret');
+-- Try it now; the response lands in net._http_response a few seconds later.
+select public.request_daily_check();
+```
+To change one later: `select vault.update_secret((select id from vault.secrets where name = 'app_url'), '<new value>');`
+
+Then turn notifications on from Settings on each phone. On iPhone, add the app to the Home Screen first and
+turn them on from there.

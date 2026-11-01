@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { recordBaseline } from "@/lib/alerts";
 import { getI18n } from "@/lib/i18n/server";
 import {
   cleanCategories,
@@ -14,11 +15,10 @@ import {
   type ListStatus,
   type Progress,
 } from "@/lib/list-rules";
-import { getPartner, requireProfile } from "@/lib/session";
+import { cacheForCouple, coupleCountries } from "@/lib/list";
+import { requireCoupleProfile } from "@/lib/session";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
-import { getTitle } from "@/lib/titles";
-import { tmdbLocale } from "@/lib/tmdb";
 import { isMediaType, type TitleRef } from "@/lib/watch";
 
 // Everything here runs as the signed-in user, so RLS limits it to their couple's list.
@@ -27,19 +27,13 @@ export type ListResult = { error?: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function requireCouple() {
-  const profile = await requireProfile();
-  if (!profile.couple_id || !profile.country) throw new Error("Finish setting up before using the list");
-  return { ...profile, couple_id: profile.couple_id, country: profile.country };
-}
-
 function cleanNotes(value: unknown) {
   const notes = typeof value === "string" ? value.trim() : "";
   return notes.length <= MAX_NOTES_LENGTH ? notes : null;
 }
 
 export async function addToList(ref: TitleRef, notes: string = ""): Promise<ListResult> {
-  const profile = await requireCouple();
+  const profile = await requireCoupleProfile();
   const { t } = await getI18n();
   if (!isMediaType(ref?.media_type) || !Number.isSafeInteger(ref.tmdb_id) || ref.tmdb_id <= 0) {
     return { error: t.title.errors.notATitle };
@@ -47,18 +41,10 @@ export async function addToList(ref: TitleRef, notes: string = ""): Promise<List
   const note = cleanNotes(notes);
   if (note === null) return { error: t.title.errors.noteTooLong(MAX_NOTES_LENGTH) };
 
-  // Cache the title in both people's languages, so it shows up named on both screens straight away.
-  const partner = await getPartner();
-  const locales = new Set([tmdbLocale(profile.language, profile.country)]);
-  if (partner?.country) locales.add(tmdbLocale(partner.language, partner.country));
   const key = { media_type: ref.media_type, tmdb_id: ref.tmdb_id };
-  try {
-    const titles = await Promise.all([...locales].map((locale) => getTitle(key, locale)));
-    if (titles.some((t) => !t)) return { error: t.title.errors.unknownTitle };
-  } catch (error) {
-    console.error("Loading a title to add failed", error);
-    return { error: t.title.errors.tmdbDown };
-  }
+  const cached = await cacheForCouple(key, profile);
+  if (cached === "unknown") return { error: t.title.errors.unknownTitle };
+  if (cached === "failed") return { error: t.title.errors.tmdbDown };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -69,6 +55,7 @@ export async function addToList(ref: TitleRef, notes: string = ""): Promise<List
     console.error("Adding to the list failed", error);
     return { error: t.title.errors.addFailed };
   }
+  await recordBaseline(key, await coupleCountries(profile));
   refresh();
   return {};
 }
@@ -83,7 +70,7 @@ export type ListChanges = {
 };
 
 export async function updateListItem(id: string, changes: ListChanges): Promise<ListResult> {
-  const profile = await requireCouple();
+  const profile = await requireCoupleProfile();
   const { t } = await getI18n();
   if (!UUID.test(id)) return { error: t.title.errors.noSuchItem };
 
@@ -129,7 +116,7 @@ export async function updateListItem(id: string, changes: ListChanges): Promise<
 }
 
 export async function removeFromList(id: string): Promise<ListResult> {
-  await requireCouple();
+  await requireCoupleProfile();
   const { t } = await getI18n();
   if (!UUID.test(id)) return { error: t.title.errors.noSuchItem };
 
@@ -145,7 +132,7 @@ export async function removeFromList(id: string): Promise<ListResult> {
 
 /** Sets or (with null) clears the signed-in person's own rating. */
 export async function rateListItem(id: string, rating: number | null): Promise<ListResult> {
-  const profile = await requireCouple();
+  const profile = await requireCoupleProfile();
   const { t } = await getI18n();
   if (!UUID.test(id)) return { error: t.title.errors.noSuchItem };
   if (rating !== null && !(Number.isInteger(rating) && rating >= 1 && rating <= 5)) {

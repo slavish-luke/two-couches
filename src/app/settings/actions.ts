@@ -1,9 +1,11 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getI18n } from "@/lib/i18n/server";
 import { isCountry, isLanguage, isTimeZone } from "@/lib/places";
+import { sendPush } from "@/lib/push";
 import { getServices, type Service } from "@/lib/services";
 import { requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -49,4 +51,70 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
 export async function loadServices(country: string): Promise<Service[]> {
   await requireProfile();
   return isCountry(country) ? getServices(country) : [];
+}
+
+/** A browser's push subscription, as PushSubscription.toJSON() gives it. */
+export type PushKeys = { endpoint: string; keys: { p256dh: string; auth: string } };
+
+function isPushKeys(value: unknown): value is PushKeys {
+  const v = value as PushKeys | null;
+  return (
+    typeof v?.endpoint === "string" &&
+    v.endpoint.startsWith("https://") &&
+    v.endpoint.length <= 1000 &&
+    typeof v.keys?.p256dh === "string" &&
+    v.keys.p256dh.length <= 200 &&
+    typeof v.keys?.auth === "string" &&
+    v.keys.auth.length <= 100
+  );
+}
+
+/** Saves this device's subscription, so the daily check can send it notifications. */
+export async function savePushSubscription(subscription: PushKeys): Promise<{ error?: string }> {
+  const [profile, { t }] = await Promise.all([requireProfile(), getI18n()]);
+  if (!isPushKeys(subscription)) return { error: t.account.notifications.failed };
+
+  const supabase = await createClient();
+  const row = { profile_id: profile.id, endpoint: subscription.endpoint };
+  // Replace rather than upsert: people may add and remove their subscriptions, not edit them.
+  const { error: deleteError } = await supabase.from("push_subscriptions").delete().match(row);
+  const { error } = deleteError
+    ? { error: deleteError }
+    : await supabase.from("push_subscriptions").insert({ ...row, ...subscription.keys });
+  if (error) {
+    console.error("Saving a push subscription failed", error);
+    return { error: t.account.notifications.failed };
+  }
+  return {};
+}
+
+/** Forgets this device's subscription after the browser has unsubscribed. */
+export async function removePushSubscription(endpoint: string): Promise<{ error?: string }> {
+  const [profile, { t }] = await Promise.all([requireProfile(), getI18n()]);
+  const supabase = await createClient();
+  const { error } = await supabase.from("push_subscriptions").delete().match({ profile_id: profile.id, endpoint });
+  if (error) {
+    console.error("Removing a push subscription failed", error);
+    return { error: t.account.notifications.failed };
+  }
+  return {};
+}
+
+/** Sends a test notification to every device the signed-in person has turned notifications on for. */
+export async function sendTestPush(): Promise<{ error?: string }> {
+  const [profile, { t }] = await Promise.all([requireProfile(), getI18n()]);
+  const origin = (await headers()).get("origin");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("push_subscriptions").select("id, endpoint, p256dh, auth");
+  if (error || !origin) {
+    if (error) console.error("Loading push subscriptions failed", error);
+    return { error: t.account.notifications.failed };
+  }
+  const sent = await sendPush(
+    supabase,
+    data,
+    { title: t.common.appName, body: t.account.notifications.testBody, url: "/settings", tag: `test-${profile.id}` },
+    origin,
+  );
+  return sent > 0 ? {} : { error: t.account.notifications.failed };
 }

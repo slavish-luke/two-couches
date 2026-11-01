@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Re-renders the page when either person changes the couple's list, so an add on one screen appears on
- * the other without reloading. Renders nothing.
+ * Re-renders the page when either person changes the couple's list or reminders, so an add on one screen
+ * appears on the other without reloading. Renders nothing.
  */
 export function ListSync({ coupleId }: { coupleId: string }) {
   const router = useRouter();
@@ -22,7 +22,7 @@ export function ListSync({ coupleId }: { coupleId: string }) {
     const filter = `couple_id=eq.${coupleId}`;
 
     const channel = supabase.channel(`list:${coupleId}`);
-    for (const table of ["list_items", "list_ratings"]) {
+    for (const table of ["list_items", "list_ratings", "reminders"]) {
       channel
         .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, refresh)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, refresh)

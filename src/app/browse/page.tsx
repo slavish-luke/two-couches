@@ -2,13 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
-import { AddButton } from "@/components/add-button";
-import { AvailabilityBadge } from "@/components/availability-badge";
 import { CountryChip } from "@/components/country-chip";
 import { FilterSelect } from "@/components/filter-select";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
-import { Poster } from "@/components/poster";
+import { TitleCard, type CardContext } from "@/components/title-card";
 import {
   DECADES,
   discoverTitles,
@@ -28,11 +26,10 @@ import { getListKeys } from "@/lib/list";
 import { countryName, isCountry } from "@/lib/places";
 import { getServices, type Service } from "@/lib/services";
 import { getPartner, requireProfile } from "@/lib/session";
-import { getAvailability, type SearchResult } from "@/lib/titles";
+import { getAvailability } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import {
   isMediaType,
-  titleHref,
   titleKey,
   tmdbImage,
   whoCanWatch,
@@ -417,45 +414,5 @@ function SettingsPrompt({ text, link }: { text: string; link: string }) {
         {link}
       </Link>
     </>
-  );
-}
-
-/** What every card on the page shares. */
-type CardContext = {
-  language: string;
-  availability: Promise<Record<string, Availability>>;
-  me: Watcher;
-  them: Watcher | null;
-  partnerName: string;
-  /** titleKey() of everything on our list, or null before pairing up (no list yet). */
-  onList: Set<string> | null;
-};
-
-function TitleCard({ result, context, className = "" }: { result: SearchResult; context: CardContext; className?: string }) {
-  return (
-    <li className={`grid content-start justify-items-start gap-1.5 ${className}`}>
-      <Link href={titleHref(result)} className="group grid w-full gap-1.5">
-        <Poster path={result.poster_path} title={result.title} size="fluid" language={context.language} />
-        <span className="line-clamp-2 font-semibold leading-snug group-hover:underline">{result.title}</span>
-      </Link>
-      {result.release_date && <span className="text-xs text-muted">{result.release_date.slice(0, 4)}</span>}
-      <Suspense>
-        <AvailabilityBadge
-          availability={context.availability}
-          titleKey={titleKey(result)}
-          me={context.me}
-          partner={context.them}
-          partnerName={context.them ? context.partnerName : null}
-          language={context.language}
-        />
-      </Suspense>
-      {context.onList && (
-        <AddButton
-          titleRef={{ media_type: result.media_type, tmdb_id: result.tmdb_id }}
-          onList={context.onList.has(titleKey(result))}
-          language={context.language}
-        />
-      )}
-    </li>
   );
 }

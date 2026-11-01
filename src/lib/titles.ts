@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/database.types";
 import { createAdminClient } from "./supabase/admin";
 import { createClient } from "./supabase/server";
@@ -18,12 +19,12 @@ import { titleKey, type Availability, type MediaType, type Provider, type TitleR
 
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-function isFresh(refreshedAt: string) {
-  return Date.now() - Date.parse(refreshedAt) < MAX_AGE_MS;
+function isFresh(refreshedAt: string, maxAgeMs = MAX_AGE_MS) {
+  return Date.now() - Date.parse(refreshedAt) < maxAgeMs;
 }
 
 /** Like Promise.allSettled over `items.map(fn)`, with at most `limit` calls in flight. TMDB rate-limits bursts. */
-async function settleLimited<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>) {
+export async function settleLimited<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>) {
   const results: PromiseSettledResult<R>[] = [];
   let next = 0;
   const worker = async () => {
@@ -209,14 +210,21 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
  * Where each title can be watched in each country, keyed by titleKey(). Served from the Supabase cache
  * and refreshed from TMDB when older than a day. One TMDB call per stale title covers every country.
  * Never throws: titles that can't be checked come back with the countries missing.
+ *
+ * Reads the cache as the signed-in user unless given another `client` (the daily check passes the admin
+ * client). `maxAgeMs` overrides how old a cached check may be.
  */
-export async function getAvailability(titles: TitleRef[], countries: string[]): Promise<Record<string, Availability>> {
+export async function getAvailability(
+  titles: TitleRef[],
+  countries: string[],
+  { client, maxAgeMs = MAX_AGE_MS }: { client?: SupabaseClient<Database>; maxAgeMs?: number } = {},
+): Promise<Record<string, Availability>> {
   // A title twice in one upsert would fail it.
   const refs = [...new Map(titles.map((ref) => [titleKey(ref), ref])).values()];
   const result: Record<string, Availability> = Object.fromEntries(refs.map((ref) => [titleKey(ref), {}]));
   if (refs.length === 0 || countries.length === 0) return result;
 
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const mediaTypes = [...new Set(refs.map((r) => r.media_type))];
   const ids = [...new Set(refs.map((r) => r.tmdb_id))];
   const [{ data: checks }, { data: rows }] = await Promise.all([
@@ -253,7 +261,7 @@ export async function getAvailability(titles: TitleRef[], countries: string[]): 
   const stale = refs.filter((ref) =>
     countries.some((country) => {
       const checked = result[titleKey(ref)][country];
-      return !checked || !isFresh(checked.checked_at);
+      return !checked || !isFresh(checked.checked_at, maxAgeMs);
     }),
   );
   if (stale.length === 0 || !isTmdbConfigured()) return result;
