@@ -70,3 +70,67 @@ export function formatLocalTime(date: Date, timeZone: string, language: string) 
     timeZone,
   }).format(date);
 }
+
+/** Someone's place, as stored on their profile: home country plus an optional visit. */
+export type PlaceFields = {
+  country: string | null;
+  visiting_country: string | null;
+  /** Last day of the visit, inclusive, in the person's own time zone (YYYY-MM-DD). */
+  visiting_until: string | null;
+  time_zone: string;
+};
+
+export type Visit = { country: string; until: string };
+
+/** Today's date (YYYY-MM-DD) in a time zone. */
+function dateIn(timeZone: string, now: Date) {
+  // en-CA formats as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone }).format(now);
+}
+
+/**
+ * The visit in force now, or null. A visit counts until the end of its "until" day in the visitor's own
+ * zone, only once they have a home country, and only when it's somewhere other than home.
+ */
+export function activeVisit(person: PlaceFields, now = new Date()): Visit | null {
+  const { country, visiting_country: visiting, visiting_until: until } = person;
+  if (!country || !visiting || !until || visiting === country) return null;
+  return dateIn(person.time_zone, now) <= until ? { country: visiting, until } : null;
+}
+
+/** "20 Dec" for a visit's last day, with the year when it isn't this year. */
+export function formatVisitDate(until: string, language: string, now = new Date()) {
+  const sameYear = until.slice(0, 4) === String(now.getUTCFullYear());
+  return new Intl.DateTimeFormat(language, {
+    day: "numeric",
+    month: "short",
+    year: sameYear ? undefined : "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${until}T00:00:00Z`));
+}
+
+/** The longest visit the settings form accepts, in days from today. */
+export const MAX_VISIT_DAYS = 366;
+
+/** The first and last "until" dates a new visit may have, in the visitor's zone: today to a year ahead. */
+export function visitDateRange(timeZone: string, now = new Date()) {
+  const today = dateIn(timeZone, now);
+  const last = new Date(`${today}T00:00:00Z`);
+  last.setUTCDate(last.getUTCDate() + MAX_VISIT_DAYS);
+  return { min: today, max: last.toISOString().slice(0, 10) };
+}
+
+/**
+ * A person with their visit applied: `country` is where they watch from right now, `home_country` is
+ * their own setting (for locales, settings and the daily check), and `visit` is set while they're away.
+ * A union, so checking `country` also narrows `home_country`.
+ */
+export type Placed<T extends PlaceFields> = Omit<T, "country"> &
+  ({ country: string; home_country: string; visit: Visit | null } | { country: null; home_country: null; visit: null });
+
+export function withVisit<T extends PlaceFields>(person: T, now = new Date()): Placed<T> {
+  const visit = activeVisit(person, now);
+  return person.country
+    ? { ...person, country: visit?.country ?? person.country, home_country: person.country, visit }
+    : { ...person, country: null, home_country: null, visit: null };
+}

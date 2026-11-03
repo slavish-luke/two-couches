@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
-import { allTimeZones, countryOptions, isCountry } from "@/lib/places";
+import { allTimeZones, countryOptions, formatVisitDate, isCountry, visitDateRange } from "@/lib/places";
 import { getServices } from "@/lib/services";
 import { requireProfile } from "@/lib/session";
+import { Advisor } from "./advisor";
 import { AppearanceSettings } from "./appearance-settings";
 import { InstallSettings } from "./install-settings";
 import { NotificationSettings } from "./notification-settings";
 import { SettingsForm } from "./settings-form";
 import { SignOutButton } from "./sign-out-button";
+import { VisitForm } from "./visit-form";
 
 export const generateMetadata = localisedTitle("settings");
 
@@ -22,7 +24,9 @@ export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
 
 async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchParams">) {
   const [profile, { language, t }, { welcome }] = await Promise.all([requireProfile(), getI18n(), searchParams]);
-  const services = isCountry(profile.country) ? await getServices(profile.country) : [];
+  // The form edits home settings: a visit (same couch mode) has its own section below.
+  const services = isCountry(profile.home_country) ? await getServices(profile.home_country) : [];
+  const countries = countryOptions(language);
 
   return (
     <div className="grid gap-6">
@@ -35,13 +39,40 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
         </p>
       </div>
       <SettingsForm
-        initial={profile}
+        initial={{ ...profile, country: profile.home_country }}
         initialServices={services}
-        countries={countryOptions(language)}
+        countries={countries}
         timeZones={allTimeZones()}
         isOnboarding={!profile.couple_id}
         language={language}
       />
+      {profile.couple_id && profile.home_country && (
+        <>
+          <Suspense
+            fallback={
+              <div className="border-t border-line pt-6">
+                <PageLoading />
+              </div>
+            }
+          >
+            <Advisor />
+          </Suspense>
+          <section className="grid gap-3 border-t border-line pt-6">
+            <div className="grid gap-1">
+              <h2 className="font-display text-2xl font-bold tracking-tight">{t.places.visit.heading}</h2>
+              <p className="text-muted">{t.places.visit.intro}</p>
+            </div>
+            <VisitForm
+              visit={profile.visit}
+              homeCountry={profile.home_country}
+              countries={countries}
+              dates={visitDateRange(profile.time_zone)}
+              untilLabel={profile.visit && formatVisitDate(profile.visit.until, language)}
+              language={language}
+            />
+          </section>
+        </>
+      )}
       <section className="grid gap-6 border-t border-line pt-6">
         <div className="grid gap-1">
           <h2 className="font-display text-2xl font-bold tracking-tight">{t.account.device.heading}</h2>

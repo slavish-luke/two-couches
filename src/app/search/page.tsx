@@ -38,7 +38,7 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
   let failed = false;
   if (query) {
     try {
-      results = await searchTitles(query, tmdbLocale(profile.language, profile.country));
+      results = await searchTitles(query, tmdbLocale(profile.language, profile.home_country));
     } catch (error) {
       console.error("Search failed", error);
       failed = true;

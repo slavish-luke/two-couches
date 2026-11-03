@@ -33,8 +33,8 @@ async function NewWatchNight({ searchParams }: Pick<PageProps<"/watch-nights/new
   if (!isCountry(profile.country)) redirect("/settings?welcome=1");
   if (!profile.couple_id) redirect("/couple");
 
-  const locale = tmdbLocale(profile.language, profile.country);
-  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
+  const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
+  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const id = Number(params.id);
   const ref: TitleRef | null =
     isMediaType(params.type) && Number.isSafeInteger(id) && id > 0 ? { media_type: params.type, tmdb_id: id } : null;

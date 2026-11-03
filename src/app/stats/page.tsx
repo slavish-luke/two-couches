@@ -37,8 +37,8 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
   if (!isCountry(profile.country)) redirect("/settings?welcome=1");
   if (!profile.couple_id) redirect("/couple");
 
-  const locale = tmdbLocale(profile.language, profile.country);
-  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
+  const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
+  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const [entries, nightStarts, movieGenres, tvGenres] = await Promise.all([
     getList(profile.couple_id, locales),
     getNightStarts(profile.couple_id),

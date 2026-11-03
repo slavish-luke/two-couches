@@ -91,12 +91,12 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
   const coupleId = profile.couple_id;
 
   const type: MediaType = isMediaType(params.type) ? params.type : "movie";
-  const locale = tmdbLocale(profile.language, profile.country);
+  const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
   const me: Watcher = { country: profile.country, services: profile.services };
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
   const partnerName = partner?.display_name || t.common.yourPartner;
 
-  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
+  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const [alerts, reminders, onList, newCount] = await Promise.all([
     getAlerts(coupleId, locales),
     getReminders(coupleId, locales),

@@ -47,7 +47,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
   if (!profile.country) redirect("/settings?welcome=1");
 
   const ref: TitleRef = { media_type: type, tmdb_id: tmdbId };
-  const title = await getTitle(ref, tmdbLocale(profile.language, profile.country));
+  const title = await getTitle(ref, tmdbLocale(profile.language, profile.home_country));
   if (!title) notFound();
 
   const facts = [

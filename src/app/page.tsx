@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAvailability } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import { isMediaType, titleHref, titleKey, whoCanWatch, type Availability, type MediaType, type Watcher } from "@/lib/watch";
+import { VisitChip } from "./settings/visit-chip";
 import { NightCard } from "./watch-nights/night-card";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
@@ -76,7 +77,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   const [{ data: members }, partner, params, { language, t }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, display_name, country, time_zone")
+      .select("id, display_name, country, time_zone, visiting_country, visiting_until")
       .eq("couple_id", profile.couple_id)
       .order("created_at"),
     getPartner(),
@@ -100,6 +101,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
                     isMe={person.id === profile.id}
                   />
                 )}
+                <VisitChip person={person} language={profile.language} now={now} />
               </div>
               <span className="text-sm text-muted">
                 {person.country
@@ -124,8 +126,8 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
             locales={
               partner.country
-                ? [tmdbLocale(profile.language, profile.country), tmdbLocale(partner.language, partner.country)]
-                : [tmdbLocale(profile.language, profile.country)]
+                ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
+                : [tmdbLocale(profile.language, profile.home_country)]
             }
           />
         </Suspense>
@@ -137,7 +139,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       <ListSection
         coupleId={profile.couple_id}
         me={{ id: profile.id, country: profile.country, services: profile.services }}
-        locale={tmdbLocale(profile.language, profile.country)}
+        locale={tmdbLocale(profile.language, profile.home_country)}
         language={profile.language}
         timeZone={profile.time_zone}
         partner={
@@ -146,7 +148,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
                 id: partner.id,
                 name: partner.display_name || t.common.yourPartner,
                 watcher: { country: partner.country, services: partner.services },
-                locale: tmdbLocale(partner.language, partner.country),
+                locale: tmdbLocale(partner.language, partner.home_country),
               }
             : null
         }
