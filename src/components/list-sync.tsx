@@ -22,7 +22,7 @@ export function ListSync({ coupleId }: { coupleId: string }) {
     const filter = `couple_id=eq.${coupleId}`;
 
     const channel = supabase.channel(`list:${coupleId}`);
-    for (const table of ["list_items", "list_ratings", "reminders", "dismissed_titles", "watch_nights", "ready_checks"]) {
+    for (const table of ["list_items", "list_ratings", "reminders", "dismissed_titles", "watch_nights", "ready_checks", "list_reviews", "night_wrapups"]) {
       channel
         .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, refresh)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, refresh)

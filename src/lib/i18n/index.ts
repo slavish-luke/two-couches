@@ -14,13 +14,14 @@ import list from "./list";
 import nights from "./nights";
 import pick from "./pick";
 import places from "./places";
+import reviews from "./reviews";
 import stats from "./stats";
 import title from "./title";
 import upcoming from "./upcoming";
 
 const dictionaries = {
-  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en, pick: pick.en, places: places.en },
-  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr, pick: pick.tr, places: places.tr },
+  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en, pick: pick.en, places: places.en, reviews: reviews.en },
+  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr, pick: pick.tr, places: places.tr, reviews: reviews.tr },
 } satisfies Record<Language, unknown>;
 
 export type Messages = (typeof dictionaries)["en"];
