@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { getMyFeedCreatedAt } from "@/app/calendar/feed";
+import { CalendarSubscribe } from "@/app/calendar/subscribe";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
@@ -28,10 +30,16 @@ async function WatchNights() {
 
   const locale = tmdbLocale(profile.language, profile.country);
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
-  const [upcoming, past] = await Promise.all([
+  const [upcoming, past, feedCreatedAt] = await Promise.all([
     getWatchNights(profile.couple_id, locales),
     getWatchNights(profile.couple_id, locales, { past: true, limit: 5 }),
+    getMyFeedCreatedAt(profile.id),
   ]);
+  const feedMadeOn =
+    feedCreatedAt &&
+    new Intl.DateTimeFormat(language, { day: "numeric", month: "short", year: "numeric", timeZone: profile.time_zone }).format(
+      new Date(feedCreatedAt),
+    );
   const now = new Date();
   const me = { id: profile.id, name: t.common.you, timeZone: profile.time_zone };
   const them = partner && { id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone };
@@ -54,6 +62,7 @@ async function WatchNights() {
         <Link href="/watch-nights/new" className="btn">
           {t.nights.plan}
         </Link>
+        <CalendarSubscribe madeOn={feedMadeOn} language={language} />
       </div>
 
       <section className="grid gap-4">

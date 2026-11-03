@@ -189,4 +189,56 @@ Branch `phase3/calendar`. No new namespace needed beyond adding keys to `nights`
 (not started)
 
 ### Block 4: Calendar subscription
-(not started)
+Done on `phase3/calendar` (migration `20261103131306_calendar_feeds.sql`, test `calendar_feeds.test.sql`).
+
+**Status line for CLAUDE.md:** `/watch-nights` has "Subscribe in your calendar" (a fold-out card under the
+header): "Make a calendar link" gives a private feed (`webcal://…/calendar/<token>.ics` button, the https
+link with Copy, and steps for Google and Apple Calendar). The link is shown once; afterwards the card says
+when it was made, with "Make a new link" (revokes the old one) and "Turn the link off". The feed has all
+the couple's nights from 30 days ago to a year ahead, in the owner's language, each with both people's
+local times, how you'll watch and the note; cancelled nights drop out. `REFRESH-INTERVAL` and
+`X-PUBLISHED-TTL` are 1 hour, `Cache-Control: private, max-age=3600`. "Add to calendar" (.ics per night)
+now uses the same event text, so it also lists both local times.
+
+**Data model row:** `calendar_feeds` | Private calendar feed link per person | profile (primary key),
+token_hash (hex SHA-256 of a 32-byte random token; unique), created_at. Each person reads, makes and
+removes only their own row (no updates: a new link is delete + insert). Not in `profiles`, which partners
+can read. The token itself is never stored.
+
+**Conventions:**
+- Feed route `src/app/calendar/[feed]/route.ts` has no session: `/calendar` is in `PUBLIC_PATHS` in
+  `src/proxy.ts`, so anything added under `/calendar` later is public too. It hashes the token
+  (`src/app/calendar/token.ts`, `node:crypto`) and `feedCalendar()` (`src/app/calendar/feed.ts`) looks it
+  up with the admin client, then reads only that owner's couple. Malformed and unknown tokens get a 404.
+- `toIcs(events, feed?)` in `night-rules.ts` now takes a list of `IcsEvent`s; with `feed` (`{ name,
+  refreshMinutes }`) it adds `NAME`/`X-WR-CALNAME` and the refresh hints. `FEED_REFRESH_MINUTES`,
+  `FEED_DAYS_BEHIND`, `FEED_DAYS_AHEAD` live there too. Events: UID `<night id>@two-couches` (stable, so a
+  moved night replaces its event), `LAST-MODIFIED` from `watch_nights.updated_at`, times in UTC.
+- A night's calendar event text is built in one place: `nightEvent()` in `src/app/calendar/night-event.ts`
+  (pure), used by the feed and by `src/app/watch-nights/[id]/ics/route.ts`.
+- Actions `makeCalendarFeed()` / `stopCalendarFeed()` in `src/app/calendar/actions.ts` run as the user;
+  `makeCalendarFeed()` returns the token to the client once. UI: `<CalendarSubscribe>`
+  (`src/app/calendar/subscribe.tsx`, client) builds the links from `window.location`. Text is under
+  `nights.calendar` in `src/lib/i18n/nights.ts` (plus `nights.calendar.feedName`).
+- The feed reads `profiles.country` straight from the table (admin client), so with block 3's visiting
+  override it keeps using the home country for title names, as intended.
+
+**Checked locally:** the feed for both users (English and Turkish), a night 40 days ago left out, line
+folding and escaping, a new link turning the old one into a 404, "Turn the link off" giving a 404,
+malformed and unknown tokens giving 404 without a session, the single-night .ics, and headless Edge
+screenshots of the card (desktop with a link, phone just after making one). Test nights and feeds were
+deleted afterwards.
+
+**Known issues / not checked:**
+- Not tried in a real calendar app: Google can only subscribe to a public https URL (not localhost), so
+  test on the deployed site. Google ignores `REFRESH-INTERVAL` and refreshes subscribed calendars on its
+  own schedule (often 8 to 24 hours); Apple Calendar honours it (its own minimum may apply). The card says
+  Google is slow.
+- Google's mobile app can't add a calendar by URL; the steps say to use a computer.
+- The `webcal://` button on desktop browsers opens whatever calendar app the OS has registered (or
+  nothing); the https link with Copy is the fallback.
+- The hosted app needs `SUPABASE_SECRET_KEY` (already set for the daily job); without it the feed route
+  throws (500).
+- Outside the files the block owns: `src/app/watch-nights/[id]/ics/route.ts` (now uses `nightEvent()`),
+  the new migration and pgTAP test, and the regenerated `database.types.ts` (it includes other blocks'
+  tables from the shared database; regenerate at integration).

@@ -1,5 +1,6 @@
+import { nightEvent } from "@/app/calendar/night-event";
 import { getMessages } from "@/lib/i18n";
-import { DEFAULT_LENGTH_MIN, toIcs } from "@/lib/night-rules";
+import { toIcs } from "@/lib/night-rules";
 import { getWatchNight } from "@/lib/nights";
 import { getCurrentProfile, getPartner } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
@@ -17,26 +18,11 @@ export async function GET(request: Request, { params }: RouteContext<"/watch-nig
   const night = await getWatchNight(id, locales);
   if (!night) return new Response(null, { status: 404 });
 
-  const t = getMessages(profile.language).nights;
-  const how = night.method
-    ? [
-        t.methods[night.method],
-        night.link,
-        night.syncplay_server && t.syncplayServer(night.syncplay_server),
-        night.syncplay_room && t.syncplayRoom(night.syncplay_room),
-      ]
-    : [];
-  const origin = new URL(request.url).origin;
-  const body = toIcs({
-    uid: `${night.id}@two-couches`,
-    start: new Date(night.starts_at),
-    // A series' runtime is one episode, which says little about the night.
-    minutes: (night.title?.media_type === "movie" && night.title.runtime) || DEFAULT_LENGTH_MIN,
-    summary: t.ics.summary(night.title?.title ?? t.noTitle),
-    description: [how.filter(Boolean).join(" · "), night.notes].filter(Boolean).join("\n\n"),
-    url: `${origin}/watch-nights`,
-  });
-  return new Response(body, {
+  const t = getMessages(profile.language);
+  const people = [{ name: t.common.you, timeZone: profile.time_zone }];
+  if (partner) people.push({ name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone });
+  const event = nightEvent(night, { t, language: profile.language, people, origin: new URL(request.url).origin });
+  return new Response(toIcs([event]), {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": 'attachment; filename="watch-night.ics"',

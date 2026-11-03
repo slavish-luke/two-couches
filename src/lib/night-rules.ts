@@ -202,24 +202,62 @@ function fold(line: string) {
   return lines.join("\r\n");
 }
 
-/** A one-event iCalendar file, so a watch night can go in each person's own calendar app. */
-export function toIcs(event: { uid: string; start: Date; minutes: number; summary: string; description: string; url: string }) {
-  const end = new Date(event.start.getTime() + event.minutes * 60000);
+export type IcsEvent = {
+  /** Stable per night, so a calendar replaces the event when the night changes. */
+  uid: string;
+  start: Date;
+  minutes: number;
+  summary: string;
+  description: string;
+  url: string;
+  /** When the night last changed, if known. */
+  updated?: Date;
+};
+
+/** A subscribed feed's name and how often calendar apps should fetch it again. */
+export type IcsFeed = { name: string; refreshMinutes: number };
+
+/** How often a subscribed calendar should be fetched again: short, so moved nights show soon. */
+export const FEED_REFRESH_MINUTES = 60;
+/** A subscribed calendar holds the nights from this many days ago… */
+export const FEED_DAYS_BEHIND = 30;
+/** …to as far ahead as nights can be planned. */
+export const FEED_DAYS_AHEAD = MAX_DAYS_AHEAD;
+
+/**
+ * An iCalendar file: one watch night to add to a calendar app, or (with `feed`) a subscribed calendar of
+ * all of them. Times are UTC, so each calendar shows them on its own clock.
+ */
+export function toIcs(events: IcsEvent[], feed?: IcsFeed) {
+  const now = icsTime(new Date());
+  const minutes = feed && Math.max(1, Math.round(feed.refreshMinutes));
+  const refresh = minutes && (minutes % 60 === 0 ? `PT${minutes / 60}H` : `PT${minutes}M`);
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Two Couches//Watch nights//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "BEGIN:VEVENT",
-    `UID:${event.uid}`,
-    `DTSTAMP:${icsTime(new Date())}`,
-    `DTSTART:${icsTime(event.start)}`,
-    `DTEND:${icsTime(end)}`,
-    `SUMMARY:${icsText(event.summary)}`,
-    `DESCRIPTION:${icsText(event.description)}`,
-    `URL:${event.url}`,
-    "END:VEVENT",
+    ...(feed
+      ? [
+          `NAME:${icsText(feed.name)}`,
+          `X-WR-CALNAME:${icsText(feed.name)}`,
+          `REFRESH-INTERVAL;VALUE=DURATION:${refresh}`,
+          `X-PUBLISHED-TTL:${refresh}`,
+        ]
+      : []),
+    ...events.flatMap((event) => [
+      "BEGIN:VEVENT",
+      `UID:${event.uid}`,
+      `DTSTAMP:${now}`,
+      ...(event.updated ? [`LAST-MODIFIED:${icsTime(event.updated)}`] : []),
+      `DTSTART:${icsTime(event.start)}`,
+      `DTEND:${icsTime(new Date(event.start.getTime() + event.minutes * 60000))}`,
+      `SUMMARY:${icsText(event.summary)}`,
+      `DESCRIPTION:${icsText(event.description)}`,
+      `URL:${event.url}`,
+      "END:VEVENT",
+    ]),
     "END:VCALENDAR",
   ]
     .map(fold)

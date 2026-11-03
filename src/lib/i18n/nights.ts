@@ -137,6 +137,36 @@ const en = {
     noTitle: "Title not picked yet",
   },
   ics: { summary: (title: string) => `Watch night: ${title}` },
+  calendar: {
+    heading: "Subscribe in your calendar",
+    intro: "Get every watch night in your own calendar app. It updates as nights are planned, moved or cancelled, showing both your local times.",
+    make: "Make a calendar link",
+    makeNew: "Make a new link",
+    stop: "Turn the link off",
+    working: "Working…",
+    subscribe: "Subscribe in Calendar",
+    linkLabel: "Your private link",
+    copy: "Copy",
+    copied: "Copied",
+    shownOnce: "This link is shown only now. If you lose it, make a new one.",
+    haveLink: (date: string) => `You made a calendar link on ${date}. It's shown only once: if you need it again, make a new one.`,
+    private: "Anyone with the link can see your watch nights, so keep it to yourself. Making a new link or turning it off stops the old one working.",
+    confirmNew: "Make a new link? Calendars using the old one will stop updating.",
+    confirmStop: "Turn the link off? Calendars using it will stop updating.",
+    google: {
+      name: "Google Calendar",
+      how: "on a computer, open Google Calendar, next to “Other calendars” choose + and then “From URL”, and paste the link. It shows on your phone too. Google checks for changes every few hours.",
+    },
+    apple: {
+      name: "Apple Calendar",
+      how: "on your iPhone, iPad or Mac, tap “Subscribe in Calendar”. Or on a Mac, choose File → New Calendar Subscription and paste the link.",
+    },
+    feedName: "Watch nights · Two Couches",
+    errors: {
+      makeFailed: "Couldn't make a link. Try again.",
+      stopFailed: "Couldn't turn the link off. Try again.",
+    },
+  },
 };
 
 const tr: typeof en = {
@@ -278,6 +308,36 @@ const tr: typeof en = {
     noTitle: "Ne izleneceği henüz seçilmedi",
   },
   ics: { summary: (title: string) => `İzleme gecesi: ${title}` },
+  calendar: {
+    heading: "Takvimine abone ol",
+    intro: "Tüm izleme gecelerini kendi takvim uygulamanda gör. Geceler planlandıkça, değiştikçe ya da iptal edildikçe güncellenir; ikinizin yerel saatleri de yazar.",
+    make: "Takvim bağlantısı oluştur",
+    makeNew: "Yeni bağlantı oluştur",
+    stop: "Bağlantıyı kapat",
+    working: "İşleniyor…",
+    subscribe: "Takvimde abone ol",
+    linkLabel: "Sana özel bağlantı",
+    copy: "Kopyala",
+    copied: "Kopyalandı",
+    shownOnce: "Bu bağlantı yalnızca şimdi gösteriliyor. Kaybedersen yenisini oluştur.",
+    haveLink: (date: string) => `Takvim bağlantısı oluşturuldu: ${date}. Yalnızca bir kez gösterilir; yeniden gerekirse yenisini oluştur.`,
+    private: "Bağlantıya sahip olan herkes izleme gecelerinizi görebilir, o yüzden kimseyle paylaşma. Yeni bağlantı oluşturmak ya da bağlantıyı kapatmak eskisini geçersiz kılar.",
+    confirmNew: "Yeni bağlantı oluşturulsun mu? Eskisini kullanan takvimler artık güncellenmez.",
+    confirmStop: "Bağlantı kapatılsın mı? Onu kullanan takvimler artık güncellenmez.",
+    google: {
+      name: "Google Takvim",
+      how: "bilgisayarda Google Takvim'i aç, “Diğer takvimler” yanındaki + düğmesinden “URL'den” seçeneğini seç ve bağlantıyı yapıştır. Telefonunda da görünür. Google değişiklikleri birkaç saatte bir denetler.",
+    },
+    apple: {
+      name: "Apple Takvim",
+      how: "iPhone, iPad ya da Mac'inde “Takvimde abone ol” düğmesine dokun. Ya da Mac'te Dosya → Yeni Takvim Aboneliği'ni seçip bağlantıyı yapıştır.",
+    },
+    feedName: "İzleme geceleri · Two Couches",
+    errors: {
+      makeFailed: "Bağlantı oluşturulamadı. Tekrar dene.",
+      stopFailed: "Bağlantı kapatılamadı. Tekrar dene.",
+    },
+  },
 };
 
 const messages = { en, tr };
