@@ -1,0 +1,46 @@
+import { Suspense } from "react";
+import { getI18n } from "@/lib/i18n/server";
+import { getWrapups } from "@/lib/reviews";
+import { getPartner, requireProfile } from "@/lib/session";
+import { tmdbLocale } from "@/lib/tmdb";
+import { WrapupCard } from "./wrapup-card";
+
+/**
+ * "How was it?" cards for the watch nights that ended in the last week and that you haven't wrapped up.
+ * Self-contained for the home page: renders nothing until there's one.
+ */
+export function AfterNight() {
+  return (
+    <Suspense>
+      <Wrapups />
+    </Suspense>
+  );
+}
+
+async function Wrapups() {
+  const [profile, partner, { language, t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
+  if (!profile.couple_id || !profile.country) return null;
+  const locales = [tmdbLocale(profile.language, profile.country)];
+  if (partner?.country) locales.push(tmdbLocale(partner.language, partner.country));
+
+  const wrapups = await getWrapups(profile.couple_id, profile.id, locales);
+  if (wrapups.length === 0) return null;
+
+  return (
+    <section aria-label={t.reviews.wrapup.label}>
+      <ul className="grid gap-3">
+        {wrapups.map((wrapup) => (
+          <WrapupCard
+            // Refilled when your partner saves theirs, since they may have moved the series on.
+            key={`${wrapup.night.id}:${wrapup.partnerOutcome}`}
+            wrapup={wrapup}
+            me={{ id: profile.id, name: t.common.you }}
+            partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
+            language={language}
+            timeZone={profile.time_zone}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}

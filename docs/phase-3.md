@@ -180,7 +180,50 @@ Branch `phase3/calendar`. No new namespace needed beyond adding keys to `nights`
 ## Handoff notes
 
 ### Block 1: After the night
-(not started)
+Done on `phase3/after-night` (migration `20261103131309_after_night.sql`, test `supabase/tests/database/after_night.test.sql`).
+
+**Status line:** Home shows a "How was {title}?" card for each watch night with a title that ended in the last 7 days
+(start + film runtime, else `DEFAULT_LENGTH_MIN`) and that you haven't dealt with, above "Next watch night". Films: "We
+watched it" (ticked; watched_on = the night's start date on your clock), or "On your Watched list since …" if it already
+is. Series: "Watched up to" season/episode, prefilled with the next episode, or with the current progress plus "{name}
+has already moved it on" once your partner has saved their card (so it isn't moved on twice). Optional rating (your
+stars, your partner's shown) and review. "Save" or "Not now" hides the card for you only. A night's title that isn't on
+the list is added when there's something to save. Hidden reviews: one per person per list item, up to 1,000
+characters, on the title page's "On our list" panel ("Reviews") and in the wrap-up card. Your partner's text shows only
+once you've written yours; until then "{name} has written theirs: write yours to see it". Emptying yours and saving
+deletes it, which hides theirs again.
+
+**Data model rows:**
+- `list_reviews` | Each person's hidden review of a list item | list item, couple (copied for Realtime), profile, body (1–1,000 chars), created_at, updated_at. FK to `list_items (id, couple_id)` on delete cascade.
+- `night_wrapups` | Who has dealt with a night's "How was it?" card | watch night, couple, profile, outcome (saved/skipped), done_at. FK to `watch_nights (id, couple_id)` on delete cascade.
+
+**Policies (for the data-model paragraph):** `list_reviews`: each person inserts, updates (body only) and deletes only
+their own; select is your own rows, and your partner's only when `public.has_reviewed(list_item_id)` (security definer,
+so the policy doesn't recurse). `public.review_authors(uuid[])` (security definer, own couple only) says who has written
+one without the text. `night_wrapups`: insert/delete own rows only, but both members read them (a deliberate change from
+"own rows only" in the plan: the second person needs to know the first already moved a series on; the outcome isn't
+private). Both tables are in Realtime and `ListSync`.
+
+**Conventions:**
+- After the night: rules are pure in `src/lib/review-rules.ts` (`nightEndsAt()`, `isWrapupDue()`, `nextEpisode()`,
+  `cleanReview()`, `MAX_REVIEW_LENGTH`, `WRAPUP_DAYS`). Queries in `src/lib/reviews.ts`: `getReviews(itemIds, myId)`
+  returns `{ mine, partner: none | hidden | shown }`; `getWrapups()`. Actions in `src/app/after-night/actions.ts`:
+  `saveReview()`, `saveWrapup()` (reuses `addToList`, `updateListItem` and `rateListItem` from `src/app/list/actions.ts`,
+  then records the wrap-up), `skipWrapup()`. UI: `<AfterNight />` (home, self-contained with its own `<Suspense>`),
+  `wrapup-card.tsx`, `review-box.tsx` (`ReviewSection` for the title panel, `ReviewField`, `PartnerReviewView`).
+- `StarPicker` is now exported from `src/app/title/[type]/[id]/list-panel.tsx` (the wrap-up card uses it, controlled).
+
+**Known issues:** Realtime applies the same RLS, so when your partner writes a review on the title page and you haven't
+written one, their "has written theirs" notice reaches your screen on the next refresh (any other list change, or
+returning to the tab), not instantly. From the wrap-up card it is instant (the `night_wrapups` insert is visible to
+both). A card is refilled (draft lost) if your partner saves their card for the same night while you're typing. Tested
+with curl and headless Edge (both users, en and tr, hidden text absent from the HTML and RSC payload), not on a phone.
+
+**Outside the files this block owns:** `src/app/title/[type]/[id]/page.tsx` (`OnOurList` fetches `getReviews()` for the
+item and passes `reviews` to `ListPanel`: one import, one line, one prop). Shared files as the table says:
+`src/lib/i18n/index.ts` (namespace `reviews`), `src/components/list-sync.tsx` (two table names), `src/app/page.tsx`
+(import + `<AfterNight />`), `database.types.ts` (regenerated; it also contains block 4's `calendar_feeds` from the shared
+database). No page-title keys (no new page).
 
 ### Block 2: Pick for tonight
 (not started)

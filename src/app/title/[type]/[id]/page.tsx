@@ -14,6 +14,7 @@ import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
 import { getDismissedKeys } from "@/lib/recommend";
+import { getReviews } from "@/lib/reviews";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, getTitle } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
@@ -118,6 +119,7 @@ async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: n
     getCategories(coupleId),
     getDismissedKeys(coupleId),
   ]);
+  const reviews = item ? (await getReviews([item.id], profile.id))[item.id] : null;
 
   return (
     <div className="grid gap-3">
@@ -130,6 +132,7 @@ async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: n
         partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
         language={profile.language}
         timeZone={profile.time_zone}
+        reviews={reviews}
       />
       {!item && (
         <DismissButton titleRef={titleRef} dismissed={dismissed.has(titleKey(titleRef))} language={profile.language} long />

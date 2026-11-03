@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { ReviewSection } from "@/app/after-night/review-box";
 import { addToList, rateListItem, removeFromList, updateListItem, type ListChanges, type ListResult } from "@/app/list/actions";
 import { Stars } from "@/components/stars";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { cleanCategories, formatDate, LIST_STATUSES, localDate, MAX_CATEGORY_LENGTH, MAX_NOTES_LENGTH } from "@/lib/list-rules";
 import type { ListItem } from "@/lib/list";
+import type { Reviews } from "@/lib/review-rules";
 import type { TitleRef } from "@/lib/watch";
 
 type Person = { id: string; name: string };
@@ -21,9 +23,11 @@ type Props = {
   partner: Person | null;
   language: string;
   timeZone: string;
+  /** Your review and what you may see of your partner's, when it's on the list. */
+  reviews?: Reviews | null;
 };
 
-/** "On our list" on a title page: add it, or change its status, progress, categories, note and ratings. */
+/** "On our list" on a title page: add it, or change its status, progress, categories, note, ratings and reviews. */
 export function ListPanel(props: Props) {
   const t = getMessages(props.language);
   return props.item ? <ListEditor {...props} item={props.item} t={t} /> : <AddToList titleRef={props.titleRef} t={t} />;
@@ -155,6 +159,9 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
 
       <Categories item={item} all={categories} pending={pending} update={update} t={t} />
       <Notes item={item} pending={pending} update={update} t={t} />
+      {props.reviews && (
+        <ReviewSection itemId={item.id} reviews={props.reviews} partnerName={partner?.name ?? null} language={language} />
+      )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
       <RemoveButton pending={pending} onRemove={() => run(() => removeFromList(item.id))} t={t} />
@@ -241,7 +248,8 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
   );
 }
 
-function StarPicker({ rating, disabled, onRate, t }: { rating: number | null; disabled: boolean; onRate: (rating: number | null) => void; t: Messages }) {
+/** Your own 1-5 rating. Choosing your current rating again clears it. */
+export function StarPicker({ rating, disabled, onRate, t }: { rating: number | null; disabled: boolean; onRate: (rating: number | null) => void; t: Messages }) {
   const [hover, setHover] = useState<number | null>(null);
   const shown = hover ?? rating ?? 0;
 

@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAvailability } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import { isMediaType, titleHref, titleKey, whoCanWatch, type Availability, type MediaType, type Watcher } from "@/lib/watch";
+import { AfterNight } from "./after-night/after-night";
 import { NightCard } from "./watch-nights/night-card";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
@@ -116,6 +117,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
         )}
       </div>
 
+      <AfterNight />
       {partner && (
         <Suspense>
           <NextNight

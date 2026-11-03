@@ -91,6 +91,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"calendar_feeds": {
+                  Row: {
+                    "created_at": string,"profile_id": string,"token_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"profile_id": string,"token_hash": string
+                  }
+                  Update: {
+                    "created_at"?: string,"profile_id"?: string,"token_hash"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "calendar_feeds_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"couples": {
                   Row: {
                     "created_at": string,"created_by": string | null,"id": string,"invite_code": string
@@ -187,6 +207,58 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"list_reviews": {
+                  Row: {
+                    "body": string,"couple_id": string,"created_at": string,"list_item_id": string,"profile_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"couple_id": string,"created_at"?: string,"list_item_id": string,"profile_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "body"?: string,"couple_id"?: string,"created_at"?: string,"list_item_id"?: string,"profile_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "list_reviews_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "list_reviews_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"night_wrapups": {
+                  Row: {
+                    "couple_id": string,"done_at": string,"outcome": string,"profile_id": string,"watch_night_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"done_at"?: string,"outcome": string,"profile_id": string,"watch_night_id": string
+                  }
+                  Update: {
+                    "couple_id"?: string,"done_at"?: string,"outcome"?: string,"profile_id"?: string,"watch_night_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "night_wrapups_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "night_wrapups_watch_night_id_couple_id_fkey"
+      columns: ["watch_night_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "watch_nights"
+      referencedColumns: ["id","couple_id"]
     }
                   ]
                 },"profiles": {
@@ -390,6 +462,9 @@ isOneToOne: false
             "create_couple":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"has_reviewed":
+{ Args: { "p_list_item_id": string }; Returns: boolean
+                           },
 "is_time_zone":
 { Args: { "tz": string }; Returns: boolean
                            },
@@ -404,6 +479,11 @@ isOneToOne: false
                            },
 "request_daily_check":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"review_authors":
+{ Args: { "p_list_item_ids": (string)[] }; Returns: {
+              "list_item_id": string,"profile_id": string
+            }[]
                            },
 "valid_categories":
 { Args: { "categories": (string)[] }; Returns: boolean
