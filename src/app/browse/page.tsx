@@ -121,7 +121,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
   ]);
   if (!isCountry(profile.country)) redirect("/settings?welcome=1");
 
-  const locale = tmdbLocale(profile.language, profile.country);
+  const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
   const me: Watcher = { country: profile.country, services: profile.services };
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
   const partnerName = partner?.display_name || t.common.yourPartner;
@@ -276,7 +276,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
           <ForYouRow
             coupleId={profile.couple_id}
             type={type}
-            locales={partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale]}
+            locales={partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale]}
             countries={them ? [me.country, them.country] : [me.country]}
             today={localDate(profile.time_zone)}
             card={{ language, me, them, partnerName, onList }}

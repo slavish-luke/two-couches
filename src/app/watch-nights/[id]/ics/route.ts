@@ -12,8 +12,8 @@ export async function GET(request: Request, { params }: RouteContext<"/watch-nig
   if (!profile?.country) return new Response(null, { status: 401 });
   if (!UUID.test(id)) return new Response(null, { status: 404 });
 
-  const locale = tmdbLocale(profile.language, profile.country);
-  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
+  const locale = tmdbLocale(profile.language, profile.home_country);
+  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const night = await getWatchNight(id, locales);
   if (!night) return new Response(null, { status: 404 });
 

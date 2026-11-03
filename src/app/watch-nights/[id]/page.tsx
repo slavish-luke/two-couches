@@ -35,8 +35,8 @@ async function EditWatchNight({ params }: Pick<PageProps<"/watch-nights/[id]">, 
   if (!isCountry(profile.country)) redirect("/settings?welcome=1");
   if (!profile.couple_id) redirect("/couple");
 
-  const locale = tmdbLocale(profile.language, profile.country);
-  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
+  const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
+  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const [night, options] = await Promise.all([getWatchNight(id, locales), titleOptions(profile.couple_id, locales)]);
   if (!night) notFound();
 

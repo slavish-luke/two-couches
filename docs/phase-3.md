@@ -186,7 +186,65 @@ Branch `phase3/calendar`. No new namespace needed beyond adding keys to `nights`
 (not started)
 
 ### Block 3: Places and services
-(not started)
+Done on `phase3/places`. Migration `20261103131342_places.sql`, pgTAP `supabase/tests/database/places.test.sql`.
+
+**What's done**
+- Settings → "What would another service get you?" (`src/app/settings/advisor.tsx`, in its own `<Suspense>`
+  under the settings form, once paired): the top 5 subscription services in your home country that you
+  don't pay for, ranked by Up next titles they'd make watchable for both of you, then for you, each with
+  both counts and up to 4 posters (linking to the title pages, "+n" for the rest). Below: "Nothing on your
+  list needs {service} right now" for each saved service that carries no Up next title in your country
+  (only said when every Up next title could be checked there). Uses home countries and saved services
+  (it's about what you subscribe to at home), and `getAvailability()` only.
+- Settings → "Travelling" (`src/app/settings/visit-form.tsx`): "I'm in {country}" (home country left out)
+  "until (the last day)", Save, and while a visit is on "You're in {country} until {date}" with "I'm back
+  home". Actions `saveVisit()` / `endVisit()` in `src/app/settings/actions.ts`; the last day must be from
+  today to 366 days ahead in your own zone.
+- Same couch mode: `getCurrentProfile()` and `getPartner()` (`src/lib/session.ts`) apply the visit, so
+  `country` is where the person watches from today and `home_country` their own setting, plus `visit`
+  (`{ country, until }` or null). Availability, badges, "available in both", Browse region and service
+  chips, Coming soon and search follow the visited country with no page changes. Services stay as saved
+  (provider IDs, so global services match in the visited country).
+- Home page person cards: a "In GB until 20 Dec" chip while that person is visiting (`<VisitChip>` in
+  `src/app/settings/visit-chip.tsx`; the cards' own query selects the two visit columns).
+
+**Callers changed to keep the home country** (one-line edits outside the block's files, as the plan asked)
+- Every `tmdbLocale()` call that took a session profile now passes `home_country`: home page, browse,
+  coming soon, search, stats, title page, watch nights (list, new, `[id]`, `[id]/ics`) and
+  `cacheForCouple()` in `src/lib/list.ts`. Where a page narrows with `isCountry(profile.country)` it reads
+  `profile.home_country ?? profile.country` (same value; it only satisfies the type).
+- `coupleCountries()` (`src/lib/list.ts`, used only for `recordBaseline()`) returns home countries, since
+  that's what the daily check compares.
+- The settings form gets `{ ...profile, country: profile.home_country }` and the home country's services.
+- Unchanged, already home: `runDailyCheck()` and `notifyPartner()` read `profiles` with the admin client.
+
+**Conventions (for CLAUDE.md)**
+- Visits: rules are pure in `src/lib/places.ts` (`activeVisit()`: on until the end of `visiting_until`
+  in the visitor's own zone, only with a home country and only when it differs; `withVisit()`,
+  `visitDateRange()`, `formatVisitDate()`). Session profiles' `country` is the effective country; use
+  `home_country` for TMDB locales, settings and anything that should ignore a visit. `withVisit()` returns
+  a union, so checking `country` also narrows `home_country`. Code that reads `profiles` directly (admin
+  client, the home cards) gets the home `country` and must apply `activeVisit()` itself if it wants the visit.
+- Advisor: pure in `src/lib/advisor-rules.ts` (`adviseServices()` runs `whoCanWatch()` with each candidate
+  service added; `showcase()` picks the posters).
+- UI text in namespace `places` (`src/lib/i18n/places.ts`).
+
+**Data model rows (for CLAUDE.md)**
+- `profiles`: add "visiting country (ISO code) and visiting until (date), set together". Built-so-far
+  note: Phase 3 block 3 (`20261103131342_places.sql`) added `profiles.visiting_country` (checked like
+  `country`) and `profiles.visiting_until`, both null or both set, user-updatable (column grant; the
+  existing own-row policy covers it). Partners can read them (that's how the chip shows).
+
+**Known issues / not checked**
+- Checked on the dev server with both local users (curl, Server Actions and headless Edge screenshots of
+  Settings at phone width and the home page in Turkish); the test visit was cleared afterwards. Not checked
+  on a real phone.
+- While both of you are in one country, the title page shows that country twice (one column each) and
+  Browse's two "popular on streaming" rows show the same region. Correct, but could be merged later.
+- A visit's expiry is lazy (read-time); the columns keep the old visit until someone saves a new one.
+- `src/lib/i18n/index.ts` keeps each language on one line, so every block's registration touches the same
+  two lines: merge by keeping all keys.
+- `database.types.ts` was regenerated from the shared DB, so it also has other blocks' tables.
 
 ### Block 4: Calendar subscription
 (not started)

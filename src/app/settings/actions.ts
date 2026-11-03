@@ -4,7 +4,8 @@ import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getI18n } from "@/lib/i18n/server";
-import { isCountry, isLanguage, isTimeZone } from "@/lib/places";
+import { isDateString } from "@/lib/list-rules";
+import { isCountry, isLanguage, isTimeZone, visitDateRange } from "@/lib/places";
 import { sendPush } from "@/lib/push";
 import { getServices, type Service } from "@/lib/services";
 import { requireProfile } from "@/lib/session";
@@ -45,6 +46,49 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
   // Re-render the page and nav, so a new language takes effect straight away.
   refresh();
   return { saved: true };
+}
+
+export type VisitState = { error?: string };
+
+/** Same couch mode: "I'm in {country} until {date}". The date is the last day, in the visitor's own zone. */
+export async function saveVisit(_prev: VisitState, formData: FormData): Promise<VisitState> {
+  const [profile, { t }] = await Promise.all([requireProfile(), getI18n()]);
+  const errors = t.places.visit.errors;
+
+  const country = formData.get("visiting_country");
+  const until = String(formData.get("visiting_until") ?? "");
+  if (!isCountry(country)) return { error: errors.country };
+  if (country === profile.home_country) return { error: errors.home };
+  const { min, max } = visitDateRange(profile.time_zone);
+  if (!isDateString(until) || until < min || until > max) return { error: errors.date };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ visiting_country: country, visiting_until: until })
+    .eq("id", profile.id);
+  if (error) {
+    console.error("Saving a visit failed", error);
+    return { error: errors.saveFailed };
+  }
+  refresh();
+  return {};
+}
+
+/** Ends a visit early: back to the home country straight away. */
+export async function endVisit(): Promise<VisitState> {
+  const [profile, { t }] = await Promise.all([requireProfile(), getI18n()]);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ visiting_country: null, visiting_until: null })
+    .eq("id", profile.id);
+  if (error) {
+    console.error("Ending a visit failed", error);
+    return { error: t.places.visit.errors.saveFailed };
+  }
+  refresh();
+  return {};
 }
 
 /** Streaming services for a country, for the settings form when the country changes. */

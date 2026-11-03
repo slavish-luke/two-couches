@@ -130,8 +130,8 @@ export async function getListKeys(coupleId: string): Promise<Set<string>> {
  */
 export async function cacheForCouple(ref: TitleRef, profile: Profile & { country: string }) {
   const partner = await getPartner();
-  const locales = new Set([tmdbLocale(profile.language, profile.country)]);
-  if (partner?.country) locales.add(tmdbLocale(partner.language, partner.country));
+  const locales = new Set([tmdbLocale(profile.language, profile.home_country)]);
+  if (partner?.country) locales.add(tmdbLocale(partner.language, partner.home_country));
   try {
     const titles = await Promise.all([...locales].map((locale) => getTitle(ref, locale)));
     return titles.some((t) => !t) ? "unknown" : null;
@@ -141,8 +141,13 @@ export async function cacheForCouple(ref: TitleRef, profile: Profile & { country
   }
 }
 
-/** The countries the couple watches from: yours, then your partner's if they've set one. */
+/**
+ * The countries the daily check watches from: your home country, then your partner's if they've set one.
+ * Home countries, not visits, since that's what the daily check compares (for recordBaseline()).
+ */
 export async function coupleCountries(profile: Profile & { country: string }) {
   const partner = await getPartner();
-  return partner?.country && partner.country !== profile.country ? [profile.country, partner.country] : [profile.country];
+  const mine = profile.home_country;
+  const theirs = partner?.home_country;
+  return theirs && theirs !== mine ? [mine, theirs] : [mine];
 }

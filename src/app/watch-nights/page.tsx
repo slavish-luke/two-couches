@@ -26,8 +26,8 @@ async function WatchNights() {
   if (!isCountry(profile.country)) redirect("/settings?welcome=1");
   if (!profile.couple_id) redirect("/couple");
 
-  const locale = tmdbLocale(profile.language, profile.country);
-  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.country)] : [locale];
+  const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
+  const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const [upcoming, past] = await Promise.all([
     getWatchNights(profile.couple_id, locales),
     getWatchNights(profile.couple_id, locales, { past: true, limit: 5 }),
