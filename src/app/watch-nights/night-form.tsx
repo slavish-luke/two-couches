@@ -44,6 +44,8 @@ export type NightValues = {
 type Props = {
   /** null for a new night. */
   nightId: string | null;
+  /** Whether either of you has started a ready check, which a new title or method clears. */
+  hasReadyChecks?: boolean;
   initial: NightValues;
   /** Titles from the list, plus any title the form was opened for. */
   options: TitleOption[];
@@ -258,6 +260,9 @@ export function NightForm(props: Props) {
           <button className="btn" disabled={pending}>
             {pending ? text.saving : props.nightId ? text.saveChanges : text.save}
           </button>
+          {props.hasReadyChecks && (values.title !== props.initial.title || values.method !== props.initial.method) && (
+            <p className="text-xs text-muted">{text.resetsReady}</p>
+          )}
           {partner && <p className="text-xs text-muted">{text.partnerTold(partner.name)}</p>}
         </div>
       </form>

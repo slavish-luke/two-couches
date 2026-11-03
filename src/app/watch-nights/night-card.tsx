@@ -5,12 +5,14 @@ import type { Messages } from "@/lib/i18n";
 import { formatDay, formatRelative, formatTime } from "@/lib/night-rules";
 import type { WatchNight } from "@/lib/nights";
 import { titleHref } from "@/lib/watch";
+import { ReadyCheck } from "./ready-check";
 
 type Person = { id: string; name: string; timeZone: string };
 
 /**
- * A watch night: what, when on each person's clock, how you'll watch, the note, and links to change it or
- * add it to a calendar. `actions` false leaves the links out (for a night that's over).
+ * A watch night: what, when on each person's clock, how you'll watch, the note, the ready check, and links
+ * to change it or add it to a calendar. `actions` false leaves the ready check and links out (for a night
+ * that's over).
  */
 export function NightCard(props: {
   night: WatchNight;
@@ -33,9 +35,9 @@ export function NightCard(props: {
         : null;
 
   return (
-    <li className="card flex gap-4 p-3">
+    <li className="card flex items-start gap-4 p-3">
       <Poster path={night.title?.poster_path ?? null} title={night.title?.title ?? ""} size="sm" language={language} />
-      <div className="grid min-w-0 content-start gap-1.5">
+      <div className="grid min-w-0 flex-1 content-start gap-1.5">
         <div className="flex flex-wrap items-baseline gap-x-2">
           {night.title ? (
             <Link href={titleHref(night.title)} className="font-display text-lg font-semibold leading-snug hover:underline">
@@ -58,6 +60,18 @@ export function NightCard(props: {
 
         <HowLine night={night} t={t} />
         {night.notes && <p className="whitespace-pre-line text-sm">{night.notes}</p>}
+
+        {actions && (
+          <ReadyCheck
+            nightId={night.id}
+            method={night.method}
+            checks={night.checks}
+            me={me}
+            partner={partner}
+            runtime={night.title?.media_type === "movie" ? night.title.runtime : null}
+            language={language}
+          />
+        )}
 
         <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
           {plannedBy && <span>{plannedBy}</span>}

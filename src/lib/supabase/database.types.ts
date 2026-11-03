@@ -229,6 +229,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"ready_checks": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"file_label": string,"file_seconds": number | null,"profile_id": string,"ready_at": string | null,"updated_at": string,"watch_night_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"file_label"?: string,"file_seconds"?: number | null,"profile_id": string,"ready_at"?: string | null,"updated_at"?: string,"watch_night_id": string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"file_label"?: string,"file_seconds"?: number | null,"profile_id"?: string,"ready_at"?: string | null,"updated_at"?: string,"watch_night_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ready_checks_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ready_checks_watch_night_id_couple_id_fkey"
+      columns: ["watch_night_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "watch_nights"
+      referencedColumns: ["id","couple_id"]
+    }
+                  ]
                 },"reminders": {
                   Row: {
                     "couple_id": string,"created_at": string,"created_by": string | null,"id": string,"media_type": string,"tmdb_id": number

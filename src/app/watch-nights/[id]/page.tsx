@@ -58,6 +58,7 @@ async function EditWatchNight({ params }: Pick<PageProps<"/watch-nights/[id]">, 
         // A change saved on the other screen arrives through ListSync; start again from it.
         key={`${night.id}:${night.starts_at}:${key}:${night.method}`}
         nightId={night.id}
+        hasReadyChecks={night.checks.length > 0}
         initial={{
           title: key,
           date: start.date,

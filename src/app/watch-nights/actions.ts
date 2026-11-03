@@ -15,10 +15,12 @@ import {
   MAX_DAYS_AHEAD,
   MAX_NIGHT_NOTES_LENGTH,
   MAX_SYNCPLAY_LENGTH,
+  UNDER_WAY_MS,
   zonedToUtc,
   type NightMethod,
 } from "@/lib/night-rules";
 import { notifyPartner, type NightChange } from "@/lib/nights";
+import { cleanFileLabel, MAX_FILE_LABEL_LENGTH, parseLength } from "@/lib/ready-rules";
 import { requireCoupleProfile } from "@/lib/session";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -84,7 +86,13 @@ export async function saveWatchNight(id: string | null, input: NightInput): Prom
 
   const supabase = await createClient();
   const before = id
-    ? (await supabase.from("watch_nights").select("starts_at, media_type, tmdb_id").eq("id", id).maybeSingle()).data
+    ? (
+        await supabase
+          .from("watch_nights")
+          .select("starts_at, media_type, tmdb_id, method, ready_checks(profile_id, ready_at)")
+          .eq("id", id)
+          .maybeSingle()
+      ).data
     : null;
   if (id && !before) return { error: errors.gone };
   const moved = !before || Date.parse(before.starts_at) !== startsAt.getTime();
@@ -120,7 +128,12 @@ export async function saveWatchNight(id: string | null, input: NightInput): Prom
   }
 
   const retitled = before && (before.media_type !== fields.media_type || before.tmdb_id !== fields.tmdb_id);
-  if (!before || moved || retitled) {
+  // A new title or method clears the ready checks (a trigger does it), so a partner who was ready hears why.
+  const unreadied =
+    before &&
+    (retitled || before.method !== method) &&
+    before.ready_checks.some((c) => c.profile_id !== profile.id && c.ready_at);
+  if (!before || moved || retitled || unreadied) {
     await notifyLater(before ? "changed" : "planned", { id: saved.data.id, starts_at: fields.starts_at!, title }, profile);
   }
   refresh();
@@ -150,4 +163,75 @@ export async function cancelWatchNight(id: string): Promise<NightResult> {
   }
   refresh();
   redirect("/watch-nights");
+}
+
+type CheckFields = Pick<Database["public"]["Tables"]["ready_checks"]["Update"], "ready_at" | "file_label" | "file_seconds">;
+
+/**
+ * Loads one of the couple's nights that isn't over yet, with who's ready, then saves your own check.
+ * Returns the night, or an error message.
+ */
+async function saveCheck(nightId: string, fields: CheckFields, profile: Profile) {
+  const { t } = await getI18n();
+  const errors = t.nights.errors;
+  if (!UUID.test(nightId)) return { error: errors.gone };
+
+  const supabase = await createClient();
+  const { data: night, error: loadError } = await supabase
+    .from("watch_nights")
+    .select("id, starts_at, media_type, tmdb_id, ready_checks(profile_id, ready_at)")
+    .eq("id", nightId)
+    .maybeSingle();
+  if (loadError) console.error("Loading a watch night failed", loadError);
+  if (!night) return { error: loadError ? t.nights.ready.errors.saveFailed : errors.gone };
+  if (Date.parse(night.starts_at) < Date.now() - UNDER_WAY_MS) return { error: t.nights.ready.errors.over };
+
+  // Update first: users may change only these columns of their row, which rules out an upsert.
+  const mine = { watch_night_id: nightId, profile_id: profile.id };
+  const updated = await supabase.from("ready_checks").update(fields).match(mine).select("profile_id");
+  let error = updated.error;
+  if (!error && !updated.data?.length) {
+    ({ error } = await supabase.from("ready_checks").insert({ ...mine, couple_id: profile.couple_id, ...fields }));
+  }
+  if (error) {
+    console.error("Saving a ready check failed", error);
+    // The night was cancelled in between.
+    return { error: error.code === "23503" ? errors.gone : t.nights.ready.errors.saveFailed };
+  }
+  return { night };
+}
+
+/** Says you're ready for a watch night, or not after all. Tells your partner when you become ready. */
+export async function setReady(nightId: string, ready: boolean): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const result = await saveCheck(nightId, { ready_at: ready ? new Date().toISOString() : null }, profile);
+  if (!result.night) return result;
+
+  const { night } = result;
+  const wasReady = night.ready_checks.some((c) => c.profile_id === profile.id && c.ready_at);
+  if (ready && !wasReady) {
+    const partnerReady = night.ready_checks.some((c) => c.profile_id !== profile.id && c.ready_at);
+    const title = isMediaType(night.media_type) && night.tmdb_id ? { media_type: night.media_type, tmdb_id: night.tmdb_id } : null;
+    await notifyLater(partnerReady ? "bothReady" : "ready", { id: night.id, starts_at: night.starts_at, title }, profile);
+  }
+  refresh();
+  return {};
+}
+
+export type FileInput = { label: string; length: string };
+
+/** Saves which version of the file you have and how long it is, so you can both check they match. */
+export async function saveFile(nightId: string, input: FileInput): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const { t } = await getI18n();
+  const errors = t.nights.ready.errors;
+  const label = cleanFileLabel(input?.label);
+  if (label === null) return { error: errors.badLabel(MAX_FILE_LABEL_LENGTH) };
+  const seconds = parseLength(input.length);
+  if (seconds === undefined) return { error: errors.badLength };
+
+  const result = await saveCheck(nightId, { file_label: label, file_seconds: seconds }, profile);
+  if (!result.night) return result;
+  refresh();
+  return {};
 }

@@ -19,7 +19,9 @@ TMDB API, deployed on Vercel.
   when both can stream them, with "not interested" to keep a title out.
 - A watch-night planner that rates each hour of the day for both time zones (evenings, weekend afternoons,
   sleep), records how you'll watch (Teleparty link or Syncplay room), notifies the other person and
-  exports to any calendar app (.ics).
+  exports to any calendar app (.ics). A ready check per night: each person ticks when they're set up and,
+  for Syncplay, notes which version of the file they have and its length, so you can see the copies match.
+  The app only describes files; it never hosts or links to them.
 - Stats per year or all time: films and series watched, hours, watch nights, month by month, top genres,
   favourites you both rated highly and the one you disagreed on most.
 - Installable PWA: app icon, phone tab bar, light/dark/system theme per device, and the list readable
@@ -27,7 +29,7 @@ TMDB API, deployed on Vercel.
 - English and Turkish UI, following each person's settings.
 - pgTAP tests for every security policy.
 
-**Status:** Sprints 0–6 done (foundations, search, shared list, browse, coming soon and alerts, for you and watch nights, polish). See `CLAUDE.md` for the rules and the sprint roadmap.
+**Status:** Sprints 0–6 and Phase 2 done (foundations, search, shared list, browse, coming soon and alerts, for you and watch nights, polish, ready checks). See `CLAUDE.md` for the rules and the sprint roadmap.
 
 ## Run it locally
 
