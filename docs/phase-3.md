@@ -183,7 +183,48 @@ Branch `phase3/calendar`. No new namespace needed beyond adding keys to `nights`
 (not started)
 
 ### Block 2: Pick for tonight
-(not started)
+Done on `phase3/pick`. No migration, no new tables, nothing for `ListSync`'s array.
+
+**Status line (for CLAUDE.md):** `/pick` ("Pick something for tonight" card under the home page's search
+box): choose 1 h 30 / 2 h / 2 h 30 / 3 h, any number of minutes (15–600), or "Until it's too late for one
+of us" (ends before 23:00 on both clocks; says whose 23:00 it is, and when it's already too late for
+someone). Then one title at a time with "Watch now" (title page), "Plan it" (`/watch-nights/new` with that
+title), "Another", "Start again", and "+ Add" for suggestions. "Only what we can both watch" is on by
+default. Candidates: Up next, then For you suggestions (films and series). Both screens land on the same
+pick when they press the same buttons (state is in the URL: `?time=120|late&all=1&n=3`).
+
+**Conventions (for CLAUDE.md):**
+- Pick rules are pure in `src/lib/pick-rules.ts`: `parseTimeChoice()`, `minutesUntilLate()` (each person's
+  next 23:00 via `zonedToUtc()`, 0 if it's past 23:00 or `fitFor()` says asleep; rounded down to 5 min),
+  `lengthOf()` (film runtime, or one episode: `titles.runtime`, else `DEFAULT_EPISODE_MIN` 45), `pickOrder()`,
+  `pickAt()`, `daySeed()`. Order is in tiers: list titles of known length, then For you of known length,
+  then films of unknown length (list, then For you). Within a tier it's a seeded weighted shuffle
+  (`seededShuffle()`, Efraimidis–Spirakis with a hash of seed + titleKey, so a tier's order doesn't depend
+  on the other tiers): watching ×4, older adds up to ×2; For you by score; with "include the rest" on,
+  "both" titles ×2. The seed is the UTC date (same on both screens); "Another" steps through the order and
+  wraps around ("That's everything that fits").
+- Data is in `src/app/pick/data.ts`: `listCandidates()` (getList + getAvailability) and
+  `forYouCandidates()` (getForYou for both types, top 15 each checked for availability, then `getTitle()`
+  for at most 16 of the ones that pass, to learn their runtime; this caches them in `titles`). For you is
+  only loaded once "Another" has gone past the list's titles of known length (`listOnlyCount()`).
+- Home page: `<Suspense><PickLink /></Suspense>` (`src/app/pick/pick-link.tsx`) under the search box.
+- i18n namespace `pick`; page title key `pick`.
+
+**Known issues:**
+- "Watch now" just opens the title page (where each of you can watch it); it doesn't mark the title as
+  watching or start a watch night.
+- "Until it's too late" is worked out when the page loads, so two screens loaded on either side of a
+  5-minute step can get a slightly different number of minutes (and, rarely, a different pick). Minutes
+  are the same on both.
+- Series episode length is TMDB's typical runtime (`titles.runtime`), not the next episode's. Titles cached
+  without a runtime show "About 45 min an episode".
+- The first pass past the list can take a few seconds uncached (TMDB recommendations for both types, then
+  details for up to 16 suggestions). For you suggestions are picked from the top 15 per type only.
+- Tested against the local data with curl and headless Edge (en/tr, phone and wide, both-only and
+  everything, too late, empty state, same pick for both users). Not tried on a real phone.
+
+**Outside the block's own files:** only the shared-file edits the plan allows: `src/lib/i18n/index.ts`
+(register `pick`), `src/lib/i18n/common.ts` (`pageTitles.pick`), `src/app/page.tsx` (one import, one line).
 
 ### Block 3: Places and services
 Done on `phase3/places`. Migration `20261103131342_places.sql`, pgTAP `supabase/tests/database/places.test.sql`.
