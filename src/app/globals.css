@@ -17,8 +17,9 @@
   --danger-soft: #fbe4e2;
 }
 
+/* Dark follows the device unless Settings picked a theme for this device (data-theme, set before paint). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0f1418;
     --surface: #161d23;
     --ink: #e5eaee;
@@ -34,6 +35,23 @@
     --danger-soft: #3b1715;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1418;
+  --surface: #161d23;
+  --ink: #e5eaee;
+  --muted: #98a5b1;
+  --line: #28333c;
+  --me: #e59a5e;
+  --me-soft: #3a2718;
+  --partner: #5cc1c6;
+  --partner-soft: #15343a;
+  --both: #72c994;
+  --both-soft: #183526;
+  --danger: #f2b8b5;
+  --danger-soft: #3b1715;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -57,6 +75,13 @@
 body {
   background: var(--bg);
   color: var(--ink);
+}
+
+/* Room below the page for the phone tab bar (AppNav), which only signed-in pages have. */
+@media (width < 40rem) {
+  body:has([data-tab-bar]) {
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+  }
 }
 
 @layer components {

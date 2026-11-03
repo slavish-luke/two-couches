@@ -245,11 +245,11 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 [auth.email.template.magic_link]
-subject = "Your Two Couches sign-in link"
+subject = "Your Two Couches sign-in link · Two Couches giriş bağlantısı"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.confirmation]
-subject = "Welcome to Two Couches"
+subject = "Welcome to Two Couches · Hoş geldin"
 content_path = "./supabase/templates/confirmation.html"
 
 # Uncomment to customize email template

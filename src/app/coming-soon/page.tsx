@@ -10,7 +10,7 @@ import { TitleCard, type CardContext } from "@/components/title-card";
 import { ALERT_STATUSES, describeAlert } from "@/lib/alert-rules";
 import { countNewAlerts, getAlerts, getReminders, type Alert } from "@/lib/alerts";
 import { type Messages } from "@/lib/i18n";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getList, getListKeys } from "@/lib/list";
 import { formatDate, localDate } from "@/lib/list-rules";
 import { countryName, isCountry } from "@/lib/places";
@@ -28,11 +28,11 @@ import {
 import { isMediaType, titleHref, titleKey, type MediaType, type TitleRef, type Watcher } from "@/lib/watch";
 import { MarkAlertsSeen } from "./mark-seen";
 
-export const metadata = { title: "Coming soon · Two Couches" };
+export const generateMetadata = localisedTitle("comingSoon");
 
 export default function ComingSoonPage({ searchParams }: PageProps<"/coming-soon">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PageLoading variant="posters" />}>
       <ComingSoon searchParams={searchParams} />
     </Suspense>
   );

@@ -10,7 +10,7 @@ import { Poster } from "@/components/poster";
 import { RemindButton } from "@/components/remind-button";
 import { getReminderKeys } from "@/lib/alerts";
 import { type Messages } from "@/lib/i18n";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
 import { getDismissedKeys } from "@/lib/recommend";
@@ -30,7 +30,7 @@ import {
 } from "@/lib/watch";
 import { ListPanel } from "./list-panel";
 
-export const metadata = { title: "Where to watch · Two Couches" };
+export const generateMetadata = localisedTitle("title");
 
 export default function TitlePage({ params }: PageProps<"/title/[type]/[id]">) {
   return (

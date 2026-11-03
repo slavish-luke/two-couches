@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { zonedParts } from "@/lib/night-rules";
 import { getWatchNight, titleOptions } from "@/lib/nights";
 import { isCountry } from "@/lib/places";
@@ -12,7 +12,7 @@ import { tmdbLocale } from "@/lib/tmdb";
 import { titleKey } from "@/lib/watch";
 import { NightForm } from "../night-form";
 
-export const metadata = { title: "Change the watch night · Two Couches" };
+export const generateMetadata = localisedTitle("changeNight");
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

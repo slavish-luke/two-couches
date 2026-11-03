@@ -14,7 +14,7 @@ const CHECKED = 40;
 
 /** Wordless placeholder while suggestions load: the first visit asks TMDB about each seed title. */
 export function ForYouLoading() {
-  return <div aria-busy className="h-72 animate-pulse rounded-xl bg-line/60" />;
+  return <div aria-busy className="h-72 rounded-xl bg-line/60 motion-safe:animate-pulse" />;
 }
 
 /**

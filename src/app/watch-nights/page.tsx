@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { formatDayLong } from "@/lib/night-rules";
 import { getWatchNights, type WatchNight } from "@/lib/nights";
 import { isCountry } from "@/lib/places";
@@ -11,7 +11,7 @@ import { getPartner, requireProfile } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
 import { NightCard } from "./night-card";
 
-export const metadata = { title: "Watch nights · Two Couches" };
+export const generateMetadata = localisedTitle("watchNights");
 
 export default function WatchNightsPage() {
   return (

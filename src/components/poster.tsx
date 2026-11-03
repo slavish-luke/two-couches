@@ -3,6 +3,7 @@ import { getMessages } from "@/lib/i18n";
 import { tmdbImage } from "@/lib/watch";
 
 const SIZES = {
+  xs: { width: 40, tmdb: "w92" },
   sm: { width: 64, tmdb: "w185" },
   lg: { width: 200, tmdb: "w500" },
   /** Fills its container's width, e.g. a grid cell. */

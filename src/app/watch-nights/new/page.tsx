@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { suggestStart } from "@/lib/night-rules";
 import { titleOptions } from "@/lib/nights";
 import { isCountry } from "@/lib/places";
@@ -12,7 +12,7 @@ import { tmdbLocale } from "@/lib/tmdb";
 import { isMediaType, titleKey, type TitleRef } from "@/lib/watch";
 import { NightForm, type TitleOption } from "../night-form";
 
-export const metadata = { title: "Plan a watch night · Two Couches" };
+export const generateMetadata = localisedTitle("planNight");
 
 export default function NewWatchNightPage({ searchParams }: PageProps<"/watch-nights/new">) {
   return (

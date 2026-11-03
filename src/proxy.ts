@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// The cron route checks its own secret; the service worker and manifest are fetched by the browser itself.
-const PUBLIC_PATHS = ["/login", "/auth", "/api/cron", "/sw.js", "/manifest.webmanifest"];
+// The cron route checks its own secret; the service worker, manifest and offline page are fetched by the browser itself.
+const PUBLIC_PATHS = ["/login", "/auth", "/api/cron", "/sw.js", "/manifest.webmanifest", "/offline"];
 
 /** Refreshes the Supabase session cookie on every request and sends signed-out visitors to /login. */
 export async function proxy(request: NextRequest) {

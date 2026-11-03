@@ -21,7 +21,7 @@ import {
   type MinRating,
   type Sort,
 } from "@/lib/browse";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getListKeys } from "@/lib/list";
 import { localDate } from "@/lib/list-rules";
 import { countryName, isCountry } from "@/lib/places";
@@ -40,11 +40,11 @@ import {
 } from "@/lib/watch";
 import { ForYouLoading, ForYouRow } from "./for-you";
 
-export const metadata = { title: "Browse · Two Couches" };
+export const generateMetadata = localisedTitle("browse");
 
 export default function BrowsePage({ searchParams }: PageProps<"/browse">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PageLoading variant="posters" />}>
       <Browse searchParams={searchParams} />
     </Suspense>
   );

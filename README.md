@@ -20,10 +20,14 @@ TMDB API, deployed on Vercel.
 - A watch-night planner that rates each hour of the day for both time zones (evenings, weekend afternoons,
   sleep), records how you'll watch (Teleparty link or Syncplay room), notifies the other person and
   exports to any calendar app (.ics).
+- Stats per year or all time: films and series watched, hours, watch nights, month by month, top genres,
+  favourites you both rated highly and the one you disagreed on most.
+- Installable PWA: app icon, phone tab bar, light/dark/system theme per device, and the list readable
+  offline (a service worker keeps the last copy; Next.js retries navigations and saves once you're back).
 - English and Turkish UI, following each person's settings.
 - pgTAP tests for every security policy.
 
-**Status:** Sprints 0–5 done (foundations, search, shared list, browse, coming soon and alerts, for you and watch nights). See `CLAUDE.md` for the rules and the sprint roadmap.
+**Status:** Sprints 0–6 done (foundations, search, shared list, browse, coming soon and alerts, for you and watch nights, polish). See `CLAUDE.md` for the rules and the sprint roadmap.
 
 ## Run it locally
 
@@ -71,8 +75,10 @@ Copy the **API Read Access Token** (the long one). That's `TMDB_API_TOKEN`.
 4. Authentication → URL Configuration: set **Site URL** to your Vercel URL (e.g. `https://two-couches.vercel.app`)
    and add `https://two-couches.vercel.app/auth/confirm` to **Redirect URLs**.
 5. Authentication → Email Templates: paste `supabase/templates/magic_link.html` into **Magic Link** and
-   `supabase/templates/confirmation.html` into **Confirm signup**. (They send a link that works on any device
-   plus a 6-digit code, which is handy when the email opens in a different browser from the app.)
+   `supabase/templates/confirmation.html` into **Confirm signup**, with the subjects from `supabase/config.toml`.
+   (They send a link that works on any device plus a 6-digit code, which is handy when the email opens in a
+   different browser from the app. Each email is in English and Turkish, since it's sent before the app
+   knows your language.)
 6. Project Settings → API Keys: copy the URL, the publishable key and a secret key.
 
 ### 3. Vercel
@@ -101,5 +107,8 @@ select public.request_daily_check();
 ```
 To change one later: `select vault.update_secret((select id from vault.secrets where name = 'app_url'), '<new value>');`
 
-Then turn notifications on from Settings on each phone. On iPhone, add the app to the Home Screen first and
-turn them on from there.
+Then on each phone open Settings → "On this device": install the app (on iPhone: Safari → Share → Add to
+Home Screen), then turn notifications on from the installed app.
+
+Offline behaviour only shows in a production build (`npm run build && npx next start`); in `next dev` the
+service worker doesn't cache anything.

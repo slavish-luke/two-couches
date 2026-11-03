@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { isAppleMobile, registerServiceWorker } from "@/components/pwa";
 import { getMessages } from "@/lib/i18n";
 import { removePushSubscription, savePushSubscription, sendTestPush } from "./actions";
 
@@ -16,15 +17,11 @@ function keyBytes(base64url: string) {
   return bytes;
 }
 
-function isAppleMobile() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-}
-
 async function currentStatus(): Promise<Status> {
   if (!("serviceWorker" in navigator && "PushManager" in window && "Notification" in window)) {
     return isAppleMobile() ? "ios" : "unsupported";
   }
-  const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
+  const registration = await registerServiceWorker();
   if (await registration.pushManager.getSubscription()) return "on";
   return Notification.permission === "denied" ? "blocked" : "off";
 }

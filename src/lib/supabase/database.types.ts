@@ -291,14 +291,14 @@ isOneToOne: false
                   ]
                 },"title_texts": {
                   Row: {
-                    "genres": (string)[],"locale": string,"media_type": string,"overview": string,"refreshed_at": string,"tagline": string,"title": string,"tmdb_id": number,"trailer_key": string | null
+                    "genres": (string)[],"locale": string,"media_type": string,"overview": string,"poster_path": string | null,"refreshed_at": string,"tagline": string,"title": string,"tmdb_id": number,"trailer_key": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "genres"?: (string)[],"locale": string,"media_type": string,"overview"?: string,"refreshed_at"?: string,"tagline"?: string,"title": string,"tmdb_id": number,"trailer_key"?: string | null
+                    "genres"?: (string)[],"locale": string,"media_type": string,"overview"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"tagline"?: string,"title": string,"tmdb_id": number,"trailer_key"?: string | null
                   }
                   Update: {
-                    "genres"?: (string)[],"locale"?: string,"media_type"?: string,"overview"?: string,"refreshed_at"?: string,"tagline"?: string,"title"?: string,"tmdb_id"?: number,"trailer_key"?: string | null
+                    "genres"?: (string)[],"locale"?: string,"media_type"?: string,"overview"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"tagline"?: string,"title"?: string,"tmdb_id"?: number,"trailer_key"?: string | null
                   }
                   Relationships: [
                     {
@@ -311,14 +311,14 @@ isOneToOne: false
                   ]
                 },"titles": {
                   Row: {
-                    "backdrop_path": string | null,"genre_ids": (number)[],"media_type": string,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
+                    "backdrop_path": string | null,"episodes": number | null,"genre_ids": (number)[],"media_type": string,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "backdrop_path"?: string | null,"genre_ids"?: (number)[],"media_type": string,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
+                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type": string,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
                   }
                   Update: {
-                    "backdrop_path"?: string | null,"genre_ids"?: (number)[],"media_type"?: string,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
+                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type"?: string,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
                   }
                   Relationships: [
                     

@@ -2,12 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Source_Sans_3 } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AppNav } from "@/components/app-nav";
 import { HtmlLang } from "@/components/html-lang";
+import { OfflineChip } from "@/components/offline-chip";
+import { PwaSetup } from "@/components/pwa";
 import { countNewAlerts } from "@/lib/alerts";
 import { getMessages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/session";
-import { signOut } from "./auth/actions";
+import { THEME_COLORS, THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({ variable: "--font-display", subsets: ["latin", "latin-ext"] });
@@ -17,19 +20,27 @@ export const metadata: Metadata = {
   title: "Two Couches",
   description: "Our shared watchlist, across two countries.",
   robots: { index: false, follow: false },
+  appleWebApp: { capable: true, title: "Two Couches", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
+  // Lets the phone tab bar sit above the iPhone home indicator (env(safe-area-inset-bottom)).
+  viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7f8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1418" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} h-full antialiased`}>
+    // The theme script sets data-theme before React hydrates, hence suppressHydrationWarning.
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col font-sans text-[17px] leading-relaxed">
+        <PwaSetup />
         <header className="border-b border-line bg-surface">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <Link href="/" className="font-display text-xl font-bold tracking-tight">
@@ -52,32 +63,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 
 async function AccountNav() {
-  const [profile, { language, t }] = await Promise.all([getCurrentProfile(), getI18n()]);
+  const [profile, { language }] = await Promise.all([getCurrentProfile(), getI18n()]);
   const newAlerts = profile?.couple_id ? await countNewAlerts(profile.alerts_seen_at) : 0;
 
   return (
     <>
       <HtmlLang language={language} />
       {profile && (
-        <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold">
-          <Link href="/" className="text-muted hover:text-ink">{t.common.nav.list}</Link>
-          <Link href="/browse" className="text-muted hover:text-ink">{t.common.nav.browse}</Link>
-          <Link href="/coming-soon" className="relative text-muted hover:text-ink">
-            {t.common.nav.comingSoon}
-            {newAlerts > 0 && (
-              <>
-                <span aria-hidden className="absolute -right-2 -top-0.5 size-2 rounded-full bg-both" />
-                <span className="sr-only"> ({t.common.nav.newAlerts(newAlerts)})</span>
-              </>
-            )}
-          </Link>
-          <Link href="/watch-nights" className="text-muted hover:text-ink">{t.common.nav.watchNights}</Link>
-          <Link href="/search" className="text-muted hover:text-ink">{t.common.nav.search}</Link>
-          <Link href="/settings" className="text-muted hover:text-ink">{t.common.nav.settings}</Link>
-          <form action={signOut}>
-            <button className="text-muted hover:text-ink">{t.common.nav.signOut}</button>
-          </form>
-        </nav>
+        <>
+          <OfflineChip language={language} />
+          <AppNav newAlerts={newAlerts} language={language} />
+        </>
       )}
     </>
   );

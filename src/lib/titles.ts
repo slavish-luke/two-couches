@@ -102,12 +102,25 @@ function toTitle(row: TitleRow, text: TitleTextRow): Title {
   return {
     ...row,
     media_type: row.media_type as MediaType,
+    poster_path: text.poster_path ?? row.poster_path,
     title: text.title,
     overview: text.overview,
     tagline: text.tagline,
     genres: text.genres,
     trailer_key: text.trailer_key,
   };
+}
+
+/** Cached text for a title, as selected with `title_texts(locale, title, poster_path)`. */
+type LocaleText = { locale: string; title: string; poster_path: string | null };
+
+/**
+ * A title's name and poster from the cached text in the first of `locales` that has one (the viewer's own
+ * first), else the original title and whichever poster was cached last.
+ */
+export function pickText(texts: LocaleText[], locales: string[], fallback: { original_title: string; poster_path: string | null }) {
+  const text = locales.map((l) => texts.find((t) => t.locale === l)).find(Boolean);
+  return { title: text?.title ?? fallback.original_title, poster_path: text?.poster_path ?? fallback.poster_path };
 }
 
 /** The best YouTube trailer: trailers over teasers, the viewer's language, then official ones. */
@@ -163,13 +176,15 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
           release_date: details.release_date,
           runtime: details.runtime,
           seasons: null,
+          episodes: null,
         }
       : {
           title: details.name,
           original_title: details.original_name,
           release_date: details.first_air_date,
-          runtime: details.episode_run_time[0],
+          runtime: details.episode_run_time[0] || details.last_episode_to_air?.runtime,
           seasons: details.number_of_seasons,
+          episodes: details.number_of_episodes || null,
         };
   const row: TitleRow = {
     media_type: ref.media_type,
@@ -182,6 +197,7 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     genre_ids: details.genres.map((g) => g.id),
     runtime: kind.runtime || null,
     seasons: kind.seasons,
+    episodes: kind.episodes,
     vote_average: details.vote_average || null,
     refreshed_at: refreshedAt,
   };
@@ -194,6 +210,7 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     tagline: details.tagline ?? "",
     genres: details.genres.map((g) => g.name),
     trailer_key: pickTrailer(details.videos, locale.slice(0, 2)),
+    poster_path: details.poster_path,
     refreshed_at: refreshedAt,
   };
 

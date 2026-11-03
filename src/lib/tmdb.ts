@@ -139,6 +139,9 @@ export type TvDetails = DetailsCommon & {
   first_air_date: string;
   episode_run_time: number[];
   number_of_seasons: number;
+  number_of_episodes?: number;
+  /** TMDB often leaves episode_run_time empty for newer series; this episode's runtime is the fallback. */
+  last_episode_to_air?: { runtime: number | null } | null;
 };
 
 export const PROVIDER_KINDS: ProviderKind[] = ["flatrate", "free", "ads", "rent", "buy"];

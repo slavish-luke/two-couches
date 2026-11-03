@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
-export const metadata = { title: "Sign in · Two Couches" };
+export const generateMetadata = localisedTitle("signIn");
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (

@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { startCouple } from "./actions";
 import { JoinForm } from "./join-form";
 
-export const metadata = { title: "Your couple · Two Couches" };
+export const generateMetadata = localisedTitle("couple");
 
 export default function CouplePage() {
   return (

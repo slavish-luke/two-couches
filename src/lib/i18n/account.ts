@@ -1,3 +1,5 @@
+import type { Theme } from "../theme";
+
 /** Sign-in, settings, pairing (couple) and their actions' messages. */
 const en = {
   login: {
@@ -51,6 +53,23 @@ const en = {
       saveFailed: "Couldn't save. Try again.",
     },
   },
+  device: {
+    heading: "On this device",
+    intro: "These stay on this phone or computer.",
+  },
+  appearance: {
+    heading: "Appearance",
+    options: { system: "Match device", light: "Light", dark: "Dark" } satisfies Record<Theme, string>,
+  },
+  install: {
+    heading: "Install the app",
+    intro: "Put Two Couches on your Home Screen. It opens in its own window, and your list works offline.",
+    button: "Install",
+    installed: "Installed on this device.",
+    ios: "On iPhone and iPad: open this page in Safari, tap Share, then Add to Home Screen.",
+    other: "Open your browser's menu and choose Install app or Add to Home Screen.",
+  },
+  signOut: "Sign out",
   notifications: {
     heading: "Notifications",
     intro: "Get a notification on this device when something you're waiting for starts streaming.",
@@ -147,6 +166,23 @@ const tr: typeof en = {
       saveFailed: "Kaydedilemedi. Tekrar dene.",
     },
   },
+  device: {
+    heading: "Bu cihazda",
+    intro: "Bunlar yalnızca bu telefon ya da bilgisayar için geçerli.",
+  },
+  appearance: {
+    heading: "Görünüm",
+    options: { system: "Cihaza uy", light: "Açık", dark: "Koyu" },
+  },
+  install: {
+    heading: "Uygulamayı yükle",
+    intro: "Uygulamayı ana ekranına ekle. Kendi penceresinde açılır ve listen çevrimdışıyken de görünür.",
+    button: "Yükle",
+    installed: "Bu cihazda yüklü.",
+    ios: "iPhone ve iPad'de: bu sayfayı Safari'de aç, Paylaş'a dokun, ardından Ana Ekrana Ekle'yi seç.",
+    other: "Tarayıcının menüsünü aç ve Uygulamayı yükle ya da Ana ekrana ekle'yi seç.",
+  },
+  signOut: "Çıkış yap",
   notifications: {
     heading: "Bildirimler",
     intro: "Beklediğin bir yapım yayına girdiğinde bu cihaza bildirim gelsin.",

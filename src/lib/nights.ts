@@ -6,6 +6,7 @@ import { sendPush } from "./push";
 import { createAdminClient } from "./supabase/admin";
 import type { Database } from "./supabase/database.types";
 import { createClient } from "./supabase/server";
+import { pickText } from "./titles";
 import { tmdbLocale } from "./tmdb";
 import { titleKey, type MediaType, type TitleRef } from "./watch";
 
@@ -20,7 +21,7 @@ export type WatchNight = Pick<
   title: (TitleRef & { title: string; poster_path: string | null; runtime: number | null }) | null;
 };
 
-const SELECT = "*, titles(original_title, poster_path, runtime, title_texts(locale, title))";
+const SELECT = "*, titles(original_title, poster_path, runtime, title_texts(locale, title, poster_path))";
 
 function toNight(
   row: NightRow & {
@@ -28,12 +29,11 @@ function toNight(
       original_title: string;
       poster_path: string | null;
       runtime: number | null;
-      title_texts: { locale: string; title: string }[];
+      title_texts: { locale: string; title: string; poster_path: string | null }[];
     } | null;
   },
   locales: string[],
 ): WatchNight {
-  const texts = row.titles?.title_texts ?? [];
   return {
     id: row.id,
     starts_at: row.starts_at,
@@ -49,8 +49,7 @@ function toNight(
         ? {
             media_type: row.media_type as MediaType,
             tmdb_id: row.tmdb_id,
-            title: locales.map((l) => texts.find((t) => t.locale === l)).find(Boolean)?.title ?? row.titles.original_title,
-            poster_path: row.titles.poster_path,
+            ...pickText(row.titles.title_texts, locales, row.titles),
             runtime: row.titles.runtime,
           }
         : null,
@@ -77,6 +76,14 @@ export async function getWatchNights(
   const { data, error } = await query.order("starts_at", { ascending: !past }).limit(limit);
   if (error) throw error;
   return data.map((row) => toNight(row, locales));
+}
+
+/** When each of the couple's watch nights starts (UTC), for the stats page. */
+export async function getNightStarts(coupleId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("watch_nights").select("starts_at").eq("couple_id", coupleId);
+  if (error) throw error;
+  return data.map((row) => row.starts_at);
 }
 
 /** One of the couple's watch nights, or null if there's no such night (or it isn't theirs). */

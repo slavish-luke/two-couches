@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
 
@@ -8,6 +9,8 @@ import { createClient } from "./supabase/server";
  * rather than trusting the cookie. Memoised per request.
  */
 export const getCurrentProfile = cache(async () => {
+  // Per request: checking the token reads the clock, which Next.js won't allow while prerendering.
+  await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;

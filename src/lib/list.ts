@@ -2,7 +2,7 @@ import "server-only";
 import type { ListStatus } from "./list-rules";
 import { getPartner, type Profile } from "./session";
 import { createClient } from "./supabase/server";
-import { getTitle } from "./titles";
+import { getTitle, pickText } from "./titles";
 import { tmdbLocale } from "./tmdb";
 import { titleKey, type MediaType, type TitleRef } from "./watch";
 
@@ -26,6 +26,10 @@ export type ListEntry = ListItem & {
   release_date: string | null;
   poster_path: string | null;
   genre_ids: number[];
+  /** Minutes: the film, or a typical episode of a series. */
+  runtime: number | null;
+  /** All episodes of a series, when TMDB says. */
+  episodes: number | null;
 };
 
 function toItem(row: {
@@ -69,24 +73,21 @@ export async function getList(coupleId: string, locales: string[]): Promise<List
   const { data, error } = await supabase
     .from("list_items")
     .select(
-      "*, list_ratings(profile_id, rating), titles(original_title, release_date, poster_path, genre_ids, title_texts(locale, title))",
+      "*, list_ratings(profile_id, rating), titles(original_title, release_date, poster_path, genre_ids, runtime, episodes, title_texts(locale, title, poster_path))",
     )
     .eq("couple_id", coupleId)
     .in("titles.title_texts.locale", locales)
     .order("created_at", { ascending: false });
   if (error) throw error;
 
-  return data.map((row) => {
-    const texts = row.titles.title_texts;
-    const text = locales.map((l) => texts.find((t) => t.locale === l)).find(Boolean);
-    return {
-      ...toItem(row),
-      title: text?.title ?? row.titles.original_title,
-      release_date: row.titles.release_date,
-      poster_path: row.titles.poster_path,
-      genre_ids: row.titles.genre_ids,
-    };
-  });
+  return data.map((row) => ({
+    ...toItem(row),
+    ...pickText(row.titles.title_texts, locales, row.titles),
+    release_date: row.titles.release_date,
+    genre_ids: row.titles.genre_ids,
+    runtime: row.titles.runtime,
+    episodes: row.titles.episodes,
+  }));
 }
 
 /** This title's entry on the couple's list, or null if it isn't on it. */

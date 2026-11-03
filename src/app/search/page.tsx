@@ -7,14 +7,14 @@ import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
-import { getI18n } from "@/lib/i18n/server";
+import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getListKeys } from "@/lib/list";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, searchTitles, type SearchResult } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import { titleHref, titleKey, type Watcher } from "@/lib/watch";
 
-export const metadata = { title: "Search · Two Couches" };
+export const generateMetadata = localisedTitle("search");
 
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
   return (

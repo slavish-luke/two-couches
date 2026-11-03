@@ -3,7 +3,7 @@ import { isAlertKind, type AlertKind } from "./alert-rules";
 import { createAdminClient } from "./supabase/admin";
 import type { Json } from "./supabase/database.types";
 import { createClient } from "./supabase/server";
-import { getAvailability } from "./titles";
+import { getAvailability, pickText } from "./titles";
 import { titleKey, type CountryAvailability, type MediaType, type TitleRef } from "./watch";
 
 /** The subscription providers in one country's availability: all a snapshot keeps. */
@@ -36,10 +36,6 @@ export async function recordBaseline(ref: TitleRef, countries: string[]) {
 }
 
 /** The title's name in the first of `locales` that's cached, else its original title. */
-function pickTitle(texts: { locale: string; title: string }[], locales: string[], original: string) {
-  return locales.map((l) => texts.find((t) => t.locale === l)).find(Boolean)?.title ?? original;
-}
-
 /** An alert's services column: provider names by profile ID. Anything malformed reads as nobody's. */
 export function alertServices(value: Json): Record<string, string[]> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -66,7 +62,7 @@ export async function getAlerts(coupleId: string, locales: string[], limit = 12)
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("alerts")
-    .select("*, titles(original_title, poster_path, title_texts(locale, title))")
+    .select("*, titles(original_title, poster_path, title_texts(locale, title, poster_path))")
     .eq("couple_id", coupleId)
     .in("titles.title_texts.locale", locales)
     .order("created_at", { ascending: false })
@@ -83,8 +79,7 @@ export async function getAlerts(coupleId: string, locales: string[], limit = 12)
             kind: row.kind,
             services: alertServices(row.services),
             created_at: row.created_at,
-            title: pickTitle(row.titles.title_texts, locales, row.titles.original_title),
-            poster_path: row.titles.poster_path,
+            ...pickText(row.titles.title_texts, locales, row.titles),
           },
         ]
       : [],
@@ -116,7 +111,7 @@ export async function getReminders(coupleId: string, locales: string[]): Promise
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reminders")
-    .select("*, titles(original_title, release_date, poster_path, title_texts(locale, title))")
+    .select("*, titles(original_title, release_date, poster_path, title_texts(locale, title, poster_path))")
     .eq("couple_id", coupleId)
     .in("titles.title_texts.locale", locales)
     .order("created_at", { ascending: false });
@@ -128,8 +123,7 @@ export async function getReminders(coupleId: string, locales: string[]): Promise
     tmdb_id: row.tmdb_id,
     created_by: row.created_by,
     created_at: row.created_at,
-    title: pickTitle(row.titles.title_texts, locales, row.titles.original_title),
-    poster_path: row.titles.poster_path,
+    ...pickText(row.titles.title_texts, locales, row.titles),
     release_date: row.titles.release_date,
   }));
 }

@@ -12,12 +12,13 @@ import browse from "./browse";
 import common from "./common";
 import list from "./list";
 import nights from "./nights";
+import stats from "./stats";
 import title from "./title";
 import upcoming from "./upcoming";
 
 const dictionaries = {
-  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en },
-  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr },
+  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en },
+  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr },
 } satisfies Record<Language, unknown>;
 
 export type Messages = (typeof dictionaries)["en"];
