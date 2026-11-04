@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import { useActionState, useRef, useState, useTransition } from "react";
+import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import { isLanguage, LANGUAGES } from "@/lib/places";
 import type { Service } from "@/lib/services";
+import { tmdbImage } from "@/lib/watch";
 import { loadServices, saveSettings } from "./actions";
 
 const COLLAPSED_COUNT = 18;
@@ -25,6 +27,7 @@ type Props = {
   language: string;
 };
 
+/** Profile and services: one form in two paper panels, saved together from the foot of the last one. */
 export function SettingsForm({
   initial,
   initialServices,
@@ -74,38 +77,62 @@ export function SettingsForm({
   const countryLabel = countries.find((c) => c.code === country)?.name ?? country;
   const visible = showAll ? services : services.filter((s, i) => i < COLLAPSED_COUNT || selected.has(s.provider_id));
 
-  return (
-    <form action={save} className="grid gap-6">
-      <label className="grid gap-1">
-        <span className="text-sm font-semibold">{t.name}</span>
-        <input name="display_name" required maxLength={50} defaultValue={initial.display_name} className="field" />
-      </label>
-
-      <label className="grid gap-1">
-        <span className="text-sm font-semibold">{t.country}</span>
-        <select
-          name="country"
-          required
-          value={country}
-          onChange={(e) => chooseCountry(e.target.value)}
-          className="field"
+  // Save sits at the foot of the last panel: the services once a country is picked, else the profile.
+  const footer = (
+    <div className="flex flex-wrap items-center gap-3 border-t-2 border-outline/15 pt-4">
+      <button className="btn" disabled={saving || !country || loadingServices}>
+        {saving ? t.saving : isOnboarding ? t.saveAndContinue : t.save}
+      </button>
+      {state.error && (
+        <p role="alert" className="text-sm font-semibold text-danger">
+          {state.error}
+        </p>
+      )}
+      {state.saved && (
+        <p
+          role="status"
+          className="inline-flex items-center gap-1.5 rounded-full border-2 border-outline bg-accent-soft px-2.5 py-0.5 text-sm font-bold"
         >
-          <option value="" disabled>
-            {t.chooseCountry}
-          </option>
-          {countries.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </label>
+          <CheckIcon />
+          {t.saved}
+        </p>
+      )}
+    </div>
+  );
 
-      {country && (
-        <>
+  return (
+    <form action={save} className="grid gap-7">
+      <section className="card grid gap-4">
+        <h2 className="display-ink text-2xl">{t.profile}</h2>
+        <label className="grid gap-1.5">
+          <span className="font-semibold">{t.name}</span>
+          <input name="display_name" required maxLength={50} defaultValue={initial.display_name} className="field" />
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className="font-semibold">{t.country}</span>
+          <select
+            name="country"
+            required
+            value={country}
+            onChange={(e) => chooseCountry(e.target.value)}
+            className="field"
+          >
+            <option value="" disabled>
+              {t.chooseCountry}
+            </option>
+            {countries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {country && (
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold">{t.timeZone}</span>
+            <label className="grid gap-1.5">
+              <span className="font-semibold">{t.timeZone}</span>
               <select name="time_zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="field">
                 {zoneOptions.map((zone) => (
                   <option key={zone} value={zone}>
@@ -114,8 +141,8 @@ export function SettingsForm({
                 ))}
               </select>
             </label>
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold">{t.language}</span>
+            <label className="grid gap-1.5">
+              <span className="font-semibold">{t.language}</span>
               <select name="language" value={language} onChange={(e) => setLanguage(e.target.value)} className="field">
                 {Object.entries(LANGUAGES).map(([code, name]) => (
                   <option key={code} value={code}>
@@ -125,20 +152,25 @@ export function SettingsForm({
               </select>
             </label>
           </div>
+        )}
+        {!country && footer}
+      </section>
 
-          <fieldset className="grid gap-2" aria-busy={loadingServices}>
-            <legend className="mb-1 text-sm font-semibold">{t.services(countryLabel)}</legend>
+      {country && (
+        <section className="card grid gap-4">
+          <fieldset className="grid min-w-0 gap-4" aria-busy={loadingServices}>
+            <legend className="display-ink mb-4 text-2xl">{t.services(countryLabel)}</legend>
             {loadingServices ? (
-              <p className="text-sm text-muted">{t.loadingServices}</p>
+              <p className="text-muted">{t.loadingServices}</p>
             ) : services.length === 0 ? (
-              <p className="text-sm text-muted">{t.noServices(countryLabel)}</p>
+              <p className="text-muted">{t.noServices(countryLabel)}</p>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                   {visible.map((s) => (
                     <label
                       key={s.provider_id}
-                      className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface p-2 text-sm has-checked:border-both has-checked:bg-both-soft"
+                      className="group flex min-w-0 cursor-pointer items-center gap-2 rounded-control border-[2.5px] border-outline bg-surface p-1.5 pr-1.5 font-semibold sm:pr-2 leading-tight transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-1 has-checked:bg-accent has-checked:text-on-accent has-checked:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] has-focus-visible:outline-3 has-focus-visible:outline-offset-3 has-focus-visible:outline-accent"
                     >
                       <input
                         type="checkbox"
@@ -146,18 +178,29 @@ export function SettingsForm({
                         value={s.provider_id}
                         checked={selected.has(s.provider_id)}
                         onChange={() => toggleService(s.provider_id)}
-                        className="accent-(--both)"
+                        className="sr-only"
                       />
-                      {s.logo_path && (
+                      {s.logo_path ? (
                         <Image
-                          src={`https://image.tmdb.org/t/p/w92${s.logo_path}`}
+                          src={tmdbImage(s.logo_path, "w92")}
                           alt=""
-                          width={24}
-                          height={24}
-                          className="rounded"
+                          width={32}
+                          height={32}
+                          unoptimized
+                          className="size-7 shrink-0 rounded-lg border-2 border-outline bg-surface sm:size-8"
                         />
+                      ) : (
+                        <span aria-hidden className="size-7 shrink-0 rounded-lg border-2 border-outline bg-surface sm:size-8" />
                       )}
-                      <span className="truncate">{s.name}</span>
+                      {/* Two lines on phones rather than an ellipsis after a few letters. */}
+                      <span className="line-clamp-2 min-w-0 flex-1 text-sm [overflow-wrap:anywhere] sm:text-[15px]">{s.name}</span>
+                      {/* The tick: shown once the service is chosen. */}
+                      <span
+                        aria-hidden
+                        className="grid size-[18px] shrink-0 place-items-center rounded-lg border-2 border-outline bg-surface text-ink opacity-0 transition group-has-checked:opacity-100"
+                      >
+                        <CheckIcon className="size-3.5" />
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -165,7 +208,7 @@ export function SettingsForm({
                   <button
                     type="button"
                     onClick={() => setShowAll(!showAll)}
-                    className="justify-self-start text-sm font-semibold text-partner"
+                    className="btn-quiet justify-self-start text-sm"
                   >
                     {showAll ? t.showFewer : t.showAll(services.length)}
                   </button>
@@ -173,14 +216,9 @@ export function SettingsForm({
               </>
             )}
           </fieldset>
-        </>
+          {footer}
+        </section>
       )}
-
-      {state.error && <p className="text-sm text-danger">{state.error}</p>}
-      {state.saved && <p className="text-sm text-both">{t.saved}</p>}
-      <button className="btn justify-self-start" disabled={saving || !country || loadingServices}>
-        {saving ? t.saving : isOnboarding ? t.saveAndContinue : t.save}
-      </button>
     </form>
   );
 }

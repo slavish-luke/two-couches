@@ -61,12 +61,17 @@ const en = {
     meOnly: "Only you",
     partner: (name: string) => `Only ${name}`,
     free: "Free to watch",
-  } satisfies Record<Exclude<Verdict, "none"> | "meOnly", unknown>,
+    /** The words on the starburst for what you can both watch, and on the small one on poster cards. */
+    stamp: "Both of us!",
+    stampShort: "Both!",
+    /** The services that make it "both": one name when it's the same service, else yours then theirs. */
+    proof: (services: string[]) => `On ${services.join(" and ")}`,
+  } satisfies Record<Exclude<Verdict, "none"> | "meOnly" | "stamp" | "stampShort" | "proof", unknown>,
   stars: (who: string, rating: number) => `${who}: ${rating} out of 5 stars`,
-  add: { add: "+ Add", adding: "Adding…", onList: "✓ On our list" },
+  add: { add: "Add", adding: "Adding…", onList: "On our list" },
   dismiss: {
     notInterested: "Not interested",
-    dismissed: "✓ Not interested",
+    dismissed: "Not interested",
     saving: "Saving…",
     undo: "Tap to see it in suggestions again",
     failed: "Couldn't save that. Try again.",
@@ -76,6 +81,7 @@ const en = {
   notFound: {
     heading: "Nothing here",
     body: "That page or title doesn't exist. Try searching for it instead.",
+    home: "Back to our list",
   },
 };
 
@@ -134,12 +140,15 @@ const tr: typeof en = {
     meOnly: "Sadece sen",
     partner: (name: string) => `Sadece ${name}`,
     free: "Ücretsiz izlenebilir",
+    stamp: "İkimiz de!",
+    stampShort: "İkimiz!",
+    proof: (services: string[]) => `Platform: ${services.join(" ve ")}`,
   },
   stars: (who: string, rating: number) => `${who}: 5 üzerinden ${rating} yıldız`,
-  add: { add: "+ Ekle", adding: "Ekleniyor…", onList: "✓ Listemizde" },
+  add: { add: "Ekle", adding: "Ekleniyor…", onList: "Listemizde" },
   dismiss: {
     notInterested: "İlgilenmiyoruz",
-    dismissed: "✓ İlgilenmiyoruz",
+    dismissed: "İlgilenmiyoruz",
     saving: "Kaydediliyor…",
     undo: "Önerilerde yeniden görmek için dokun",
     failed: "Kaydedilemedi. Tekrar dene.",
@@ -149,6 +158,7 @@ const tr: typeof en = {
   notFound: {
     heading: "Burada bir şey yok",
     body: "Bu sayfa ya da yapım bulunamadı. Aramayı dene.",
+    home: "Listemize dön",
   },
 };
 

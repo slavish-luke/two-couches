@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { Couches } from "@/components/couch";
 import { CountryChip } from "@/components/country-chip";
+import { ArrowIcon, BackIcon } from "@/components/icons";
 import { FilterSelect } from "@/components/filter-select";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
@@ -47,7 +49,7 @@ export const generateMetadata = localisedTitle("browse");
 
 export default function BrowsePage({ searchParams }: PageProps<"/browse">) {
   return (
-    <Suspense fallback={<PageLoading variant="posters" />}>
+    <Suspense fallback={<PageLoading variant="posters" wide />}>
       <Browse searchParams={searchParams} />
     </Suspense>
   );
@@ -95,7 +97,7 @@ function positiveInt(value: unknown) {
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
-const ROW_LENGTH = 10;
+const ROW_LENGTH = 6;
 
 /** A service either of us pays for, and whose it is. */
 type ServiceChip = Service & { whose: "both" | "me" | "partner" };
@@ -202,38 +204,38 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
   }
 
   const card: CardContext = { language, availability, me, them, partnerName, onList };
-  const pill = (active: boolean) =>
-    `inline-flex items-center gap-1.5 rounded-full border px-3 py-1 transition ${
-      active ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"
-    }`;
   const whose = { both: t.browse.whose.both, me: t.browse.whose.me, partner: t.browse.whose.partner(partnerName) };
-  const dot = { both: "text-both", me: "text-me", partner: "text-partner" };
+  const dot = { both: "bg-stamp", me: "bg-me", partner: "bg-partner" };
   const selectQuery = filtersQuery({ ...filters, page: 1 });
 
   let empty: ReactNode = null;
   if (failed) {
-    empty = <p className="text-danger">{t.browse.failed}</p>;
+    empty = (
+      <p role="alert" className="font-semibold text-danger">
+        {t.browse.failed}
+      </p>
+    );
   } else if (filters.both && me.services.length === 0) {
     empty = <SettingsPrompt text={t.browse.noServices} link={t.browse.goToSettings} />;
   } else if (filters.both && them && them.services.length === 0) {
-    empty = <p className="text-sm text-muted">{t.browse.partnerNoServices(partnerName)}</p>;
+    empty = <p className="max-w-md font-medium text-muted">{t.browse.partnerNoServices(partnerName)}</p>;
   } else if (shown.length === 0 && filters.both && checked.length > 0 && filters.page < totalPages) {
     empty = (
       <>
-        <p className="font-semibold">{t.browse.noneForBoth}</p>
-        <Link href={filtersHref(filters, { page: filters.page + 1 })} className="text-sm font-semibold text-partner">
-          {t.browse.lookFurther}
+        <p className="display-ink text-2xl">{t.browse.noneForBoth}</p>
+        <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn mt-2">
+          {t.browse.lookFurther} <ArrowIcon />
         </Link>
       </>
     );
   } else if (shown.length === 0) {
     empty = (
       <>
-        <p className="font-semibold">{t.browse.noMatches}</p>
+        <p className="display-ink text-2xl">{t.browse.noMatches}</p>
         {(isFiltered || filters.both) && (
           <Link
             href={filtersHref(filters, { service: null, genre: null, decade: null, rating: null, sort: "popular", both: them ? false : null })}
-            className="text-sm font-semibold text-partner"
+            className="btn-quiet mt-2 text-sm"
           >
             {t.browse.clearFilters}
           </Link>
@@ -243,173 +245,184 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
   }
 
   return (
-    <div className="grid gap-8">
-      <div className="grid gap-4">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t.browse.heading}</h1>
-        <nav aria-label={t.browse.typesLabel} className="flex gap-1 border-b border-line">
+    <div data-wide className="grid gap-8">
+      <h1 className="sr-only">{t.browse.heading}</h1>
+      <nav aria-label={t.browse.typesLabel}>
+        <ul className="-mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:none]">
           {(["movie", "tv"] as const).map((mediaType) => (
-            <Link
-              key={mediaType}
-              // Genre IDs differ between films and series, so switching drops the genre.
-              href={filtersHref(filters, { type: mediaType, genre: null })}
-              aria-current={type === mediaType ? "page" : undefined}
-              className={`-mb-px border-b-2 px-3 py-2 font-semibold ${
-                type === mediaType ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
-              }`}
-            >
-              {t.common.mediaTypePlural[mediaType]}
-            </Link>
+            <li key={mediaType} className="shrink-0">
+              <Link
+                // Genre IDs differ between films and series, so switching drops the genre.
+                href={filtersHref(filters, { type: mediaType, genre: null })}
+                aria-current={type === mediaType ? "page" : undefined}
+                className="tab block px-5 pb-2 pt-3.5 text-[2rem] sm:text-[2.6rem]"
+              >
+                {t.common.mediaTypePlural[mediaType]}
+              </Link>
+            </li>
           ))}
-        </nav>
-      </div>
+        </ul>
+      </nav>
       {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
 
-      {showRows && profile.couple_id && (
-        <Suspense fallback={<ForYouLoading />}>
-          <ForYouRow
-            coupleId={profile.couple_id}
-            type={type}
-            locales={partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale]}
-            countries={them ? [me.country, them.country] : [me.country]}
-            today={localDate(profile.time_zone)}
-            card={{ language, me, them, partnerName, onList }}
-          />
-        </Suspense>
-      )}
-
-      {rows.map((row) => (
-        <section key={row.key} className="grid gap-3">
-          <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
-            {row.heading}
-            {row.note && <span className="font-sans text-sm font-normal text-muted">{row.note}</span>}
-            {row.country && (
-              <CountryChip code={row.country} name={countryName(row.country, language)} isMe={row.isMe} />
-            )}
-          </h2>
-          <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">
-            {row.items.map((r) => (
-              <TitleCard key={titleKey(r)} result={r} context={card} className="w-32 shrink-0 snap-start" />
-            ))}
-          </ul>
-        </section>
-      ))}
-
-      <section className="grid gap-4">
-        {rows.length > 0 && (
-          <h2 className="font-display text-lg font-semibold">{t.browse.streamingNow}</h2>
+      {/* The catalogue leads; For you and the strands run down a rail beside it on wide screens and come first on phones. */}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-[auto_1fr] lg:gap-x-10 xl:grid-cols-[minmax(0,1fr)_27rem]">
+        {showRows && profile.couple_id && (
+          <div className="lg:col-start-2 lg:row-start-1">
+            <Suspense fallback={<ForYouLoading />}>
+              <ForYouRow
+                coupleId={profile.couple_id}
+                type={type}
+                locales={partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale]}
+                countries={them ? [me.country, them.country] : [me.country]}
+                today={localDate(profile.time_zone)}
+                card={{ language, me, them, partnerName, onList }}
+              />
+            </Suspense>
+          </div>
         )}
-        <div className="flex flex-wrap gap-2 text-sm font-semibold">
-          {filters.both !== null && (
-            <Link href={filtersHref(filters, { both: !filters.both })} className={pill(filters.both)} aria-pressed={filters.both}>
-              <span aria-hidden className={filters.both ? "" : "text-both"}>
-                ●
-              </span>
-              {t.browse.bothToggle}
-            </Link>
+        <section className="grid content-start gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          {rows.length > 0 && <h2 className="display text-[clamp(2rem,4vw,2.8rem)]">{t.browse.streamingNow}</h2>}
+          <div className="flex flex-wrap gap-2">
+            {filters.both !== null && (
+              <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-pressed={filters.both}>
+                <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
+                {t.browse.bothToggle}
+              </Link>
+            )}
+            {chips.length > 0 && filters.both !== null && (
+              <span aria-hidden className="mx-1 w-[3px] self-stretch rounded-full bg-outline/25" />
+            )}
+            {chips.map((s) => (
+              <Link
+                key={s.provider_id}
+                href={filtersHref(filters, { service: filters.service === s.provider_id ? null : s.provider_id })}
+                className="chip py-0.5 pl-1"
+                aria-pressed={filters.service === s.provider_id}
+                title={whose[s.whose]}
+              >
+                {s.logo_path ? (
+                  <Image
+                    src={tmdbImage(s.logo_path, "w92")}
+                    alt=""
+                    width={24}
+                    height={24}
+                    unoptimized
+                    className="size-6 rounded-full border-2 border-outline"
+                  />
+                ) : (
+                  <span className="w-1" />
+                )}
+                {s.name}
+                <span className="sr-only">({whose[s.whose]})</span>
+                <span aria-hidden className={`size-3 shrink-0 rounded-full border-2 border-outline ${dot[s.whose]}`} />
+              </Link>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:max-w-4xl">
+            <FilterSelect
+              path="/browse"
+              query={selectQuery}
+              name="genre"
+              label={t.browse.genre}
+              value={filters.genre ? String(filters.genre) : ""}
+              options={[{ value: "", label: t.browse.anyGenre }, ...genres.map((g) => ({ value: String(g.id), label: g.name }))]}
+            />
+            <FilterSelect
+              path="/browse"
+              query={selectQuery}
+              name="decade"
+              label={t.browse.decade}
+              value={filters.decade ?? ""}
+              options={[{ value: "", label: t.browse.anyDecade }, ...DECADES.map((d) => ({ value: d, label: t.browse.decades[d] }))]}
+            />
+            <FilterSelect
+              path="/browse"
+              query={selectQuery}
+              name="rating"
+              label={t.browse.rating}
+              value={filters.rating ?? ""}
+              options={[
+                { value: "", label: t.browse.anyRating },
+                ...MIN_RATINGS.map((r) => ({ value: r, label: t.browse.minRating(r) })),
+              ]}
+            />
+            <FilterSelect
+              path="/browse"
+              query={selectQuery}
+              name="sort"
+              label={t.browse.sort}
+              value={filters.sort === "popular" ? "" : filters.sort}
+              options={SORTS.map((s) => ({ value: s === "popular" ? "" : s, label: t.browse.sorts[s] }))}
+            />
+          </div>
+
+          <p className="max-w-[65ch] text-sm font-medium text-muted">
+            {filters.both
+              ? t.browse.scope.both
+              : chip || me.services.length > 0
+                ? t.browse.scope.mine
+                : t.browse.scope.everything}
+            {filters.both && !empty && ` ${t.browse.bothChecked(shown.length, checked.length)}`}
+          </p>
+
+          {empty ? (
+            <div className="card grid justify-items-center gap-2 px-6 py-12 text-center">
+              <Couches size={56} className="mb-2" />
+              {empty}
+            </div>
+          ) : (
+            <ul className="grid grid-cols-2 gap-x-5 gap-y-8 pt-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+              {shown.map((r, i) => (
+                <TitleCard key={titleKey(r)} result={r} context={card} index={i} />
+              ))}
+            </ul>
           )}
-          {chips.map((s) => (
-            <Link
-              key={s.provider_id}
-              href={filtersHref(filters, { service: filters.service === s.provider_id ? null : s.provider_id })}
-              className={pill(filters.service === s.provider_id)}
-              aria-pressed={filters.service === s.provider_id}
-              title={whose[s.whose]}
-            >
-              {s.logo_path ? (
-                <Image src={tmdbImage(s.logo_path, "w92")} alt="" width={18} height={18} unoptimized className="rounded" />
+
+          {!failed && totalPages > 1 && (
+            <nav aria-label={t.browse.pagesLabel} className="mt-2 flex items-center justify-between gap-3">
+              {filters.page > 1 ? (
+                <Link href={filtersHref(filters, { page: filters.page - 1 })} className="btn-quiet">
+                  <BackIcon /> {t.browse.previous}
+                </Link>
               ) : (
-                <span aria-hidden className={dot[s.whose]}>
-                  ●
-                </span>
+                <span />
               )}
-              {s.name}
-              <span className="sr-only">({whose[s.whose]})</span>
-              {s.logo_path && (
-                <span aria-hidden className={`text-[0.6rem] ${filters.service === s.provider_id ? "" : dot[s.whose]}`}>
-                  ●
-                </span>
+              <span className="rounded-full border-[2.5px] border-outline bg-surface px-3 py-0.5 text-sm font-bold">
+                {t.browse.page(filters.page)}
+              </span>
+              {filters.page < totalPages ? (
+                <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn">
+                  {t.browse.more} <ArrowIcon />
+                </Link>
+              ) : (
+                <span />
               )}
-            </Link>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <FilterSelect
-            path="/browse"
-            query={selectQuery}
-            name="genre"
-            label={t.browse.genre}
-            value={filters.genre ? String(filters.genre) : ""}
-            options={[{ value: "", label: t.browse.anyGenre }, ...genres.map((g) => ({ value: String(g.id), label: g.name }))]}
-          />
-          <FilterSelect
-            path="/browse"
-            query={selectQuery}
-            name="decade"
-            label={t.browse.decade}
-            value={filters.decade ?? ""}
-            options={[{ value: "", label: t.browse.anyDecade }, ...DECADES.map((d) => ({ value: d, label: t.browse.decades[d] }))]}
-          />
-          <FilterSelect
-            path="/browse"
-            query={selectQuery}
-            name="rating"
-            label={t.browse.rating}
-            value={filters.rating ?? ""}
-            options={[
-              { value: "", label: t.browse.anyRating },
-              ...MIN_RATINGS.map((r) => ({ value: r, label: t.browse.minRating(r) })),
-            ]}
-          />
-          <FilterSelect
-            path="/browse"
-            query={selectQuery}
-            name="sort"
-            label={t.browse.sort}
-            value={filters.sort === "popular" ? "" : filters.sort}
-            options={SORTS.map((s) => ({ value: s === "popular" ? "" : s, label: t.browse.sorts[s] }))}
-          />
-        </div>
-
-        <p className="text-sm text-muted">
-          {filters.both
-            ? t.browse.scope.both
-            : chip || me.services.length > 0
-              ? t.browse.scope.mine
-              : t.browse.scope.everything}
-          {filters.both && !empty && ` ${t.browse.bothChecked(shown.length, checked.length)}`}
-        </p>
-
-        {empty ? (
-          <div className="card grid justify-items-center gap-1 py-12 text-center">{empty}</div>
-        ) : (
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4">
-            {shown.map((r) => (
-              <TitleCard key={titleKey(r)} result={r} context={card} />
+            </nav>
+          )}
+        </section>
+        {rows.length > 0 && (
+          <div className="grid content-start gap-8 lg:col-start-2 lg:row-start-2">
+            {rows.map((row) => (
+              <section key={row.key} className="card grid gap-4 pb-6">
+                <h2 className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <span className="display-ink text-2xl">{row.heading}</span>
+                  {row.country && (
+                    <CountryChip code={row.country} name={countryName(row.country, language)} isMe={row.isMe} />
+                  )}
+                  {row.note && <span className="text-sm font-medium text-muted">{row.note}</span>}
+                </h2>
+                <ul className="grid grid-cols-3 gap-x-3 gap-y-6 pt-1 sm:grid-cols-6 lg:grid-cols-3">
+                  {row.items.map((r, i) => (
+                    <TitleCard key={titleKey(r)} result={r} context={card} index={i} className="text-sm" />
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
-
-        {!failed && totalPages > 1 && (
-          <nav aria-label={t.browse.pagesLabel} className="flex items-center justify-between gap-3 text-sm font-semibold">
-            {filters.page > 1 ? (
-              <Link href={filtersHref(filters, { page: filters.page - 1 })} className="btn-quiet">
-                {t.browse.previous}
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span className="text-muted">{t.browse.page(filters.page)}</span>
-            {filters.page < totalPages ? (
-              <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn-quiet">
-                {t.browse.more}
-              </Link>
-            ) : (
-              <span />
-            )}
-          </nav>
-        )}
-      </section>
+      </div>
     </div>
   );
 }
@@ -417,9 +430,9 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
 function SettingsPrompt({ text, link }: { text: string; link: string }) {
   return (
     <>
-      <p className="text-sm text-muted">{text}</p>
-      <Link href="/settings" className="text-sm font-semibold text-partner">
-        {link}
+      <p className="max-w-md font-medium text-muted">{text}</p>
+      <Link href="/settings" className="btn-quiet mt-2 text-sm">
+        {link} <ArrowIcon />
       </Link>
     </>
   );

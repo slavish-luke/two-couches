@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { PageLoading } from "@/components/page-loading";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { allTimeZones, countryOptions, formatVisitDate, isCountry, visitDateRange } from "@/lib/places";
@@ -23,6 +23,19 @@ export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
   );
 }
 
+/** A paper panel with a cartoon heading and an optional intro. */
+function Panel({ heading, intro, children }: { heading: string; intro?: string; children: ReactNode }) {
+  return (
+    <section className="card grid content-start gap-4">
+      <div className="grid gap-1.5">
+        <h3 className="display-ink text-2xl">{heading}</h3>
+        {intro && <p className="max-w-[65ch] text-muted">{intro}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchParams">) {
   const [profile, { language, t }, { welcome }] = await Promise.all([requireProfile(), getI18n(), searchParams]);
   // The form edits home settings: a visit (same couch mode) has its own section below.
@@ -30,12 +43,12 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
   const countries = countryOptions(language);
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-2">
-        <h1 className="font-display text-3xl font-bold tracking-tight">
+    <div className="grid gap-7">
+      <div className="grid gap-3">
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">
           {welcome ? t.account.settings.welcome : t.account.settings.heading}
         </h1>
-        <p className="text-muted">
+        <p className="max-w-[65ch] font-medium text-muted">
           {welcome ? t.account.settings.welcomeIntro : t.account.settings.intro}
         </p>
       </div>
@@ -49,19 +62,10 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
       />
       {profile.couple_id && profile.home_country && (
         <>
-          <Suspense
-            fallback={
-              <div className="border-t border-line pt-6">
-                <PageLoading />
-              </div>
-            }
-          >
-            <Advisor />
-          </Suspense>
-          <section className="grid gap-3 border-t border-line pt-6">
-            <div className="grid gap-1">
-              <h2 className="font-display text-2xl font-bold tracking-tight">{t.places.visit.heading}</h2>
-              <p className="text-muted">{t.places.visit.intro}</p>
+          <section className="card grid gap-4">
+            <div className="grid gap-1.5">
+              <h2 className="display-ink text-2xl">{t.places.visit.heading}</h2>
+              <p className="max-w-[65ch] text-muted">{t.places.visit.intro}</p>
             </div>
             <VisitForm
               visit={profile.visit}
@@ -72,37 +76,36 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
               language={language}
             />
           </section>
+          <Suspense fallback={<div aria-busy className="card h-48 motion-safe:animate-pulse" />}>
+            <Advisor />
+          </Suspense>
         </>
       )}
-      <section className="grid gap-6 border-t border-line pt-6">
-        <div className="grid gap-1">
-          <h2 className="font-display text-2xl font-bold tracking-tight">{t.account.device.heading}</h2>
-          <p className="text-muted">{t.account.device.intro}</p>
-        </div>
+
+      <section className="mt-4 grid gap-5">
         <div className="grid gap-2">
-          <h3 className="font-display text-lg font-semibold">{t.account.appearance.heading}</h3>
+          <h2 className="display text-[2rem]">{t.account.device.heading}</h2>
+          <p className="font-medium text-muted">{t.account.device.intro}</p>
+        </div>
+        <Panel heading={t.account.appearance.heading}>
           <AppearanceSettings language={language} />
-        </div>
-        <div className="grid gap-2">
-          <h3 className="font-display text-lg font-semibold">{t.account.dataSaver.heading}</h3>
-          <p className="text-muted">{t.account.dataSaver.intro}</p>
-          <DataSaverSettings language={language} />
-        </div>
-        <div className="grid gap-2">
-          <h3 className="font-display text-lg font-semibold">{t.account.install.heading}</h3>
-          <p className="text-muted">{t.account.install.intro}</p>
-          <InstallSettings language={language} />
-        </div>
+        </Panel>
         {profile.couple_id && (
-          <div className="grid gap-2">
-            <h3 className="font-display text-lg font-semibold">{t.account.notifications.heading}</h3>
-            <p className="text-muted">{t.account.notifications.intro}</p>
+          <Panel heading={t.account.notifications.heading} intro={t.account.notifications.intro}>
             <NotificationSettings vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null} language={language} />
-          </div>
+          </Panel>
         )}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Panel heading={t.account.install.heading} intro={t.account.install.intro}>
+            <InstallSettings language={language} />
+          </Panel>
+          <Panel heading={t.account.dataSaver.heading} intro={t.account.dataSaver.intro}>
+            <DataSaverSettings language={language} />
+          </Panel>
+        </div>
       </section>
 
-      <div className="border-t border-line pt-6">
+      <div className="mt-2 flex justify-end">
         <SignOutButton language={language} />
       </div>
     </div>

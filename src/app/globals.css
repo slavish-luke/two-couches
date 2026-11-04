@@ -1,57 +1,81 @@
 @import "tailwindcss";
 
-/* Ochre marks you, teal marks your partner; "both" green is used only where the two of you overlap. */
+/*
+ * Looks: <html data-skin> sets a skin's fonts, shapes and motion; <html data-palette> sets its colours
+ * (src/lib/theme.ts, chosen per device in Settings). Components only use the tokens, so a new skin or
+ * palette is a new block here.
+ *
+ * Colour roles: --me and --partner fill each person's marks (couch, dot, name tag); --stamp is the loud
+ * "both" fill, only for what you can both watch; --both is that colour made safe for text; --accent fills
+ * the one spotlight panel per screen and selected controls; --pop is the bright button colour.
+ */
+
+/* Saturday Morning: a Saturday-morning cartoon. Thick ink outlines, hard offset shadows, springy motion. */
+[data-skin="saturday"] {
+  --font-skin-display: var(--font-luckiest), sans-serif;
+  --font-skin-body: var(--font-fredoka), sans-serif;
+  --outline-width: 3px;
+  --skin-radius-panel: 22px;
+  --skin-radius-control: 14px;
+  --skin-radius-poster: 10px;
+  /* Offset of the hard shadow under panels, and under small controls. */
+  --lift: 6px;
+  --lift-sm: 3px;
+}
+
+/* Sunburst: sunshine-yellow rays, cream paper, grape, and a bubblegum starburst for "both". */
+[data-palette="sunburst"] {
+  --p-bg: #ffd23f;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --ray: #ffc61a;
+  --outline: #1d1a2b;
+  --me: #ff8a65;
+  --me-soft: #ffdccf;
+  --partner: #5cc8ff;
+  --partner-soft: #d4f0ff;
+  --stamp: #ff2e93;
+  --on-stamp: #ffffff;
+  --both: #b0005f;
+  --both-soft: #ffd6ea;
+  --accent: #6a4cf5;
+  --on-accent: #ffffff;
+  --accent-soft: #e6e0ff;
+  --accent-muted: #e2dbff;
+  --pop: #ffd23f;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  color-scheme: light;
+}
+
+/* Text tokens follow the surface they sit on: the page and paper share them, the spotlight swaps them. */
+:root,
+.card,
+.paper,
+.field,
+.chip,
+.btn,
+.btn-quiet {
+  --ink: var(--p-ink);
+  --muted: var(--p-muted);
+  --line: var(--p-line);
+  --focus: var(--accent);
+}
+
 :root {
-  --bg: #f5f7f8;
-  --surface: #ffffff;
-  --ink: #17212b;
-  --muted: #586674;
-  --line: #dce2e7;
-  --me: #b45f1e;
-  --me-soft: #f6e7da;
-  --partner: #157f86;
-  --partner-soft: #ddeff0;
-  --both: #2e7a4c;
-  --both-soft: #def0e4;
-  --danger: #b3261e;
-  --danger-soft: #fbe4e2;
+  --bg: var(--p-bg);
+  --surface: var(--p-surface);
 }
 
-/* Dark follows the device unless Settings picked a theme for this device (data-theme, set before paint). */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f1418;
-    --surface: #161d23;
-    --ink: #e5eaee;
-    --muted: #98a5b1;
-    --line: #28333c;
-    --me: #e59a5e;
-    --me-soft: #3a2718;
-    --partner: #5cc1c6;
-    --partner-soft: #15343a;
-    --both: #72c994;
-    --both-soft: #183526;
-    --danger: #f2b8b5;
-    --danger-soft: #3b1715;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #0f1418;
-  --surface: #161d23;
-  --ink: #e5eaee;
-  --muted: #98a5b1;
-  --line: #28333c;
-  --me: #e59a5e;
-  --me-soft: #3a2718;
-  --partner: #5cc1c6;
-  --partner-soft: #15343a;
-  --both: #72c994;
-  --both-soft: #183526;
-  --danger: #f2b8b5;
-  --danger-soft: #3b1715;
-  color-scheme: dark;
+/* The one spotlight panel per screen (Home: the next watch night). */
+.spotlight {
+  --ink: var(--on-accent);
+  --muted: var(--accent-muted);
+  --line: rgb(255 255 255 / 0.35);
+  --both: #ffc2e0;
+  --focus: var(--pop);
 }
 
 @theme inline {
@@ -60,41 +84,395 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-outline: var(--outline);
   --color-me: var(--me);
   --color-me-soft: var(--me-soft);
   --color-partner: var(--partner);
   --color-partner-soft: var(--partner-soft);
   --color-both: var(--both);
   --color-both-soft: var(--both-soft);
+  --color-stamp: var(--stamp);
+  --color-on-stamp: var(--on-stamp);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-pop: var(--pop);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-body);
-  --font-display: var(--font-display);
+  --font-sans: var(--font-skin-body);
+  --font-display: var(--font-skin-display);
+  --radius-panel: var(--skin-radius-panel);
+  --radius-control: var(--skin-radius-control);
+  --radius-poster: var(--skin-radius-poster);
+  /* The one motion clock: everything that moves overshoots once and settles. */
+  --ease-spring: cubic-bezier(0.2, 1.4, 0.4, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body {
-  background: var(--bg);
-  color: var(--ink);
+/*
+ * Big cartoon lettering: cream letters with an ink outline and a hard ink shadow, for page titles and
+ * section heads on the page ground. `display-ink` is the same face in plain ink, for heads on paper.
+ */
+@utility display {
+  font-family: var(--font-skin-display);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: var(--p-surface);
+  -webkit-text-stroke: max(2px, 0.05em) var(--outline);
+  paint-order: stroke fill;
+  text-shadow: 0.07em 0.07em 0 var(--outline);
+}
+
+@utility display-ink {
+  font-family: var(--font-skin-display);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+/* An ink outline and a hard shadow: the skin's panel edge. */
+@utility outlined {
+  border: var(--outline-width) solid var(--outline);
+  box-shadow: var(--lift) var(--lift) 0 var(--outline);
+}
+
+@utility outlined-sm {
+  border: calc(var(--outline-width) - 0.5px) solid var(--outline);
+  box-shadow: var(--lift-sm) var(--lift-sm) 0 var(--outline);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    caret-color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    isolation: isolate;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: var(--stamp);
+    color: var(--on-stamp);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 2px;
+  }
+
+  html {
+    scrollbar-color: var(--outline) transparent;
+  }
+}
+
+/* Saturday Morning's sunburst: rays fanning down from above the top of the screen. */
+[data-skin="saturday"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-conic-gradient(from 0deg at 50% -10%, var(--ray) 0 6deg, transparent 6deg 12deg);
 }
 
 /* Room below the page for the phone tab bar (AppNav), which only signed-in pages have. */
-@media (width < 40rem) {
+@media (width < 48rem) {
   body:has([data-tab-bar]) {
-    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
   }
 }
 
+/* The layout's <main> is wide; pages are a reading column unless their root says data-wide. */
+[data-page] > :not([data-wide]) {
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
 @layer components {
-  .field {
-    @apply w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-partner focus:ring-2 focus:ring-partner/30;
+  .card {
+    @apply outlined rounded-panel bg-surface p-5 text-ink;
   }
+  .paper {
+    @apply bg-surface text-ink;
+  }
+  .spotlight {
+    @apply outlined rounded-panel bg-accent text-ink;
+  }
+  .field {
+    @apply w-full rounded-control border-[3px] border-outline bg-surface px-3.5 py-2 text-ink outline-none transition placeholder:text-muted focus:shadow-[4px_4px_0_var(--accent)];
+  }
+  /* The bright button: squashes when pressed. */
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg bg-ink px-4 py-2 font-semibold text-bg transition hover:opacity-90 disabled:opacity-50;
+    @apply outlined-sm inline-flex items-center justify-center gap-2 rounded-control bg-pop px-4 pt-2.5 pb-2 text-[1.05rem] leading-none tracking-[0.04em] text-ink transition duration-150 ease-(--ease-spring) hover:-translate-x-0.5 hover:-translate-y-0.5 hover:-rotate-1 hover:shadow-[5px_5px_0_var(--outline)] active:translate-x-[3px] active:translate-y-[3px] active:scale-x-[1.03] active:scale-y-[0.95] active:shadow-[0_0_0_var(--outline)] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none;
+    font-family: var(--font-skin-display);
   }
   .btn-quiet {
-    @apply inline-flex items-center justify-center rounded-lg border border-line bg-surface px-4 py-2 font-semibold text-ink transition hover:bg-bg disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-control border-[2.5px] border-outline bg-surface px-3.5 py-1.5 font-semibold text-ink shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] transition duration-150 ease-(--ease-spring) hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_var(--outline)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none;
   }
-  .card {
-    @apply rounded-xl border border-line bg-surface p-5;
+  /* Filter and toggle chips. Selected: aria-pressed, aria-current, aria-checked or a checked input inside. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-outline bg-surface px-3 py-1 text-[15px] font-semibold text-ink transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-2 aria-pressed:bg-accent aria-pressed:text-on-accent aria-pressed:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] aria-[current=page]:bg-accent aria-[current=page]:text-on-accent aria-[current=page]:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] aria-[current=true]:bg-accent aria-[current=true]:text-on-accent aria-[current=true]:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] aria-checked:bg-accent aria-checked:text-on-accent aria-checked:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] has-checked:bg-accent has-checked:text-on-accent has-checked:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)];
+  }
+  /* Big outlined tabs for a page's views (Home's Up next / Watched / Dropped, Films / Series). The current one tips and turns grape. */
+  .tab {
+    @apply display-ink rounded-[16px] border-[3px] border-outline bg-surface/75 px-4 pb-1.5 pt-2.5 text-[1.6rem] transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:bg-surface aria-[current=page]:-rotate-2 aria-[current=page]:bg-accent aria-[current=page]:text-on-accent aria-[current=page]:shadow-[4px_4px_0_var(--outline)] sm:text-[1.9rem];
+  }
+  /* A list entry's categories: little white tags. */
+  .strand {
+    @apply inline-flex items-center rounded-full border-2 border-outline bg-surface px-2 text-[13px] font-semibold leading-snug text-ink;
+  }
+  /* Rows that lean a little, alternately, and wiggle when pointed at. */
+  .tilt-row {
+    --tilt: -0.5deg;
+    rotate: var(--tilt);
+  }
+  .tilt-row:nth-child(2n) {
+    --tilt: 0.6deg;
+  }
+}
+
+/* Cartoon motion. Every move overshoots once and settles. */
+@keyframes pop {
+  0% {
+    scale: 0;
+    rotate: -30deg;
+  }
+  70% {
+    scale: 1.15;
+    rotate: 6deg;
+  }
+  100% {
+    scale: 1;
+    rotate: var(--r, -8deg);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    rotate: var(--tilt, 0deg);
+  }
+  25% {
+    rotate: calc(var(--tilt, 0deg) - 1.5deg);
+  }
+  75% {
+    rotate: calc(var(--tilt, 0deg) + 1.5deg);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-1.5deg);
+  }
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+/* A new pick deals itself onto the table (/pick): in from the right with a spin, overshoot, settle. */
+@keyframes pick-deal {
+  0% {
+    opacity: 0;
+    translate: 48px 10px;
+    rotate: 9deg;
+    scale: 0.88;
+  }
+  55% {
+    opacity: 1;
+    translate: -6px 0;
+    rotate: -2.5deg;
+    scale: 1.03;
+  }
+  80% {
+    translate: 2px 0;
+    rotate: 0.5deg;
+    scale: 0.99;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: var(--tilt, 0deg);
+    scale: 1;
+  }
+}
+
+/* A nav tab the page whooshed past. */
+@keyframes jiggle {
+  40% {
+    transform: translateY(-6px) rotate(-6deg) scale(1.12);
+  }
+}
+
+/* The nav pill stretching as it travels. */
+@keyframes smear {
+  40% {
+    transform: scaleX(1.25) scaleY(0.85);
+  }
+  70% {
+    transform: scaleX(0.96) scaleY(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tilt-row:hover {
+    animation: wiggle 0.4s;
+  }
+  .couch {
+    animation: bob 3.2s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  .couch-partner {
+    animation-delay: 0.6s;
+  }
+  .couch-eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: blink 4.5s infinite;
+  }
+  .couch-partner .couch-eye {
+    animation-delay: 1.7s;
+  }
+  .pick-deal {
+    animation: pick-deal 0.55s var(--ease-spring) both;
+  }
+  .burst {
+    animation: pop 0.6s var(--ease-spring) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+}
+
+/*
+ * Page transitions (src/components/page-transition.tsx). The header and tab bar stay put; the pages and
+ * the flight layer (speed lines, sections passed on the way) are moved by script. Only transform and
+ * opacity animate.
+ */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(site-header),
+::view-transition-group(tab-bar) {
+  animation: none;
+  z-index: 10;
+}
+
+::view-transition-old(site-header),
+::view-transition-old(tab-bar),
+::view-transition-old(flight) {
+  display: none;
+}
+
+::view-transition-new(site-header),
+::view-transition-new(tab-bar),
+::view-transition-new(flight),
+::view-transition-old(.page-out),
+::view-transition-new(.page-in) {
+  animation: none;
+}
+
+/* Stacking: whooshing, the flight layer streaks over both pages; peeling, the old sheet lies on top. */
+::view-transition-group(flight) {
+  z-index: 4;
+  animation: none;
+}
+
+html[data-flight="peel"]::view-transition-group(.page-out) {
+  z-index: 3;
+}
+
+html[data-flight="peel"]::view-transition-group(flight) {
+  z-index: 2;
+}
+
+/* A page that peels away is an opaque sheet of the page's ground, rays lined up with the screen's. */
+html[data-flight="peel"]::view-transition-old(.page-out) {
+  background:
+    repeating-conic-gradient(from 0deg at var(--sheet-x, 50%) var(--sheet-y, -10vh), var(--ray) 0 6deg, transparent 6deg 12deg),
+    var(--bg);
+  box-shadow: -16px 0 28px -12px rgb(29 26 43 / 0.35);
+}
+
+/* A poster moving between the list and its title page. */
+::view-transition-group(.morph) {
+  z-index: 6;
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-spring);
+}
+
+/* The opening animation (src/components/intro.tsx): a cover in the accent colour from the first paint until its script runs. */
+.intro {
+  display: none;
+}
+
+html[data-intro] .intro {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+html[data-intro="playing"] .intro {
+  background: none;
+}
+
+.intro svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.intro-word {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font: 400 clamp(44px, 9vw, 120px) var(--font-skin-display);
+  color: var(--p-surface);
+  -webkit-text-stroke: 5px var(--outline);
+  paint-order: stroke fill;
+  text-shadow: 7px 7px 0 var(--outline);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-intro] .intro {
+    display: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

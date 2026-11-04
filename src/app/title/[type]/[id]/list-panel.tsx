@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import { ReviewSection } from "@/app/after-night/review-box";
 import { addToList, rateListItem, removeFromList, updateListItem, type ListChanges, type ListResult } from "@/app/list/actions";
+import { PlusIcon, StarIcon } from "@/components/icons";
 import { Stars } from "@/components/stars";
+import { NameTag } from "@/components/name-tag";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { cleanCategories, formatDate, LIST_STATUSES, localDate, MAX_CATEGORY_LENGTH, MAX_NOTES_LENGTH } from "@/lib/list-rules";
 import type { ListItem } from "@/lib/list";
@@ -26,6 +28,9 @@ type Props = {
   /** Your review and what you may see of your partner's, when it's on the list. */
   reviews?: Reviews | null;
 };
+
+/** Status radios as chips (`.chip` shows aria-checked as selected). */
+const RADIO_CHIP = "chip disabled:opacity-60";
 
 /** "On our list" on a title page: add it, or change its status, progress, categories, note, ratings and reviews. */
 export function ListPanel(props: Props) {
@@ -52,8 +57,8 @@ function AddToList({ titleRef, t }: { titleRef: TitleRef; t: Messages }) {
   const [note, setNote] = useState("");
 
   return (
-    <section className="card grid gap-3">
-      <h2 className="font-display text-xl font-semibold">{t.title.panel.saveForLater}</h2>
+    <section className="card grid gap-4">
+      <h2 className="display-ink text-2xl">{t.title.panel.saveForLater}</h2>
       <form
         className="grid gap-3 sm:flex"
         onSubmit={(e) => {
@@ -70,10 +75,21 @@ function AddToList({ titleRef, t }: { titleRef: TitleRef; t: Messages }) {
           className="field"
         />
         <button className="btn shrink-0" disabled={pending}>
-          {pending ? t.common.add.adding : t.title.panel.addToList}
+          {pending ? (
+            t.common.add.adding
+          ) : (
+            <>
+              <PlusIcon className="size-4" />
+              {t.title.panel.addToList}
+            </>
+          )}
         </button>
       </form>
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-danger">
+          {error}
+        </p>
+      )}
     </section>
   );
 }
@@ -86,10 +102,10 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
   const showRatings = item.status === "watched" || Object.keys(item.ratings).length > 0;
 
   return (
-    <section className="card grid gap-5" aria-busy={pending}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-xl font-semibold">{t.title.panel.onOurList}</h2>
-        <p className="text-sm text-muted">
+    <section className="card grid gap-6 sm:p-6" aria-busy={pending}>
+      <div className="grid gap-1">
+        <h2 className="display-ink text-[2rem]">{t.title.panel.onOurList}</h2>
+        <p className="text-sm font-semibold text-muted">
           {item.added_by === me.id
             ? t.title.panel.addedByYou(added)
             : item.added_by === partner?.id
@@ -106,9 +122,7 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
             aria-checked={item.status === status}
             disabled={pending}
             onClick={() => item.status !== status && update({ status })}
-            className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
-              item.status === status ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"
-            }`}
+            className={RADIO_CHIP}
           >
             {t.common.statuses[status]}
           </button>
@@ -121,7 +135,7 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
 
       {item.status === "watched" && (
         <label className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-semibold">{t.title.panel.watchedOn}</span>
+          <span className="font-bold">{t.title.panel.watchedOn}</span>
           <input
             key={item.watched_on}
             type="date"
@@ -135,8 +149,8 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
 
       {showRatings && (
         <div className="grid gap-2">
-          <h3 className="text-sm font-semibold">{t.title.panel.ratings}</h3>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <h3 className="text-lg font-bold">{t.title.panel.ratings}</h3>
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             <StarPicker
               rating={item.ratings[me.id] ?? null}
               disabled={pending}
@@ -144,12 +158,14 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
               t={t}
             />
             {partner && (
-              <span className="text-sm">
-                {partner.name}:{" "}
+              <span className="flex flex-wrap items-center gap-2">
+                <NameTag name={partner.name} who="partner" />
                 {item.ratings[partner.id] ? (
-                  <Stars rating={item.ratings[partner.id]} who={partner.name} language={language} />
+                  <span className="text-2xl leading-none">
+                    <Stars rating={item.ratings[partner.id]} who={partner.name} language={language} />
+                  </span>
                 ) : (
-                  <span className="text-muted">{t.title.panel.notRated}</span>
+                  <span className="text-sm font-semibold text-muted">{t.title.panel.notRated}</span>
                 )}
               </span>
             )}
@@ -163,8 +179,14 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
         <ReviewSection itemId={item.id} reviews={props.reviews} partnerName={partner?.name ?? null} language={language} />
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
-      <RemoveButton pending={pending} onRemove={() => run(() => removeFromList(item.id))} t={t} />
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-danger">
+          {error}
+        </p>
+      )}
+      <div className="border-t-2 border-outline/15 pt-4">
+        <RemoveButton pending={pending} onRemove={() => run(() => removeFromList(item.id))} t={t} />
+      </div>
     </section>
   );
 }
@@ -181,7 +203,7 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
   if (editing) {
     return (
       <form
-        className="flex flex-wrap items-end gap-3"
+        className="paper flex flex-wrap items-end gap-3 rounded-control border-[3px] border-outline p-3"
         onSubmit={(e) => {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
@@ -191,7 +213,7 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
         }}
       >
         <label className="grid gap-1">
-          <span className="text-sm font-semibold">{t.title.panel.season}</span>
+          <span className="text-sm font-bold">{t.title.panel.season}</span>
           <input
             name="season"
             type="number"
@@ -202,7 +224,7 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
           />
         </label>
         <label className="grid gap-1">
-          <span className="text-sm font-semibold">{t.title.panel.episode}</span>
+          <span className="text-sm font-bold">{t.title.panel.episode}</span>
           <input name="episode" type="number" min={1} defaultValue={progress?.episode ?? 1} className="field w-24" />
         </label>
         <button className="btn" disabled={pending}>
@@ -216,61 +238,82 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1 text-sm">
-        <span className="font-semibold">{t.title.panel.progress}</span>
-        {progress
-          ? t.title.panel.watchedUpTo(t.common.progress(progress.season, progress.episode))
-          : t.title.panel.notStarted}
-      </span>
-      <button
-        className="btn-quiet px-3 py-1 text-sm"
-        disabled={pending}
-        onClick={() =>
-          update({ ...started, progress: progress ? { ...progress, episode: progress.episode + 1 } : { season: 1, episode: 1 } })
-        }
-      >
-        {progress ? t.title.panel.watchedEpisode(progress.episode + 1) : t.title.panel.watchedSeasonStart(1)}
-      </button>
-      {progress && (!seasons || nextSeason <= seasons) && (
+    <div className="grid gap-2">
+      <p>
+        <span className="font-bold">{t.title.panel.progress}</span>
+        <span className="font-medium">
+          {progress
+            ? t.title.panel.watchedUpTo(t.common.progress(progress.season, progress.episode))
+            : t.title.panel.notStarted}
+        </span>
+      </p>
+      <div className="flex flex-wrap items-center gap-2.5">
         <button
-          className="btn-quiet px-3 py-1 text-sm"
+          className="btn-quiet text-sm"
           disabled={pending}
-          onClick={() => update({ ...started, progress: { season: nextSeason, episode: 1 } })}
+          onClick={() =>
+            update({ ...started, progress: progress ? { ...progress, episode: progress.episode + 1 } : { season: 1, episode: 1 } })
+          }
         >
-          {t.title.panel.watchedSeasonStart(nextSeason)}
+          <PlusIcon className="size-3.5" />
+          {progress ? t.title.panel.watchedEpisode(progress.episode + 1) : t.title.panel.watchedSeasonStart(1)}
         </button>
-      )}
-      <button className="text-sm font-semibold text-partner" onClick={() => setEditing(true)}>
-        {t.title.panel.edit}
-      </button>
+        {progress && (!seasons || nextSeason <= seasons) && (
+          <button
+            className="btn-quiet text-sm"
+            disabled={pending}
+            onClick={() => update({ ...started, progress: { season: nextSeason, episode: 1 } })}
+          >
+            {t.title.panel.watchedSeasonStart(nextSeason)}
+          </button>
+        )}
+        <button className="px-1 text-sm font-bold underline underline-offset-4" onClick={() => setEditing(true)}>
+          {t.title.panel.edit}
+        </button>
+      </div>
     </div>
   );
 }
 
-/** Your own 1-5 rating. Choosing your current rating again clears it. */
+/**
+ * Your own 1-5 rating: big cartoon stars that pop in, one after another, when you choose. Choosing your
+ * current rating again clears it.
+ */
 export function StarPicker({ rating, disabled, onRate, t }: { rating: number | null; disabled: boolean; onRate: (rating: number | null) => void; t: Messages }) {
   const [hover, setHover] = useState<number | null>(null);
+  // The stars up to the one just chosen pop; `round` replays it on every choice.
+  const [popped, setPopped] = useState({ upTo: 0, round: 0 });
   const shown = hover ?? rating ?? 0;
 
   return (
-    <span className="flex items-center gap-2 text-sm">
-      {t.common.you}:
+    <span className="flex flex-wrap items-center gap-2">
+      <NameTag name={t.common.you} who="me" />
       <span role="radiogroup" aria-label={t.title.panel.yourRating} className="flex" onMouseLeave={() => setHover(null)}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
+            type="button"
             role="radio"
             aria-checked={rating === n}
             aria-label={t.title.panel.starCount(n)}
             title={rating === n ? t.title.panel.clearRating : undefined}
             disabled={disabled}
             onMouseEnter={() => setHover(n)}
-            // Choosing your current rating again clears it.
-            onClick={() => onRate(rating === n ? null : n)}
-            className={`px-0.5 text-2xl leading-none transition ${n <= shown ? "text-me" : "text-line"}`}
+            onClick={() => {
+              // Choosing your current rating again clears it.
+              const next = rating === n ? null : n;
+              setPopped((p) => ({ upTo: next ?? 0, round: p.round + 1 }));
+              onRate(next);
+            }}
+            className="grid size-11 place-items-center rounded-full transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-6 hover:scale-110 active:scale-90 disabled:opacity-60"
           >
-            ★
+            <span
+              key={n <= popped.upTo ? `${n}-${popped.round}` : n}
+              style={{ "--r": "0deg", animationDelay: `${(n - 1) * 45}ms` } as CSSProperties}
+              className={`grid place-items-center ${n <= popped.upTo ? "motion-safe:animate-[pop_0.45s_cubic-bezier(0.2,1.4,0.4,1)_both]" : ""}`}
+            >
+              <StarIcon filled={n <= shown} className="size-9" />
+            </span>
           </button>
         ))}
       </span>
@@ -288,7 +331,7 @@ function Categories({ item, all, pending, update, t }: { item: ListItem; all: st
 
   return (
     <div className="grid gap-2">
-      <h3 className="text-sm font-semibold">{t.title.panel.categories}</h3>
+      <h3 className="text-lg font-bold">{t.title.panel.categories}</h3>
       <div className="flex flex-wrap items-center gap-2">
         {options.map((name) => {
           const on = item.categories.includes(name);
@@ -298,16 +341,14 @@ function Categories({ item, all, pending, update, t }: { item: ListItem; all: st
               aria-pressed={on}
               disabled={pending}
               onClick={() => save(on ? item.categories.filter((c) => c !== name) : [...item.categories, name])}
-              className={`rounded-full border px-3 py-1 text-sm transition ${
-                on ? "border-partner bg-partner-soft font-semibold text-partner" : "border-line text-muted hover:text-ink"
-              }`}
+              className="chip disabled:opacity-60"
             >
               {name}
             </button>
           );
         })}
         <form
-          className="flex gap-2"
+          className="flex min-w-0 gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             const name = draft.trim();
@@ -322,7 +363,8 @@ function Categories({ item, all, pending, update, t }: { item: ListItem; all: st
             aria-label={t.title.panel.newCategory}
             className="field w-40 py-1 text-sm"
           />
-          <button className="btn-quiet px-3 py-1 text-sm" disabled={pending || !draft.trim()}>
+          <button className="btn-quiet text-sm" disabled={pending || !draft.trim()}>
+            <PlusIcon className="size-3.5" />
             {t.title.panel.addCategory}
           </button>
         </form>
@@ -345,8 +387,8 @@ function Notes({ item, pending, update, t }: { item: ListItem; pending: boolean;
         update({ notes }, () => setDraft(null));
       }}
     >
-      <label className="grid gap-1">
-        <span className="text-sm font-semibold">{t.title.panel.note}</span>
+      <label className="grid gap-2">
+        <span className="text-lg font-bold">{t.title.panel.note}</span>
         <textarea
           value={notes}
           onChange={(e) => setDraft(e.target.value)}
@@ -357,7 +399,7 @@ function Notes({ item, pending, update, t }: { item: ListItem; pending: boolean;
         />
       </label>
       {dirty && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2.5">
           <button className="btn" disabled={pending}>
             {t.title.panel.saveNote}
           </button>
@@ -375,18 +417,18 @@ function RemoveButton({ pending, onRemove, t }: { pending: boolean; onRemove: ()
 
   if (!confirming) {
     return (
-      <button className="justify-self-start text-sm font-semibold text-danger" onClick={() => setConfirming(true)}>
+      <button className="text-sm font-bold text-danger underline underline-offset-4" onClick={() => setConfirming(true)}>
         {t.title.panel.remove}
       </button>
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
-      <span>{t.title.panel.removeConfirm}</span>
-      <button className="font-semibold text-danger" disabled={pending} onClick={onRemove}>
+    <div className="flex flex-wrap items-center gap-3">
+      <span className="font-semibold">{t.title.panel.removeConfirm}</span>
+      <button className="btn-quiet bg-danger-soft text-sm text-danger" disabled={pending} onClick={onRemove}>
         {t.title.panel.removeYes}
       </button>
-      <button className="font-semibold text-muted" onClick={() => setConfirming(false)}>
+      <button className="btn-quiet text-sm" onClick={() => setConfirming(false)}>
         {t.title.panel.removeNo}
       </button>
     </div>

@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { Couches } from "@/components/couch";
 import { PageLoading } from "@/components/page-loading";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { startCouple } from "./actions";
-import { JoinForm } from "./join-form";
+import { CopyCode, JoinForm } from "./join-form";
 
 export const generateMetadata = localisedTitle("couple");
 
@@ -19,27 +20,32 @@ export default function CouplePage() {
 
 async function Couple() {
   const [profile, { language, t }] = await Promise.all([requireProfile(), getI18n()]);
+  const text = t.account.couple;
 
   if (!profile.couple_id) {
     return (
-      <div className="grid gap-6">
-        <div className="grid gap-2">
-          <h1 className="font-display text-3xl font-bold tracking-tight">{t.account.couple.pairUp}</h1>
-          <p className="text-muted">{t.account.couple.pairUpIntro}</p>
+      <div className="grid gap-7">
+        <div className="grid gap-3">
+          <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{text.pairUp}</h1>
+          <p className="max-w-[65ch] font-medium text-muted">{text.pairUpIntro}</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <section className="card grid content-start gap-3">
-            <h2 className="font-display text-lg font-semibold">{t.account.couple.start}</h2>
-            <p className="text-sm text-muted">{t.account.couple.startIntro}</p>
-            <form action={startCouple}>
-              <button className="btn w-full">{t.account.couple.getCode}</button>
-            </form>
-          </section>
-          <section className="card grid content-start gap-3">
-            <h2 className="font-display text-lg font-semibold">{t.account.couple.haveCode}</h2>
-            <JoinForm language={language} />
-          </section>
-        </div>
+        {/* The moment two people join: the screen's one spotlight. */}
+        <section className="spotlight grid gap-6 p-6 sm:p-8">
+          <Couches size={72} className="justify-self-center" />
+          <div className="grid gap-8 sm:grid-cols-2 sm:gap-0">
+            <div className="grid content-start gap-3 sm:pr-8">
+              <h2 className="display text-[2rem] [color:var(--pop)]">{text.start}</h2>
+              <p className="text-muted">{text.startIntro}</p>
+              <form action={startCouple}>
+                <button className="btn">{text.getCode}</button>
+              </form>
+            </div>
+            <div className="grid content-start gap-3 border-t-[3px] border-dashed border-line pt-8 sm:border-t-0 sm:border-l-[3px] sm:pt-0 sm:pl-8">
+              <h2 className="display text-[2rem] [color:var(--pop)]">{text.haveCode}</h2>
+              <JoinForm language={language} />
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
@@ -51,20 +57,26 @@ async function Couple() {
   ]);
   if ((count ?? 0) >= 2 || !couple) redirect("/");
 
-  const code = couple.invite_code;
+  const code = `${couple.invite_code.slice(0, 4)}-${couple.invite_code.slice(4)}`;
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-2">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t.account.couple.invite}</h1>
-        <p className="text-muted">
-          {t.account.couple.inviteIntro.before}
-          <strong className="text-ink">{t.account.couple.pairUp}</strong>
-          {t.account.couple.inviteIntro.after}
+    <div className="grid gap-7">
+      <div className="grid gap-3">
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{text.invite}</h1>
+        <p className="max-w-[65ch] font-medium text-muted">
+          {text.inviteIntro.before}
+          <strong className="font-bold text-ink">{text.pairUp}</strong>
+          {text.inviteIntro.after}
         </p>
       </div>
-      <p className="card select-all text-center font-mono text-4xl font-semibold tracking-[0.25em]">
-        {code.slice(0, 4)}-{code.slice(4)}
-      </p>
+      {/* The moment two people join: the screen's one spotlight. */}
+      <section className="spotlight grid justify-items-center gap-5 px-5 py-8 text-center sm:py-10">
+        <Couches size={72} />
+        <h2 className="text-lg font-bold">{text.inviteCode}</h2>
+        <p className="display -rotate-2 select-all whitespace-nowrap text-[clamp(2.6rem,11vw,5rem)] tracking-[0.08em]">
+          {code}
+        </p>
+        <CopyCode code={code} language={language} />
+      </section>
     </div>
   );
 }

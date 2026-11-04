@@ -1,51 +1,71 @@
 /**
- * Light or dark, chosen per device in Settings and kept in localStorage ("system" removes it). Pure apart
- * from applyTheme(), which only runs in the browser.
+ * How the app looks on this device: a "skin" (Look in Settings: its fonts, shapes, decorations and motion)
+ * and one of that skin's palettes (Colours). Both are kept in localStorage and set on <html> as data-skin
+ * and data-palette before the first paint. Saturday Morning with its Sunburst palette is the standard
+ * look (nothing stored). Pure apart from applyLook(), which only runs in the browser.
  */
 
-export const THEMES = ["system", "light", "dark"] as const;
+/** Each skin and its palettes, the first being the skin's standard one. */
+export const SKINS = {
+  saturday: ["sunburst"],
+} as const satisfies Record<string, readonly string[]>;
 
-export type Theme = (typeof THEMES)[number];
+export type Skin = keyof typeof SKINS;
+export type Palette = (typeof SKINS)[Skin][number];
+export type Look = { skin: Skin; palette: Palette };
 
-const STORAGE_KEY = "theme";
+export const DEFAULT_LOOK: Look = { skin: "saturday", palette: "sunburst" };
 
-/** The page background in each theme, for the browser's toolbar (<meta name="theme-color">). */
-export const THEME_COLORS = { light: "#f5f7f8", dark: "#0f1418" } as const;
+const STORAGE_KEY = "look";
+/** The intro plays once per app launch; this sessionStorage key marks it played (src/components/intro.tsx). */
+export const INTRO_KEY = "intro-played";
 
 /**
- * Runs in <head> before the first paint, so a saved theme never flashes the other one. Also points the
- * theme-color tags at the saved theme once they're parsed. Keep in step with applyTheme().
+ * Each palette's page ground (for the browser toolbar and the manifest) and the colours Settings uses to
+ * draw its swatch.
  */
-export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("${STORAGE_KEY}");if(t!=="light"&&t!=="dark")return;document.documentElement.setAttribute("data-theme",t);document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",t==="dark"?"${THEME_COLORS.dark}":"${THEME_COLORS.light}")})})}catch(e){}})()`;
+export const PALETTE_COLORS = {
+  sunburst: { ground: "#ffd23f", paper: "#fffaf0", ink: "#1d1a2b", accent: "#6a4cf5", both: "#ff2e93", me: "#ff8a65", partner: "#5cc8ff" },
+} as const satisfies Record<Palette, Record<"ground" | "paper" | "ink" | "accent" | "both" | "me" | "partner", string>>;
 
-export function isTheme(value: unknown): value is Theme {
-  return typeof value === "string" && (THEMES as readonly string[]).includes(value);
+const GROUNDS = Object.fromEntries(Object.entries(PALETTE_COLORS).map(([palette, colors]) => [palette, colors.ground]));
+
+function parseLook(value: string | null): Look {
+  const [skin, palette] = (value ?? "").split("/");
+  if (skin && skin in SKINS) {
+    const palettes: readonly string[] = SKINS[skin as Skin];
+    return { skin: skin as Skin, palette: (palettes.includes(palette ?? "") ? palette : palettes[0]) as Palette };
+  }
+  return DEFAULT_LOOK;
 }
 
-export function savedTheme(): Theme {
+/**
+ * Runs in <head> before the first paint, so a saved look never flashes another one, and points the
+ * theme-color tag at its ground. It also asks for the opening animation (data-intro) once per browser
+ * session unless the device asks for reduced motion. Keep in step with parseLook() and applyLook().
+ */
+export const LOOK_SCRIPT = `(function(){try{var d=document.documentElement,s=${JSON.stringify(SKINS)},g=${JSON.stringify(GROUNDS)};localStorage.removeItem("theme");var v=(localStorage.getItem("${STORAGE_KEY}")||"").split("/");if(s[v[0]]){d.setAttribute("data-skin",v[0]);d.setAttribute("data-palette",s[v[0]].indexOf(v[1])>=0?v[1]:s[v[0]][0])}var p=d.getAttribute("data-palette");document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",g[p])})});if(!sessionStorage.getItem("${INTRO_KEY}")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)d.setAttribute("data-intro","")}catch(e){}})()`;
+
+export function savedLook(): Look {
   try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value === "light" || value === "dark" ? value : "system";
+    return parseLook(localStorage.getItem(STORAGE_KEY));
   } catch {
-    return "system";
+    return DEFAULT_LOOK;
   }
 }
 
-/** Switches this device to a theme straight away and remembers it. */
-export function applyTheme(theme: Theme) {
+/** Switches this device to a look straight away and remembers it. */
+export function applyLook(look: Look) {
   const root = document.documentElement;
   try {
-    if (theme === "system") localStorage.removeItem(STORAGE_KEY);
-    else localStorage.setItem(STORAGE_KEY, theme);
+    if (look.skin === DEFAULT_LOOK.skin && look.palette === DEFAULT_LOOK.palette) localStorage.removeItem(STORAGE_KEY);
+    else localStorage.setItem(STORAGE_KEY, `${look.skin}/${look.palette}`);
   } catch {
-    // Private browsing can refuse storage; the theme still applies until the page reloads.
+    // Private browsing can refuse storage; the look still applies until the page reloads.
   }
-  if (theme === "system") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", theme);
-  // The tags carry media queries for "system"; a fixed theme overrides both.
+  root.setAttribute("data-skin", look.skin);
+  root.setAttribute("data-palette", look.palette);
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    const media = meta.getAttribute("media") ?? "";
-    const forScheme = theme === "system" ? (media.includes("dark") ? "dark" : "light") : theme;
-    meta.setAttribute("content", THEME_COLORS[forScheme]);
+    meta.setAttribute("content", PALETTE_COLORS[look.palette].ground);
   }
 }

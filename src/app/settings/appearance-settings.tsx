@@ -1,8 +1,10 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { burstPath } from "@/components/burst";
+import { Couch } from "@/components/couch";
 import { getMessages } from "@/lib/i18n";
-import { applyTheme, savedTheme, THEMES, type Theme } from "@/lib/theme";
+import { applyLook, DEFAULT_LOOK, PALETTE_COLORS, savedLook, SKINS, type Look, type Palette, type Skin } from "@/lib/theme";
 
 const listeners = new Set<() => void>();
 
@@ -15,38 +17,100 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** System, light or dark, for this device only. */
+// useSyncExternalStore compares snapshots by identity, so the saved look is read as one string.
+const lookKey = () => {
+  const { skin, palette } = savedLook();
+  return `${skin}/${palette}`;
+};
+
+const SWATCH_BURST = burstPath(10, 46, 30, 50, 50);
+
+/** A tiny scene in a palette's own colours: its ground, a paper panel, the two couches and the burst. */
+function Swatch({ palette, className = "" }: { palette: Palette; className?: string }) {
+  const c = PALETTE_COLORS[palette];
+  return (
+    <span
+      aria-hidden
+      className={`relative block overflow-hidden rounded-control border-[3px] border-outline ${className}`}
+      style={{ background: c.ground }}
+    >
+      <span
+        className="absolute inset-x-3 bottom-3 top-6 rounded-[10px] border-[2.5px]"
+        style={{ background: c.paper, borderColor: c.ink }}
+      />
+      <span className="absolute left-4 top-2.5 h-3 w-14 rounded-full" style={{ background: c.accent }} />
+      <svg viewBox="0 0 100 100" className="absolute bottom-1 right-1.5 size-10 rotate-12">
+        <path d={SWATCH_BURST} fill={c.both} stroke={c.ink} strokeWidth={6} strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+/** Look (the skin) and Colours (its palette), for this device only. */
 export function AppearanceSettings({ language }: { language: string }) {
-  // "system" on the server; the saved choice once hydrated.
-  const theme = useSyncExternalStore(subscribe, savedTheme, () => "system" as Theme);
+  // The standard look on the server; the saved one once hydrated.
+  const key = useSyncExternalStore(subscribe, lookKey, () => `${DEFAULT_LOOK.skin}/${DEFAULT_LOOK.palette}`);
+  const [skin, palette] = key.split("/") as [Skin, Palette];
   const t = getMessages(language).account.appearance;
 
-  function choose(next: Theme) {
-    applyTheme(next);
+  function choose(next: Look) {
+    applyLook(next);
     listeners.forEach((listener) => listener());
   }
 
+  const option =
+    "grid cursor-pointer gap-2 rounded-panel border-[3px] border-outline bg-surface p-2 transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 has-checked:bg-accent has-checked:text-on-accent has-checked:shadow-[4px_4px_0_var(--outline)] has-focus-visible:outline-3 has-focus-visible:outline-offset-3 has-focus-visible:outline-accent";
+
   return (
-    <fieldset className="grid gap-2">
-      <legend className="sr-only">{t.heading}</legend>
-      <div className="flex flex-wrap gap-2">
-        {THEMES.map((option) => (
-          <label
-            key={option}
-            className="cursor-pointer rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-muted transition hover:text-ink has-checked:border-ink has-checked:bg-ink has-checked:text-bg has-focus-visible:ring-2 has-focus-visible:ring-partner/40"
-          >
-            <input
-              type="radio"
-              name="theme"
-              value={option}
-              checked={theme === option}
-              onChange={() => choose(option)}
-              className="sr-only"
-            />
-            {t.options[option]}
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    <div className="grid gap-5">
+      <p className="text-muted">{t.intro}</p>
+      <fieldset className="grid gap-2.5">
+        <legend className="mb-2.5 font-bold">{t.look}</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(Object.keys(SKINS) as Skin[]).map((option_) => (
+            <label key={option_} className={option}>
+              <input
+                type="radio"
+                name="skin"
+                value={option_}
+                checked={skin === option_}
+                onChange={() => choose({ skin: option_, palette: SKINS[option_][0] })}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className="relative flex h-24 items-end justify-center gap-1 overflow-hidden rounded-control border-[3px] border-outline bg-pop bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] pb-2"
+              >
+                <Couch who="me" size={50} />
+                <Couch who="partner" size={50} />
+              </span>
+              <span className="grid px-1 pb-0.5 leading-tight">
+                <span className="font-bold">{t.skins[option_]}</span>
+                <span className="text-sm opacity-85">{t.skinNotes[option_]}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="grid gap-2.5">
+        <legend className="mb-2.5 font-bold">{t.colours}</legend>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {SKINS[skin].map((option_) => (
+            <label key={option_} className={option}>
+              <input
+                type="radio"
+                name="palette"
+                value={option_}
+                checked={palette === option_}
+                onChange={() => choose({ skin, palette: option_ })}
+                className="sr-only"
+              />
+              <Swatch palette={option_} className="h-16" />
+              <span className="px-1 pb-0.5 text-sm font-bold leading-tight">{t.palettes[option_]}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </div>
   );
 }

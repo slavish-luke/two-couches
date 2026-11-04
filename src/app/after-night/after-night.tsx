@@ -28,7 +28,7 @@ async function Wrapups() {
 
   return (
     <section aria-label={t.reviews.wrapup.label}>
-      <ul className="grid gap-3">
+      <ul className="grid gap-6">
         {wrapups.map((wrapup) => (
           <WrapupCard
             // Refilled when your partner saves theirs, since they may have moved the series on.

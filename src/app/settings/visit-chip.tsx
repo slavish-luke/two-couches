@@ -7,10 +7,11 @@ export function VisitChip({ person, language, now }: { person: PlaceFields; lang
   if (!visit) return null;
   return (
     <span
-      className="rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted"
+      className="inline-block max-w-full -rotate-2 rounded-[12px] border-2 border-outline bg-surface px-2 py-px text-center text-xs font-bold leading-snug text-ink shadow-[2px_2px_0_var(--outline)]"
       title={countryName(visit.country, language)}
     >
-      {getMessages(language).places.chip(visit.country, formatVisitDate(visit.until, language, now))}
+      {/* The date wraps as one piece ("20 Dec", never "20" on its own line). */}
+      {getMessages(language).places.chip(visit.country, formatVisitDate(visit.until, language, now).replace(/ /g, " "))}
     </span>
   );
 }

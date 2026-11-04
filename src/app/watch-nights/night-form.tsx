@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { CheckIcon } from "@/components/icons";
 import { getMessages, type Messages } from "@/lib/i18n";
 import {
   addDays,
@@ -63,11 +64,14 @@ function parseKey(key: string): TitleRef | null {
   return isMediaType(type) && Number(id) > 0 ? { media_type: type, tmdb_id: Number(id) } : null;
 }
 
+/** How each hour looks by how well it suits you both: free time is grape-tinted, sleepy hours are hatched. */
 const SLOT_STYLE: Record<SlotRating, string> = {
-  great: "border-both bg-both-soft",
-  possible: "border-line bg-surface",
-  late: "border-dashed border-line bg-bg text-muted",
+  great: "border-solid bg-accent-soft",
+  possible: "border-solid bg-surface",
+  late: "border-dashed bg-surface bg-[image:repeating-linear-gradient(135deg,var(--line)_0_3px,transparent_3px_9px)] text-muted",
 };
+
+const LABEL = "text-[15px] font-bold";
 
 /** Plans or changes a watch night: what, when (with an hour picker rated for both of you) and how. */
 export function NightForm(props: Props) {
@@ -114,7 +118,7 @@ export function NightForm(props: Props) {
         }}
       >
         <label className="grid gap-1.5">
-          <span className="text-sm font-semibold">{text.what}</span>
+          <span className={LABEL}>{text.what}</span>
           <select value={values.title} onChange={(e) => set({ title: e.target.value })} className="field">
             <option value="">{text.pickLater}</option>
             {props.extra && <option value={props.extra.key}>{props.extra.title}</option>}
@@ -130,10 +134,10 @@ export function NightForm(props: Props) {
           </select>
         </label>
 
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           <div className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1.5">
-              <span className="text-sm font-semibold">{text.day}</span>
+              <span className={LABEL}>{text.day}</span>
               <input
                 type="date"
                 required
@@ -146,7 +150,7 @@ export function NightForm(props: Props) {
               />
             </label>
             <label className="grid gap-1.5">
-              <span className="text-sm font-semibold">{text.time}</span>
+              <span className={LABEL}>{text.time}</span>
               <input
                 type="time"
                 required
@@ -156,7 +160,7 @@ export function NightForm(props: Props) {
                 className="field w-auto"
               />
             </label>
-            <span className="pb-2 text-xs text-muted">{text.zoneNote(me.timeZone.replace(/_/g, " "))}</span>
+            <span className="pb-2.5 text-sm text-muted">{text.zoneNote(me.timeZone.replace(/_/g, " "))}</span>
           </div>
 
           {isDateString(values.date) && (
@@ -177,7 +181,7 @@ export function NightForm(props: Props) {
         </div>
 
         <fieldset className="grid gap-3">
-          <legend className="mb-1.5 text-sm font-semibold">{text.how}</legend>
+          <legend className={`mb-2 ${LABEL}`}>{text.how}</legend>
           <div role="radiogroup" aria-label={text.how} className="flex flex-wrap gap-2">
             {[null, ...NIGHT_METHODS].map((method) => (
               <button
@@ -186,9 +190,7 @@ export function NightForm(props: Props) {
                 role="radio"
                 aria-checked={values.method === method}
                 onClick={() => set({ method })}
-                className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
-                  values.method === method ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"
-                }`}
+                className="chip"
               >
                 {method ? t.nights.methods[method] : text.undecided}
               </button>
@@ -197,7 +199,7 @@ export function NightForm(props: Props) {
           {values.method && <p className="text-sm text-muted">{text.hints[values.method]}</p>}
           {(values.method === "teleparty" || values.method === "other") && (
             <label className="grid gap-1.5">
-              <span className="text-sm font-semibold">{values.method === "teleparty" ? text.telepartyLink : text.otherLink}</span>
+              <span className={LABEL}>{values.method === "teleparty" ? text.telepartyLink : text.otherLink}</span>
               <input
                 type="url"
                 inputMode="url"
@@ -212,7 +214,7 @@ export function NightForm(props: Props) {
           {values.method === "syncplay" && (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5">
-                <span className="text-sm font-semibold">{text.server}</span>
+                <span className={LABEL}>{text.server}</span>
                 <input
                   value={values.syncplay_server}
                   maxLength={MAX_SYNCPLAY_LENGTH}
@@ -224,7 +226,7 @@ export function NightForm(props: Props) {
                 />
               </label>
               <label className="grid gap-1.5">
-                <span className="text-sm font-semibold">{text.room}</span>
+                <span className={LABEL}>{text.room}</span>
                 <input
                   value={values.syncplay_room}
                   maxLength={MAX_SYNCPLAY_LENGTH}
@@ -234,13 +236,13 @@ export function NightForm(props: Props) {
                   className="field"
                 />
               </label>
-              <p className="text-xs text-muted sm:col-span-2">{text.roomNote}</p>
+              <p className="text-sm text-muted sm:col-span-2">{text.roomNote}</p>
             </div>
           )}
         </fieldset>
 
         <label className="grid gap-1.5">
-          <span className="text-sm font-semibold">{text.notes}</span>
+          <span className={LABEL}>{text.notes}</span>
           <textarea
             value={values.notes}
             maxLength={MAX_NIGHT_NOTES_LENGTH}
@@ -251,9 +253,9 @@ export function NightForm(props: Props) {
           />
         </label>
 
-        <div className="grid justify-items-start gap-2">
+        <div className="grid justify-items-start gap-2.5 border-t-2 border-outline/15 pt-5">
           {error && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="font-semibold text-danger">
               {error}
             </p>
           )}
@@ -261,9 +263,9 @@ export function NightForm(props: Props) {
             {pending ? text.saving : props.nightId ? text.saveChanges : text.save}
           </button>
           {props.hasReadyChecks && (values.title !== props.initial.title || values.method !== props.initial.method) && (
-            <p className="text-xs text-muted">{text.resetsReady}</p>
+            <p className="text-sm text-muted">{text.resetsReady}</p>
           )}
-          {partner && <p className="text-xs text-muted">{text.partnerTold(partner.name)}</p>}
+          {partner && <p className="text-sm text-muted">{text.partnerTold(partner.name)}</p>}
         </div>
       </form>
 
@@ -274,7 +276,7 @@ export function NightForm(props: Props) {
           onClick={() => {
             if (window.confirm(text.confirmCancel)) run(() => cancelWatchNight(props.nightId!));
           }}
-          className="justify-self-start text-sm font-semibold text-danger hover:underline disabled:opacity-50"
+          className="btn-quiet justify-self-start text-danger"
         >
           {pending ? text.cancelling : text.cancelNight}
         </button>
@@ -300,8 +302,8 @@ function HourPicker(props: {
   const pickedHour = props.time ? Number(props.time.slice(0, 2)) : null;
 
   return (
-    <div className="grid gap-2">
-      <div role="group" aria-label={text.slotsLabel} className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+    <div className="grid gap-3">
+      <div role="group" aria-label={text.slotsLabel} className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 sm:gap-2">
         {hoursOfDay(props.date, me.timeZone).map((start) => {
           const local = zonedParts(start, me.timeZone);
           const rating = rateSlot(start, props.zones);
@@ -325,20 +327,42 @@ function HourPicker(props: {
                 .filter(Boolean)
                 .join(" · ")}
               onClick={() => props.onPick(local.time)}
-              className={`grid rounded-lg border px-1.5 py-1 text-left leading-tight transition disabled:opacity-40 ${SLOT_STYLE[rating]} ${
-                picked ? "ring-2 ring-ink" : "hover:border-muted"
+              className={`grid min-w-0 gap-0.5 rounded-control border-[2.5px] border-outline px-1.5 pb-1.5 pt-1 text-left sm:px-2 leading-tight transition duration-200 ease-(--ease-spring) disabled:opacity-35 ${
+                picked
+                  ? "relative z-10 -rotate-3 scale-110 bg-accent text-on-accent shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
+                  : `${SLOT_STYLE[rating]} enabled:hover:-translate-y-0.5 enabled:hover:-rotate-2 enabled:hover:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]`
               }`}
             >
-              <span className="text-sm font-semibold text-me">{mine}</span>
-              {theirs && <span className="text-xs text-partner">{theirs}</span>}
+              <span className="flex min-w-0 items-center gap-0.5 whitespace-nowrap text-sm font-bold sm:gap-1 sm:text-[15px]">
+                {partner && <Dot fill="bg-me" small />}
+                {mine}
+              </span>
+              {theirs && (
+                <span className="flex min-w-0 items-center gap-0.5 whitespace-nowrap text-[11px] sm:gap-1 font-semibold sm:text-xs">
+                  <Dot fill="bg-partner" small />
+                  {theirs}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm font-semibold text-muted">
+        {partner && (
+          <>
+            <li className="flex items-center gap-1.5">
+              <Dot fill="bg-me" />
+              {me.name}
+            </li>
+            <li className="flex items-center gap-1.5">
+              <Dot fill="bg-partner" />
+              {partner.name}
+            </li>
+          </>
+        )}
         {(["great", "possible", "late"] as const).map((rating) => (
           <li key={rating} className="flex items-center gap-1.5">
-            <span aria-hidden className={`size-3 rounded border ${SLOT_STYLE[rating]}`} />
+            <span aria-hidden className={`h-4 w-6 shrink-0 rounded-full border-2 border-outline ${SLOT_STYLE[rating]}`} />
             {text.legend[rating]}
           </li>
         ))}
@@ -347,18 +371,45 @@ function HourPicker(props: {
   );
 }
 
+/** A person's colour dot; `small` shrinks it on phones, where the hour grid is tight. */
+function Dot({ fill, small = false }: { fill: string; small?: boolean }) {
+  const size = small ? "size-2 border-[1.5px] sm:size-2.5 sm:border-2" : "size-2.5 border-2";
+  return <span aria-hidden className={`${size} shrink-0 rounded-full border-outline ${fill}`} />;
+}
+
 /** The chosen start on each person's clock, and how well it suits you both. */
 function Summary(props: { start: Date; me: Person; partner: Person | null; zones: string[]; language: string; t: Messages }) {
   const { start, me, partner, language, t } = props;
   const rating = rateSlot(start, props.zones);
   const when = (zone: string) => `${formatDay(start, zone, language)}, ${formatTime(start, zone, language)}`;
+  const people = [
+    { name: t.common.you, zone: me.timeZone, fill: "bg-me" },
+    ...(partner ? [{ name: partner.name, zone: partner.timeZone, fill: "bg-partner" }] : []),
+  ];
   return (
-    <div className={`grid gap-0.5 rounded-lg border p-3 text-sm ${rating === "great" ? "border-both bg-both-soft" : "border-line"}`}>
-      <p className="font-semibold text-me">{t.nights.timeFor(t.common.you, when(me.timeZone))}</p>
-      {partner && <p className="font-semibold text-partner">{t.nights.timeFor(partner.name, when(partner.timeZone))}</p>}
+    <div
+      className={`paper grid gap-2 rounded-control border-[3px] border-outline p-3 ${rating === "great" ? "bg-accent-soft" : ""}`}
+    >
+      <ul className="grid gap-1.5">
+        {people.map((person) => (
+          <li key={person.fill} className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <span className={`rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${person.fill}`}>
+              {person.name}
+            </span>
+            <span className="font-semibold">{when(person.zone)}</span>
+          </li>
+        ))}
+      </ul>
       {partner && (
-        <p className={rating === "great" ? "text-both" : "text-muted"}>
-          {rating === "great" && <span aria-hidden>● </span>}
+        <p className={`flex items-start gap-2 ${rating === "great" ? "font-bold" : "font-semibold text-muted"}`}>
+          {rating === "great" && (
+            <span
+              aria-hidden
+              className="mt-px grid size-5 shrink-0 place-items-center rounded-full border-2 border-outline bg-accent text-on-accent"
+            >
+              <CheckIcon className="size-3 [stroke-width:3.5]" />
+            </span>
+          )}
           {t.nights.form.verdict[rating]}
         </p>
       )}

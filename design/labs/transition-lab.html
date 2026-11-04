@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transition Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #1d1a2b; --paper: #fffaf0; --sun: #ffd23f; --me: #ff8a65; --pt: #5cc8ff; --both: #ff2e93; --grape: #7b61ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { background: var(--sun); color: var(--ink); font-family: Fredoka, sans-serif; overflow-x: hidden; }
+  body::before { content: ""; position: fixed; inset: 0; background: repeating-conic-gradient(from 0deg at 50% -10%, #ffc61a 0 6deg, transparent 6deg 12deg); pointer-events: none; }
+
+  .lab { position: fixed; z-index: 100; left: 50%; bottom: 16px; translate: -50% 0; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; background: #1d1a2bf0; padding: 10px 12px; border-radius: 18px; box-shadow: 0 10px 30px #0006; }
+  .lab span { color: var(--paper); font-weight: 600; font-size: 14px; padding: 0 4px; }
+  .lab button { font: 700 14px Fredoka, sans-serif; border: 3px solid var(--ink); background: var(--paper); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  .lab button[aria-pressed="true"] { background: var(--sun); }
+  .lab select { font: 600 14px Fredoka, sans-serif; border-radius: 999px; padding: 5px 8px; }
+
+  header { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; view-transition-name: header; }
+  .logo { font: 400 36px "Luckiest Guy", sans-serif; color: var(--paper); -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); rotate: -2deg; }
+  nav { position: relative; display: flex; gap: 8px; }
+  nav a { position: relative; z-index: 1; font-weight: 700; font-size: 17px; padding: 8px 16px; border-radius: 999px; color: var(--ink); text-decoration: none; cursor: pointer; }
+  nav a[aria-current] { color: #fff; }
+  /* The nav pill: slides to the current tab, stretching on the way (a cartoon "smear"). */
+  .pill { position: absolute; z-index: 0; top: 0; height: 100%; background: var(--grape); border: 3px solid var(--ink); border-radius: 999px; box-shadow: 3px 3px 0 var(--ink); transition: left .38s cubic-bezier(.3, 1.5, .5, 1), width .38s cubic-bezier(.3, 1.5, .5, 1); view-transition-name: pill; }
+  .pill.smear { animation: smear .38s; }
+  @keyframes smear { 40% { transform: scaleX(1.35) scaleY(.82); } 70% { transform: scaleX(.95) scaleY(1.06); } }
+
+  main { position: relative; padding: 8px 32px 120px; view-transition-name: page; }
+  h1 { margin: 6px 0 18px; font: 400 64px "Luckiest Guy", sans-serif; color: var(--paper); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 5px 5px 0 var(--ink); letter-spacing: .02em; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+  .card { background: var(--paper); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 5px 5px 0 var(--ink); padding: 14px; display: grid; gap: 8px; }
+  .card .poster { aspect-ratio: 2/3; border: 3px solid var(--ink); border-radius: 12px; background: center/cover; }
+  .card b { font-size: 18px; }
+  .card small { font-weight: 500; }
+  .block { height: 96px; border-radius: 16px; border: 3px solid var(--ink); }
+
+  /* Speed lines that streak across with the whoosh. */
+  .streak { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0;
+    background: repeating-linear-gradient(0deg, transparent 0 22px, #1d1a2b22 22px 25px, transparent 25px 61px, #fffaf088 61px 66px, transparent 66px 97px); }
+  .streak.go-left { animation: streak-left .42s ease-out; } .streak.go-right { animation: streak-right .42s ease-out; }
+  @keyframes streak-left { 0% { opacity: 0; transform: translateX(40%) scaleX(1.6); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(-40%) scaleX(1); } }
+  @keyframes streak-right { 0% { opacity: 0; transform: translateX(-40%) scaleX(1.6); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(40%) scaleX(1); } }
+
+  /* Mini burst from the tab you clicked. */
+  .miniburst { position: fixed; z-index: 70; width: 120px; height: 120px; margin: -60px 0 0 -60px; pointer-events: none; animation: miniburst .45s cubic-bezier(.2, .8, .3, 1) forwards; }
+  @keyframes miniburst { 0% { transform: scale(.2) rotate(-90deg); opacity: 1; } 60% { opacity: 1; } 100% { transform: scale(2.2) rotate(40deg); opacity: 0; } }
+
+
+  /* Whoosh across several pages: the old page, the skipped pages and the new page are layers in <main>. */
+  main.flying { overflow: hidden; }
+  .layer { position: absolute; inset: 0 0 auto 0; padding: 8px 32px 0; will-change: transform, opacity; backface-visibility: hidden; contain: layout paint; }
+  .ghost h1 { font-size: 96px; }
+  nav a.passed { animation: passed .3s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes passed { 40% { transform: translateY(-6px) rotate(-6deg) scale(1.12); } }
+  .streak.strong { background: repeating-linear-gradient(0deg, transparent 0 14px, #1d1a2b33 14px 18px, transparent 18px 40px, #fffaf0aa 40px 47px, transparent 47px 70px); }
+  /* Peel sheets: opaque paper with the page's rays drawn in place (no fixed background, so moving them never
+     repaints), and a soft shadow on the edge that lifts. */
+  .layer.sheet { inset: 0; min-height: 100%; background: repeating-conic-gradient(from 0deg at calc(50vw + var(--sheet-x, 0px)) calc(-10vh + var(--sheet-y, 0px)), #ffc61a 0 6deg, transparent 6deg 12deg), var(--sun); box-shadow: -16px 0 28px -12px #1d1a2b55; }
+
+  ::view-transition-group(*) { animation-duration: .38s; }
+  ::view-transition-group(pill) { animation: none; }
+  ::view-transition-old(pill), ::view-transition-new(pill) { animation: none; }
+
+  /* 1. WHOOSH: the page skids off with a lean and a smear, the new one skids in and settles. */
+  html.t-whoosh::view-transition-old(page) { animation: .3s cubic-bezier(.6, 0, .9, .4) both whoosh-out; }
+  html.t-whoosh::view-transition-new(page) { animation: .42s cubic-bezier(.2, 1.3, .4, 1) .06s both whoosh-in; }
+  @keyframes whoosh-out { to { transform: translateX(calc(var(--dir) * -60%)) skewX(calc(var(--dir) * 12deg)); filter: blur(6px); opacity: 0; } }
+  @keyframes whoosh-in { from { transform: translateX(calc(var(--dir) * 50%)) skewX(calc(var(--dir) * -14deg)); filter: blur(6px); opacity: 0; } 60% { filter: blur(0); } }
+
+  /* 2. BOING: the old page ducks out, the new one pops up with a squash and stretch. */
+  html.t-boing::view-transition-old(page) { animation: .16s ease-in both boing-out; }
+  html.t-boing::view-transition-new(page) { animation: .5s cubic-bezier(.2, 1, .3, 1) .08s both boing-in; transform-origin: 50% 100%; }
+  @keyframes boing-out { to { opacity: 0; transform: scale(.97) translateY(8px); } }
+  @keyframes boing-in { 0% { opacity: 0; transform: translateY(40px) scale(.9, .9); } 45% { opacity: 1; transform: translateY(-8px) scale(.97, 1.04); } 70% { transform: translateY(2px) scale(1.02, .98); } 100% { transform: none; } }
+
+  /* 3. CARD TOSS: the old page gets tossed away like a card, the new one drops in from above with a bounce. */
+  html.t-toss::view-transition-old(page) { animation: .36s cubic-bezier(.5, 0, .9, .5) both toss-out; transform-origin: 30% 120%; }
+  html.t-toss::view-transition-new(page) { animation: .5s cubic-bezier(.3, 1.4, .5, 1) .1s both toss-in; }
+  @keyframes toss-out { to { transform: translate(calc(var(--dir) * -30%), 30%) rotate(calc(var(--dir) * -12deg)); opacity: 0; } }
+  @keyframes toss-in { from { transform: translateY(-60px) rotate(calc(var(--dir) * 3deg)); opacity: 0; } }
+
+  /* 4. MINI BURST: a little starburst pops from the tab, and the page crossfades under it. */
+  html.t-burst::view-transition-old(page) { animation: .2s ease-in both fade-out; }
+  html.t-burst::view-transition-new(page) { animation: .35s cubic-bezier(.2, 1.2, .4, 1) .1s both burst-in; }
+  @keyframes fade-out { to { opacity: 0; } }
+  @keyframes burst-in { from { opacity: 0; transform: scale(.96); } }
+
+  @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } .streak, .miniburst, .pill.smear { animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Two Couches</div>
+  <nav id="nav"><span class="pill" id="pill"></span></nav>
+</header>
+<main id="page"></main>
+<div class="streak" id="streak"></div>
+
+<div class="lab">
+  <span>Style:</span>
+  <button data-t="whoosh" aria-pressed="true">1 · Whoosh</button>
+  <button data-t="boing">2 · Boing</button>
+  <button data-t="toss">3 · Card toss</button>
+  <button data-t="burst">4 · Mini burst</button>
+  <span>Back:</span>
+  <select id="back"><option value="peel">Peel back (new)</option><option value="mirror">Mirror (before)</option></select>
+  <span>Speed</span>
+  <select id="speed"><option value="1">Normal</option><option value="0.35">Slow-mo</option></select>
+</div>
+
+<script>
+const P = (p) => `https://image.tmdb.org/t/p/w342${p}`;
+const POSTERS = [P("/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"), P("/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg"), P("/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg"), P("/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg")];
+const NAMES = ["Breaking Bad", "The Matrix", "Inception", "Fight Club"];
+const PAGES = [
+  { name: "Our list", render: () => `<h1>Up next!</h1><div class="cards">${POSTERS.map((p, i) => `<div class="card"><div class="poster" style="background-image:url(${p})"></div><b>${NAMES[i]}</b><small>Added by you</small></div>`).join("")}</div>` },
+  { name: "Browse", render: () => `<h1>Browse!</h1><div class="cards">${[...POSTERS].reverse().concat(POSTERS.slice(0, 2)).map((p, i) => `<div class="card"><div class="poster" style="background-image:url(${p})"></div><b>${[...NAMES].reverse().concat(NAMES.slice(0, 2))[i]}</b><small>Picked for you two</small></div>`).join("")}</div>` },
+  { name: "Coming soon", render: () => `<h1>Coming soon!</h1><div class="cards">${["#ff8a65", "#5cc8ff", "#ff2e93", "#7b61ff", "#8ee38b", "#fffaf0"].map((c) => `<div class="card"><div class="block" style="background:${c}"></div><b>New episode Friday</b><small>On both your services</small></div>`).join("")}</div>` },
+  { name: "Watch nights", render: () => `<h1>Watch nights!</h1><div class="cards">${["Thu 5 Nov", "Sat 7 Nov", "Fri 13 Nov"].map((d, i) => `<div class="card"><div class="poster" style="background-image:url(${POSTERS[i]});aspect-ratio:16/9"></div><b>${d}</b><small>1:00 PM for you · 2:00 AM for Sam</small></div>`).join("")}</div>` },
+];
+
+const nav = document.getElementById("nav"), pill = document.getElementById("pill"), page = document.getElementById("page");
+let current = 0, style = "whoosh";
+PAGES.forEach((p, i) => { const a = document.createElement("a"); a.textContent = p.name; a.onclick = (e) => go(i, e); nav.append(a); });
+function placePill() { const a = nav.querySelectorAll("a")[current]; pill.style.left = a.offsetLeft + "px"; pill.style.width = a.offsetWidth + "px"; nav.querySelectorAll("a").forEach((x, j) => x.toggleAttribute("aria-current", j === current)); }
+function burstSvg() {
+  let d = ""; for (let i = 0; i < 24; i++) { const r = i % 2 ? 34 : 50, a = (Math.PI * i) / 12 - Math.PI / 2; d += `${i ? "L" : "M"}${(60 + r * Math.cos(a)).toFixed(1)} ${(60 + r * Math.sin(a)).toFixed(1)}`; }
+  return `<svg viewBox="0 0 120 120"><path d="${d}Z" fill="#ff2e93" stroke="#1d1a2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
+}
+function go(i, e) {
+  if (i === current) return;
+  const dir = i > current ? 1 : -1, speed = +document.getElementById("speed").value;
+  document.documentElement.style.setProperty("--dir", dir);
+  // The pill and the extras run alongside the page swap, never in front of it.
+  pill.classList.remove("smear"); void pill.offsetWidth; pill.classList.add("smear");
+  if (style === "burst" && e) { const b = document.createElement("div"); b.className = "miniburst"; b.innerHTML = burstSvg(); b.style.left = e.clientX + "px"; b.style.top = e.clientY + "px"; b.style.animationDuration = (.45 / speed) + "s"; document.body.append(b); setTimeout(() => b.remove(), 600 / speed); }
+  const swap = () => { current = i; page.innerHTML = PAGES[i].render(); placePill(); };
+  if (style === "whoosh") return whoosh(i, dir, speed);
+  if (!document.startViewTransition) return swap();
+  const t = document.startViewTransition(swap);
+  t.ready.then(() => document.getAnimations().forEach((a) => { if (a.effect?.pseudoElement?.startsWith("::view-transition")) a.playbackRate = speed; }));
+}
+
+// Whoosh (forward) and peel (back), built for smoothness: only transform and opacity move (the GPU composites
+// those without repainting), every layer is a real element that stays, and the new page's own nodes become
+// the page at the end, so nothing re-renders or blinks.
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let flight = null;
+
+function layerOf(html, cls = "") {
+  const l = document.createElement("div");
+  l.className = "layer " + cls;
+  l.innerHTML = html;
+  return l;
+}
+
+/** Puts the page's own content into a layer, builds the others, and pins the stage height for the flight. */
+function stageFor(targetIndex, skipped) {
+  // A second click mid-flight finishes the first flight instantly.
+  if (flight) flight.finish();
+  const rect = page.getBoundingClientRect();
+  // Line each sheet's sunburst up with the page's own rays without a fixed background (which repaints).
+  document.documentElement.style.setProperty("--sheet-x", `${-rect.left}px`);
+  document.documentElement.style.setProperty("--sheet-y", `${-rect.top}px`);
+  const oldLayer = layerOf("");
+  oldLayer.append(...page.childNodes);
+  const target = layerOf(PAGES[targetIndex].render());
+  const ghosts = skipped.map((k) => layerOf(PAGES[k].render(), "ghost"));
+  page.classList.add("flying");
+  page.style.height = Math.max(rect.height, 600) + "px";
+  return { oldLayer, target, ghosts };
+}
+
+function land(target, token) {
+  if (token.landed) return;
+  token.landed = true;
+  page.replaceChildren(...target.childNodes);
+  page.classList.remove("flying");
+  page.style.height = "";
+  if (flight === token) flight = null;
+}
+
+function runAll(anims, target) {
+  const token = { landed: false };
+  token.finish = () => { anims.forEach((a) => a.finish()); land(target, token); };
+  flight = token;
+  Promise.all(anims.map((a) => a.finished)).then(() => land(target, token), () => {});
+}
+
+function speedLines(dir, n, ms) {
+  const s = document.getElementById("streak");
+  s.className = "streak" + (n ? " strong" : "");
+  void s.offsetWidth;
+  s.classList.add(dir > 0 ? "go-left" : "go-right");
+  s.style.animationDuration = ms(380 + 90 * n) + "ms";
+}
+
+function whoosh(i, dir, speed) {
+  const ms = (x) => x / speed;
+  const skipped = [];
+  for (let k = current + dir; k !== i; k += dir) skipped.push(k);
+  const n = skipped.length;
+  const tabs = [...nav.querySelectorAll("a")];
+  current = i;
+  pill.style.transitionDuration = ms(360 + 80 * n) + "ms";
+  placePill();
+  if (reduce) { page.innerHTML = PAGES[i].render(); return; }
+
+  speedLines(dir, n, ms);
+  skipped.forEach((k, j) => setTimeout(() => { tabs[k].classList.remove("passed"); void tabs[k].offsetWidth; tabs[k].classList.add("passed"); }, ms(50 + 65 * j)));
+
+  if (dir < 0 && document.getElementById("back").value === "peel") return peel(i, skipped, ms);
+
+  const { oldLayer, target, ghosts } = stageFor(i, skipped);
+  page.append(oldLayer, ...ghosts, target);
+  const x = (pct) => `${dir * pct}%`;
+  const anims = [];
+  // Out: a quick skid with a lean. Ease-in so it leaves with intent.
+  anims.push(oldLayer.animate(
+    [{ transform: "none", opacity: 1 }, { transform: `translateX(${x(-55)}) skewX(${dir * 9}deg)`, opacity: 0 }],
+    { duration: ms(260), easing: "cubic-bezier(.55,0,.85,.35)", fill: "forwards" }));
+  // Skipped pages: one continuous riffle, overlapping, no holds.
+  const step = 75;
+  ghosts.forEach((g, j) => anims.push(g.animate(
+    [
+      { transform: `translateX(${x(70)}) skewX(${-dir * 8}deg)`, opacity: 0 },
+      { transform: `translateX(${x(10)}) skewX(${-dir * 3}deg)`, opacity: 1, offset: .4 },
+      { transform: `translateX(${x(-60)}) skewX(${dir * 8}deg)`, opacity: 0 },
+    ],
+    { duration: ms(240), delay: ms(90 + step * j), easing: "cubic-bezier(.45,.05,.55,.95)", fill: "both" })));
+  // In: skids in and settles, one soft overshoot.
+  anims.push(target.animate(
+    [
+      { transform: `translateX(${x(45)}) skewX(${-dir * 9}deg)`, opacity: 0 },
+      { opacity: 1, offset: .35 },
+      { transform: "none", opacity: 1 },
+    ],
+    { duration: ms(440), delay: ms(n ? 90 + step * n : 70), easing: "cubic-bezier(.22,1.2,.36,1)", fill: "both" }));
+  runAll(anims, target);
+}
+
+// Back: the pages are a pile; the top sheets peel off to the right and the page you came from is underneath.
+function peel(i, skipped, ms) {
+  const { oldLayer, target, ghosts } = stageFor(i, skipped);
+  const sheets = [oldLayer, ...ghosts];
+  [target, ...sheets].forEach((l) => l.classList.add("sheet"));
+  // Bottom to top: target, then the skipped pages nearest the target, then the page you were on.
+  page.append(target, ...[...ghosts].reverse(), oldLayer);
+  const n = ghosts.length, step = 80;
+  const anims = sheets.map((sheet, j) => sheet.animate(
+    [
+      { transform: "none" },
+      { transform: "translateX(-1.5%) rotate(-.4deg)", offset: .15 },
+      { transform: "translateX(112%) rotate(3deg)" },
+    ],
+    { duration: ms(n ? 300 : 360), delay: ms(j * step), easing: "cubic-bezier(.5,0,.75,.4)", fill: "both" }));
+  // The page underneath rises to meet you as the last sheet clears.
+  anims.push(target.animate(
+    [{ transform: "translateX(-3%) scale(.965)", opacity: .85 }, { transform: "none", opacity: 1 }],
+    { duration: ms(460 + step * n), easing: "cubic-bezier(.2,.9,.3,1)", fill: "both" }));
+  runAll(anims, target);
+}
+
+document.querySelectorAll("[data-t]").forEach((b) => (b.onclick = () => {
+  style = b.dataset.t;
+  document.documentElement.className = "t-" + style;
+  document.querySelectorAll("[data-t]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+document.documentElement.className = "t-whoosh";
+page.innerHTML = PAGES[0].render();
+requestAnimationFrame(placePill);
+addEventListener("resize", placePill);
+</script>
+</body>
+</html>

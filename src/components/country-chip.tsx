@@ -1,8 +1,10 @@
-/** Two-letter country code in the person's colour: ochre for you, teal for your partner. */
+/** Two-letter country code on a tag in the person's colour. */
 export function CountryChip({ code, name, isMe }: { code: string; name: string; isMe: boolean }) {
-  const style = isMe ? "bg-me-soft text-me" : "bg-partner-soft text-partner";
   return (
-    <span className={`rounded-full px-2 py-0.5 font-mono text-xs font-medium ${style}`} title={name}>
+    <span
+      className={`rounded-full border-2 border-outline px-1.5 text-xs font-bold leading-snug text-ink ${isMe ? "bg-me" : "bg-partner"}`}
+      title={name}
+    >
       {code}
     </span>
   );

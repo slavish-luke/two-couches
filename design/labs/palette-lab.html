@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palette Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+  :root { --lab-bg: #101114; --lab-ink: #ececf0; --lab-muted: #9a9cab; --lab-line: #2a2c33; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--lab-bg); color: var(--lab-ink); font-family: Archivo, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  .lab-head { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--lab-bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--lab-line); padding: 14px 24px; display: grid; gap: 12px; }
+  .lab-title { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .lab-title h1 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; font-variation-settings: "wdth" 62; letter-spacing: .01em; }
+  .lab-title p { margin: 0; color: var(--lab-muted); font-size: 14px; }
+  .picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+  .pick { flex: none; display: grid; grid-template-columns: auto auto; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-ink); font: 600 13px Archivo, sans-serif; cursor: pointer; }
+  .pick[aria-pressed="true"] { border-color: var(--lab-ink); background: #ffffff12; }
+  .chips { display: flex; }
+  .chips i { width: 14px; height: 22px; display: block; }
+  .chips i:first-child { border-radius: 999px 0 0 999px; width: 18px; }
+  .chips i:last-child { border-radius: 0 999px 999px 0; }
+  .lab-main { padding: 24px; display: grid; gap: 18px; max-width: 1500px; margin: 0 auto; }
+  .about { display: flex; gap: 12px 28px; flex-wrap: wrap; align-items: baseline; }
+  .about h2 { margin: 0; font-size: 44px; font-weight: 900; text-transform: uppercase; font-variation-settings: "wdth" 62; line-height: .9; }
+  .about p { margin: 0; color: var(--lab-muted); max-width: 70ch; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sw { display: grid; gap: 4px; font-size: 11px; color: var(--lab-muted); }
+  .sw b { width: 76px; height: 34px; border-radius: 4px; display: block; box-shadow: inset 0 0 0 1px #ffffff1f; }
+  .grid-title { margin: 28px 0 0; font-size: 28px; font-weight: 900; text-transform: uppercase; font-variation-settings: "wdth" 62; }
+  .all { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
+  .all figure { margin: 0; display: grid; gap: 8px; cursor: pointer; }
+  .all figcaption { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+  .all figcaption span { color: var(--lab-muted); font-weight: 400; font-size: 13px; }
+  .mini { height: 300px; overflow: hidden; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--lab-line); position: relative; }
+  .mini .app { transform: scale(.36); transform-origin: top left; width: 278%; pointer-events: none; }
+
+  /* ---------- the app mock, painted entirely from tokens ---------- */
+  .app { background: var(--bg); color: var(--ink); border-radius: 8px; overflow: hidden; font-size: 16px; line-height: 1.5; transition: background .4s, color .4s; }
+  .app * { transition: background-color .4s, color .4s, border-color .4s; }
+  .cond { font-variation-settings: "wdth" 62; word-spacing: .1em; }
+  .semi { font-variation-settings: "wdth" 80; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 32px; border-bottom: 1px solid var(--line); }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 25px; text-transform: uppercase; }
+  .nav { display: flex; gap: 22px; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .nav .on { color: var(--ink); box-shadow: 0 16px 0 -13px var(--ink); }
+  .body { display: grid; grid-template-columns: 5fr 7fr; gap: 44px; padding: 32px; }
+  .clocks { position: relative; display: grid; grid-template-columns: 1fr 1fr; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+  .clocks > div { padding: 18px 0; display: grid; gap: 8px; }
+  .clocks > div + div { border-left: 1px solid var(--line); padding-left: 16px; }
+  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .dot { width: 10px; height: 10px; border-radius: 99px; }
+  .cc { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 800; letter-spacing: .1em; }
+  .time { font-size: 70px; font-weight: 900; line-height: .82; letter-spacing: -.02em; }
+  .time small { font-size: 15px; vertical-align: top; margin-left: 4px; letter-spacing: .06em; }
+  .day { font-size: 13px; color: var(--muted); }
+  .apart { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); background: var(--bg); padding: 0 10px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .plate { margin-top: 30px; background: var(--plate-bg); color: var(--plate-ink); border-radius: 6px; padding: 20px; display: grid; gap: 14px; box-shadow: 0 24px 48px -24px rgb(0 0 0 / .6), 0 2px 6px rgb(0 0 0 / .18); }
+  .plate h3 { margin: 0; font-size: 28px; font-weight: 900; text-transform: uppercase; line-height: 1; }
+  .plate .row { display: flex; gap: 16px; border-top: 1px solid var(--plate-line); padding-top: 14px; }
+  .plate .meta { display: grid; gap: 8px; flex: 1; }
+  .plate .t { font-weight: 600; font-size: 18px; }
+  .plate .t span { color: var(--plate-muted); font-size: 14px; font-weight: 400; }
+  .listing { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border-top: 1px solid var(--plate-line); border-bottom: 1px solid var(--plate-line); padding: 10px 0; }
+  .listing .who { font-size: 11px; }
+  .listing .tt { font-size: 32px; font-weight: 900; line-height: .9; }
+  .listing .dd { font-size: 12px; color: var(--plate-muted); }
+  .btn { display: inline-block; padding: 7px 12px; border-radius: 4px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; font-variation-settings: "wdth" 80; }
+  .plate .btn { background: var(--plate-ink); color: var(--plate-bg); justify-self: start; }
+  .pick-card { margin-top: 18px; border: 2px solid var(--ink); border-radius: 6px; padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .pick-card b { display: block; text-transform: uppercase; font-size: 17px; }
+  .pick-card span { color: var(--muted); font-size: 13px; }
+  .tabs { display: flex; gap: 26px; align-items: flex-start; border-bottom: 2px solid var(--ink); padding-bottom: 12px; }
+  .tab { font-size: 56px; font-weight: 900; text-transform: uppercase; line-height: .9; color: color-mix(in srgb, var(--muted) 55%, transparent); }
+  .tab.on { color: var(--ink); }
+  .tab sup { font-size: 13px; font-variation-settings: "wdth" 80; color: var(--muted); }
+  .chiprow { display: flex; gap: 8px; margin: 18px 0 6px; }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chip i { width: 8px; height: 8px; border-radius: 99px; background: var(--stamp); display: block; }
+  .item { display: grid; grid-template-columns: 64px 64px 1fr; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .year { font-size: 32px; font-weight: 900; line-height: 1; color: var(--muted); }
+  .poster { position: relative; width: 64px; height: 96px; border-radius: 3px; background: var(--surface) center/cover; }
+  .stamp { position: absolute; left: -6px; bottom: -8px; background: var(--stamp); color: var(--on-stamp); font-weight: 900; font-size: 11px; letter-spacing: .08em; padding: 1px 7px; border-radius: 3px; rotate: -4deg; text-transform: uppercase; box-shadow: inset 0 0 0 1.5px var(--stamp), inset 0 0 0 2.5px var(--on-stamp); font-variation-settings: "wdth" 70; }
+  .marks { position: absolute; left: -4px; bottom: -8px; white-space: nowrap; background: color-mix(in srgb, var(--bg) 90%, transparent); color: var(--ink); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 3px; display: flex; gap: 5px; align-items: center; }
+  .marks i { width: 8px; height: 8px; border-radius: 99px; border: 1.5px solid currentColor; display: block; }
+  .ttl { font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .facts { font-size: 14px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .facts b { color: var(--ink); }
+  .facts .w { color: var(--ink); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-variation-settings: "wdth" 80; }
+  .added { font-size: 12px; color: var(--muted); }
+  .browse { padding: 0 32px 32px; display: grid; gap: 14px; }
+  .browse h4 { margin: 8px 0 0; font-size: 34px; font-weight: 900; text-transform: uppercase; border-top: 1px solid var(--line); padding-top: 14px; }
+  .strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .strip .poster { width: 100%; height: auto; aspect-ratio: 2/3; }
+  .strip .stamp { left: 8px; }
+  .strip .marks { left: 8px; }
+  .strip p { margin: 12px 0 0; font-weight: 600; }
+  .strip small { color: var(--muted); }
+</style>
+</head>
+<body>
+  <header class="lab-head">
+    <div class="lab-title">
+      <h1>Palette Lab</h1>
+      <p>Same layout, different colours. Click a palette (or press ← →). Every role stays the same: you, your partner, and one loud colour for "both".</p>
+    </div>
+    <div class="picker" id="picker"></div>
+  </header>
+
+  <main class="lab-main">
+    <div class="about"><h2 id="name"></h2><p id="mood"></p></div>
+    <div class="swatches" id="swatches"></div>
+    <div id="preview"></div>
+    <h3 class="grid-title">All of them</h3>
+    <div class="all" id="all"></div>
+  </main>
+
+<script>
+const P = (path) => `https://image.tmdb.org/t/p/w342${path}`;
+const POSTERS = {
+  bb: P("/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"),
+  matrix: P("/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg"),
+  inception: P("/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg"),
+  fight: P("/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg"),
+};
+
+// Each palette: page ground, raised surface, ink, muted, rules; you (me), your partner, the loud "both" stamp
+// and its ink; and the one reversed "plate".
+const PALETTES = [
+  { id: "ultramarine", name: "Ultramarine", mood: "What you have now. Deep festival blue, paper plate, signal-orange stamp.",
+    bg: "#161a5c", surface: "#1e2370", ink: "#f2f0ea", muted: "#b3b7e3", line: "#343a8a", me: "#dcbc7c", partner: "#93c9c9", stamp: "#ff5a1f", onStamp: "#1a0b03",
+    plateBg: "#f2f0ea", plateInk: "#161a5c", plateMuted: "#4c5191", plateLine: "#d6d4e3" },
+  { id: "velvet", name: "Velvet Seat", mood: "The inside of an old cinema: plum-black velvet, warm cream, a marquee-gold stamp.",
+    bg: "#1c1016", surface: "#28161f", ink: "#f5e9dc", muted: "#c3a5a7", line: "#3d2430", me: "#e0a370", partner: "#9cc2d6", stamp: "#ffc93c", onStamp: "#2a1600",
+    plateBg: "#f5e9dc", plateInk: "#2a0f1b", plateMuted: "#7d5160", plateLine: "#e3d1c4" },
+  { id: "lateshow", name: "Late Show", mood: "Deep teal like a TV glow at 1 am, with a coral stamp. Calm, a little moody.",
+    bg: "#0d2b2c", surface: "#123738", ink: "#eaf3ef", muted: "#9fc0b9", line: "#22494a", me: "#ecbb8a", partner: "#bba9ee", stamp: "#ff6a5a", onStamp: "#2b0703",
+    plateBg: "#f1eee6", plateInk: "#0d2b2c", plateMuted: "#4a6b69", plateLine: "#d9d6cc" },
+  { id: "dusk", name: "Dusk & Dawn", mood: "One of you is in the evening while the other is in the morning: plum night, peach dawn, dusk blue, hot-pink stamp.",
+    bg: "#2a1a3c", surface: "#352349", ink: "#fbefe8", muted: "#c9b2d6", line: "#46325e", me: "#ffb38a", partner: "#8fd3ff", stamp: "#ff3d7f", onStamp: "#ffffff",
+    plateBg: "#fbefe8", plateInk: "#2a1a3c", plateMuted: "#6e5880", plateLine: "#ecdcd6" },
+  { id: "greenroom", name: "Green Room", mood: "Forest green and lamp-warm accents, a tangerine stamp. Cosy without being cute.",
+    bg: "#14281f", surface: "#1b3428", ink: "#eef0e4", muted: "#a9bfae", line: "#2a4636", me: "#e8b56b", partner: "#a3c8dc", stamp: "#ff8a2b", onStamp: "#2a1200",
+    plateBg: "#eee9da", plateInk: "#14281f", plateMuted: "#556b5c", plateLine: "#d8d2c1" },
+  { id: "noir", name: "Noir + Acid", mood: "Black and white like a film still, with one shock of acid lime for 'both'.",
+    bg: "#0e0e0f", surface: "#18181a", ink: "#f3f3f1", muted: "#9a9a96", line: "#2b2b2e", me: "#d8c6a5", partner: "#a9c1db", stamp: "#c8ff3d", onStamp: "#121a00",
+    plateBg: "#f3f3f1", plateInk: "#0e0e0f", plateMuted: "#5d5d5a", plateLine: "#dcdcd8" },
+  { id: "matinee", name: "Matinée", mood: "Light and soft: blush paper, inky plum text, an electric-violet stamp.",
+    bg: "#f7efe9", surface: "#ffffff", ink: "#2a2233", muted: "#6f6378", line: "#e6d9d2", me: "#a86a3c", partner: "#3e7c95", stamp: "#6c4dff", onStamp: "#ffffff",
+    plateBg: "#2a2233", plateInk: "#f7efe9", plateMuted: "#bdb0c8", plateLine: "#40354b" },
+  { id: "seaside", name: "Seaside", mood: "Pale sea-glass daylight, deep ink-teal plate, a tomato stamp.",
+    bg: "#e8f1f1", surface: "#ffffff", ink: "#0f2a30", muted: "#4f6b70", line: "#cfdfdf", me: "#9b5d23", partner: "#2b6e85", stamp: "#e8452c", onStamp: "#ffffff",
+    plateBg: "#0f2a30", plateInk: "#eef5f4", plateMuted: "#9ebcbf", plateLine: "#24474e" },
+  { id: "popcorn", name: "Popcorn", mood: "Butter yellow and cherry red, like a concession stand. Loud and happy.",
+    bg: "#f6e7a6", surface: "#fbf2c9", ink: "#2b1b12", muted: "#6e5636", line: "#e3cf82", me: "#8c5a1e", partner: "#2f6a7a", stamp: "#d7262e", onStamp: "#ffffff",
+    plateBg: "#2b1b12", plateInk: "#f6e7a6", plateMuted: "#c9b07a", plateLine: "#4a3424" },
+];
+
+function mock(p) {
+  const vars = `--bg:${p.bg};--surface:${p.surface};--ink:${p.ink};--muted:${p.muted};--line:${p.line};--me:${p.me};--partner:${p.partner};--stamp:${p.stamp};--on-stamp:${p.onStamp};--plate-bg:${p.plateBg};--plate-ink:${p.plateInk};--plate-muted:${p.plateMuted};--plate-line:${p.plateLine}`;
+  const meSoft = `color-mix(in srgb, ${p.me} 22%, ${p.bg})`, ptSoft = `color-mix(in srgb, ${p.partner} 22%, ${p.bg})`;
+  const stamp = `<span class="stamp">Both</span>`;
+  const only = `<span class="marks"><i style="color:var(--me)"></i><i style="color:var(--partner);background:var(--partner)"></i>Only Sam</span>`;
+  const row = (year, poster, title, facts, mark) => `
+    <div class="item"><div class="year cond">${year}</div>
+      <div class="poster" style="background-image:url(${poster})">${mark}</div>
+      <div><div class="ttl semi">${title}</div><div class="facts">${facts}</div><div class="added">Added by you on 3 Nov 2026</div></div></div>`;
+  const card = (poster, title, sub, mark) => `<div><div class="poster" style="background-image:url(${poster})">${mark}</div><p>${title}</p><small>${sub}</small></div>`;
+  return `<div class="app" style="${vars}">
+    <div class="top"><div class="logo cond"><svg width="34" height="22" viewBox="0 0 30 20"><circle cx="10" cy="10" r="9" fill="${p.me}"/><circle cx="20" cy="10" r="9" fill="${p.partner}"/><path d="M15 2.5a9 9 0 0 1 0 15a9 9 0 0 1 0-15z" fill="${p.stamp}"/></svg>Two Couches</div>
+      <div class="nav semi"><span class="on">Our list</span><span>Browse</span><span>Coming soon</span><span>Watch nights</span><span>Stats</span></div></div>
+    <div class="body">
+      <div>
+        <div class="clocks">
+          <div><div class="who"><span class="dot" style="background:var(--me)"></span>You <span class="cc" style="background:${meSoft};color:var(--me)">GB</span></div><div class="time cond">10:30<small class="semi">AM</small></div><div class="day">Wednesday</div></div>
+          <div><div class="who"><span class="dot" style="background:var(--partner)"></span>Sam <span class="cc" style="background:${ptSoft};color:var(--partner)">NZ</span></div><div class="time cond">11:30<small class="semi">PM</small></div><div class="day">Wednesday</div></div>
+          <span class="apart semi">13 h apart</span>
+        </div>
+        <div class="plate"><h3 class="cond">Next watch night</h3>
+          <div class="row"><div class="poster" style="background-image:url(${POSTERS.inception})"></div>
+            <div class="meta"><div class="t">Inception <span>in 27 hours</span></div>
+              <div class="listing"><div><div class="who"><span class="dot" style="background:var(--me);filter:brightness(.7)"></span>You</div><div class="tt cond">1:00 PM</div><div class="dd">Thu, 5 Nov</div></div>
+              <div><div class="who"><span class="dot" style="background:var(--partner);filter:brightness(.7)"></span>Sam</div><div class="tt cond">2:00 AM</div><div class="dd">Fri, 6 Nov</div></div></div>
+              <span class="btn">I'm ready</span></div></div></div>
+        <div class="pick-card"><div><b class="semi">Pick something for tonight</b><span>Say how long you have and get one title that fits.</span></div><span style="font-size:22px">→</span></div>
+      </div>
+      <div>
+        <div class="tabs"><span class="tab on cond">Up next<sup>4</sup></span><span class="tab cond">Watched<sup>0</sup></span><span class="tab cond">Dropped<sup>0</sup></span></div>
+        <div class="chiprow"><span class="chip"><i></i>We can both watch</span><span class="chip on">Films</span><span class="chip">Series</span></div>
+        ${row("2008", POSTERS.bb, "Breaking Bad", `Series <b>Netflix</b> <span class="w">Watching · up to S1 E3</span>`, stamp)}
+        ${row("1999", POSTERS.matrix, "The Matrix", "Film", "")}
+        ${row("2010", POSTERS.inception, "Inception", "Film", only)}
+        ${row("1999", POSTERS.fight, "Fight Club", "Film <b>Netflix</b>", stamp)}
+      </div>
+    </div>
+    <div class="browse"><h4 class="cond">For you</h4>
+      <div class="strip">${card(POSTERS.matrix, "The Matrix", "Like Inception", stamp)}${card(POSTERS.fight, "Fight Club", "Like The Matrix", "")}${card(POSTERS.inception, "Inception", "Like Fight Club", stamp)}${card(POSTERS.bb, "Breaking Bad", "Like The Matrix", only)}${card(POSTERS.matrix, "The Matrix", "Like Fight Club", stamp)}${card(POSTERS.fight, "Fight Club", "Like Inception", "")}</div>
+    </div>
+  </div>`;
+}
+
+const picker = document.getElementById("picker");
+let current = 0;
+function show(i) {
+  current = (i + PALETTES.length) % PALETTES.length;
+  const p = PALETTES[current];
+  document.getElementById("name").textContent = p.name;
+  document.getElementById("mood").textContent = p.mood;
+  document.getElementById("preview").innerHTML = mock(p);
+  const sw = [["Ground", p.bg], ["Ink", p.ink], ["Muted", p.muted], ["You", p.me], ["Partner", p.partner], ["Both (loud)", p.stamp], ["Plate", p.plateBg], ["Plate ink", p.plateInk]];
+  document.getElementById("swatches").innerHTML = sw.map(([l, c]) => `<div class="sw"><b style="background:${c}"></b>${l}<br>${c}</div>`).join("");
+  picker.querySelectorAll(".pick").forEach((b, j) => b.setAttribute("aria-pressed", String(j === current)));
+  try { localStorage.setItem("lab", p.id); } catch {}
+}
+PALETTES.forEach((p, i) => {
+  const b = document.createElement("button");
+  b.className = "pick";
+  b.innerHTML = `<span class="chips"><i style="background:${p.bg}"></i><i style="background:${p.me}"></i><i style="background:${p.partner}"></i><i style="background:${p.stamp}"></i></span>${p.name}`;
+  b.onclick = () => { show(i); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  picker.append(b);
+});
+document.getElementById("all").innerHTML = PALETTES.map((p, i) =>
+  `<figure data-i="${i}"><div class="mini">${mock(p)}</div><figcaption>${p.name}<span>${p.mood.split(":")[0].split(".")[0]}</span></figcaption></figure>`).join("");
+document.getElementById("all").addEventListener("click", (e) => { const f = e.target.closest("figure"); if (f) { show(+f.dataset.i); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+addEventListener("keydown", (e) => { if (e.key === "ArrowRight") show(current + 1); if (e.key === "ArrowLeft") show(current - 1); });
+let start = 0;
+try { start = Math.max(0, PALETTES.findIndex((p) => p.id === localStorage.getItem("lab"))); } catch {}
+show(start);
+</script>
+</body>
+</html>

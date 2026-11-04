@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Source_Sans_3 } from "next/font/google";
+import { Fredoka, Luckiest_Guy } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 import { preconnect } from "react-dom";
 import { AppNav } from "@/components/app-nav";
+import { Couches } from "@/components/couch";
+import { FlightDeck } from "@/components/flight-deck";
 import { HtmlLang } from "@/components/html-lang";
+import { Intro } from "@/components/intro";
 import { OfflineChip } from "@/components/offline-chip";
 import { PwaSetup } from "@/components/pwa";
 import { WarmUp } from "@/components/warm-up";
@@ -12,11 +15,13 @@ import { countNewAlerts } from "@/lib/alerts";
 import { getMessages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/session";
-import { THEME_COLORS, THEME_SCRIPT } from "@/lib/theme";
+import { DEFAULT_LOOK, LOOK_SCRIPT, PALETTE_COLORS } from "@/lib/theme";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({ variable: "--font-display", subsets: ["latin", "latin-ext"] });
-const body = Source_Sans_3({ variable: "--font-body", subsets: ["latin", "latin-ext"] });
+// Saturday Morning's faces: Luckiest Guy for cartoon lettering, Fredoka for reading. Both cover Turkish.
+// A later skin's fonts are declared with preload: false, so only the active skin's fonts download.
+const luckiest = Luckiest_Guy({ variable: "--font-luckiest", weight: "400", subsets: ["latin", "latin-ext"] });
+const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin", "latin-ext"] });
 
 const TMDB_IMAGES = "https://image.tmdb.org";
 
@@ -30,10 +35,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   // Lets the phone tab bar sit above the iPhone home indicator (env(safe-area-inset-bottom)).
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
-    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
-  ],
+  // The standard palette's ground; LOOK_SCRIPT points it at this device's palette.
+  themeColor: PALETTE_COLORS[DEFAULT_LOOK.palette].ground,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -43,28 +46,45 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   preconnect(TMDB_IMAGES);
   preconnect(TMDB_IMAGES, { crossOrigin: "anonymous" });
   return (
-    // The theme script sets data-theme before React hydrates, hence suppressHydrationWarning.
-    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} h-full antialiased`}>
+    // LOOK_SCRIPT swaps in this device's look before React hydrates, hence suppressHydrationWarning.
+    <html
+      lang="en"
+      data-skin={DEFAULT_LOOK.skin}
+      data-palette={DEFAULT_LOOK.palette}
+      suppressHydrationWarning
+      className={`${luckiest.variable} ${fredoka.variable} h-full antialiased`}
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col font-sans text-[17px] leading-relaxed">
         <PwaSetup />
-        <header className="border-b border-line bg-surface">
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <Link href="/" className="font-display text-xl font-bold tracking-tight">
-              Two Couches
+        {/* Stays put while pages whoosh and peel beneath it. */}
+        <header style={{ viewTransitionName: "site-header" }} className="relative z-20">
+          <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 pb-2 pt-4 sm:px-6 lg:px-8 lg:pt-5">
+            <Link
+              href="/"
+              className="group flex shrink-0 -rotate-2 items-center gap-2 transition duration-200 ease-(--ease-spring) hover:-rotate-4 hover:scale-105"
+            >
+              <span data-logo-couches className="inline-flex">
+                <Couches size={44} className="sm:hidden" />
+                <Couches size={54} className="max-sm:hidden" />
+              </span>
+              <span className="display text-[1.65rem] sm:text-[2.3rem]">Two Couches</span>
             </Link>
             <Suspense>
               <AccountNav />
             </Suspense>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
-        <footer className="border-t border-line px-4 py-5 text-center text-sm text-muted">
-          <Suspense fallback={getMessages("en").common.footer}>
-            <Attribution />
-          </Suspense>
+        <Intro />
+        <main className="mx-auto w-full max-w-[90rem] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <footer className="mx-auto w-full max-w-[90rem] px-4 pb-6 pt-2 sm:px-6 lg:px-8">
+          <p className="mx-auto max-w-[48rem] rounded-panel border-[3px] border-outline bg-surface px-4 py-3 text-sm text-muted">
+            <Suspense fallback={getMessages("en").common.footer}>
+              <Attribution />
+            </Suspense>
+          </p>
         </footer>
       </body>
     </html>
@@ -82,6 +102,7 @@ async function AccountNav() {
         <>
           <OfflineChip language={language} />
           <AppNav newAlerts={newAlerts} language={language} />
+          <FlightDeck language={language} />
           {profile.couple_id && <WarmUp />}
         </>
       )}

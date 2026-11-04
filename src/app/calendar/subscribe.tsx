@@ -44,16 +44,24 @@ export function CalendarSubscribe(props: {
   }
 
   return (
-    <details className="group w-full rounded-xl border border-line bg-surface">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
-        <span>{t.heading}</span>
-        <span aria-hidden className="text-muted transition group-open:rotate-180">
-          ▾
+    <details className="card group w-full p-0">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-3">
+          <CalendarIcon />
+          <span className="display-ink text-xl">{t.heading}</span>
+        </span>
+        <span
+          aria-hidden
+          className="grid size-8 shrink-0 place-items-center rounded-full border-[2.5px] border-outline bg-pop transition duration-200 ease-(--ease-spring) group-open:rotate-180"
+        >
+          <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </span>
       </summary>
 
-      <div aria-busy={pending} className="grid gap-3 border-t border-line px-4 py-4 text-sm">
-        <p className="text-muted">{t.intro}</p>
+      <div aria-busy={pending} className="grid gap-4 border-t-2 border-outline/15 px-5 pb-5 pt-4">
+        <p className="max-w-[65ch] text-muted">{t.intro}</p>
 
         {token ? (
           <>
@@ -62,38 +70,38 @@ export function CalendarSubscribe(props: {
                 {t.subscribe}
               </a>
             </div>
-            <label className="grid gap-1">
-              <span className="font-semibold">{t.linkLabel}</span>
+            <label className="grid gap-1.5">
+              <span className="font-bold">{t.linkLabel}</span>
               <span className="flex gap-2">
                 <input
                   id="calendar-link"
                   readOnly
                   value={https}
                   onFocus={(e) => e.currentTarget.select()}
-                  className="field min-w-0 flex-1 font-mono text-xs"
+                  className="field min-w-0 flex-1 font-mono text-sm"
                 />
                 <button type="button" onClick={copy} className="btn-quiet shrink-0">
                   {copied ? t.copied : t.copy}
                 </button>
               </span>
             </label>
-            <p className="font-semibold">{t.shownOnce}</p>
+            <p className="rounded-control border-[2.5px] border-outline bg-accent-soft px-3 py-2 font-bold">{t.shownOnce}</p>
             <ul className="grid gap-2">
               <li>
-                <span className="font-semibold">{t.google.name}: </span>
+                <span className="font-bold">{t.google.name}: </span>
                 {t.google.how}
               </li>
               <li>
-                <span className="font-semibold">{t.apple.name}: </span>
+                <span className="font-bold">{t.apple.name}: </span>
                 {t.apple.how}
               </li>
             </ul>
           </>
         ) : props.madeOn ? (
-          <p>{t.haveLink(props.madeOn)}</p>
+          <p className="font-semibold">{t.haveLink(props.madeOn)}</p>
         ) : null}
 
-        <p className="text-muted">{t.private}</p>
+        <p className="max-w-[65ch] text-sm text-muted">{t.private}</p>
 
         <div className="flex flex-wrap gap-2">
           {props.madeOn || token ? (
@@ -123,11 +131,31 @@ export function CalendarSubscribe(props: {
         </div>
 
         {error && (
-          <p role="alert" className="text-danger">
+          <p role="alert" className="font-semibold text-danger">
             {error}
           </p>
         )}
       </div>
     </details>
+  );
+}
+
+/** A little calendar page, drawn like the other icons but at heading size. */
+function CalendarIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-7 shrink-0"
+    >
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="var(--pop)" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+      <path d="m9 15 2 2 4-4" />
+    </svg>
   );
 }

@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-04T23:30:00Z",
+  "title": "Design System: Two Couches",
+  "extensions": {
+    "look": {
+      "attributes": ["data-skin", "data-palette"],
+      "setBy": "LOOK_SCRIPT in <head> (src/lib/theme.ts), from localStorage key 'look' = 'skin/palette'; nothing stored = saturday/sunburst",
+      "skins": { "saturday": { "displayName": "Saturday Morning", "palettes": ["sunburst"] } },
+      "plannedSkins": ["Sticker Scrapbook (Bagel Fat One + Nunito)", "POW! Comic Book (Bangers + Shantell Sans)", "Candy Shop (Dela Gothic One + Rubik)"],
+      "skinMustDefine": ["--font-skin-display", "--font-skin-body", "--outline-width", "--skin-radius-panel", "--skin-radius-control", "--skin-radius-poster", "--lift", "--lift-sm", "ground decoration + matching peel-sheet background", "next/font declarations (preload: false unless default)", "SKINS entry", "i18n skins/skinNotes"],
+      "paletteMustDefine": ["--p-bg", "--p-surface", "--p-ink", "--p-muted", "--p-line", "--ray", "--outline", "--me", "--me-soft", "--partner", "--partner-soft", "--stamp", "--on-stamp", "--both", "--both-soft", "--accent", "--on-accent", "--accent-soft", "--accent-muted", "--pop", "--danger", "--danger-soft", "color-scheme", "PALETTE_COLORS entry (ground, paper, ink, accent, both, me, partner)"]
+    },
+    "colorMeta": {
+      "sunburst-ground": { "role": "neutral", "displayName": "Sunburst Ground", "canonical": "#ffd23f", "cssVar": "--p-bg / --bg", "tonalRamp": ["oklch(15% 0.04 90)", "oklch(28% 0.07 90)", "oklch(42% 0.1 90)", "oklch(56% 0.13 90)", "oklch(70% 0.16 90)", "oklch(80% 0.17 90)", "oklch(87.6% 0.17 90)", "oklch(95% 0.07 90)"] },
+      "sunburst-ray": { "role": "neutral", "displayName": "Sunburst Ray", "canonical": "#ffc61a", "cssVar": "--ray" },
+      "cream-paper": { "role": "neutral", "displayName": "Cream Paper", "canonical": "#fffaf0", "cssVar": "--p-surface / --surface" },
+      "cartoon-ink": { "role": "neutral", "displayName": "Cartoon Ink", "canonical": "#1d1a2b", "cssVar": "--p-ink / --outline", "tonalRamp": ["oklch(15% 0.03 290)", "oklch(22% 0.035 290)", "oklch(32% 0.04 290)", "oklch(44% 0.045 290)", "oklch(56% 0.045 290)", "oklch(68% 0.04 290)", "oklch(82% 0.03 290)", "oklch(95% 0.01 290)"] },
+      "dusk-muted": { "role": "neutral", "displayName": "Dusk Muted", "canonical": "#4a4360", "cssVar": "--p-muted" },
+      "ink-line": { "role": "neutral", "displayName": "Ink Line", "canonical": "rgb(29 26 43 / 0.2)", "cssVar": "--p-line" },
+      "coral-me": { "role": "tertiary", "displayName": "Coral Me", "canonical": "#ff8a65", "cssVar": "--me", "note": "Fill only, never text.", "tonalRamp": ["oklch(15% 0.05 40)", "oklch(28% 0.09 40)", "oklch(42% 0.13 40)", "oklch(55% 0.16 40)", "oklch(66% 0.17 40)", "oklch(75% 0.15 40)", "oklch(85% 0.08 40)", "oklch(95% 0.03 40)"] },
+      "coral-me-soft": { "role": "tertiary", "displayName": "Coral Me Soft", "canonical": "#ffdccf", "cssVar": "--me-soft" },
+      "sky-partner": { "role": "tertiary", "displayName": "Sky Partner", "canonical": "#5cc8ff", "cssVar": "--partner", "note": "Fill only, never text.", "tonalRamp": ["oklch(15% 0.04 235)", "oklch(28% 0.07 235)", "oklch(42% 0.1 235)", "oklch(55% 0.12 235)", "oklch(66% 0.13 235)", "oklch(78% 0.13 235)", "oklch(87% 0.07 235)", "oklch(95% 0.03 235)"] },
+      "sky-partner-soft": { "role": "tertiary", "displayName": "Sky Partner Soft", "canonical": "#d4f0ff", "cssVar": "--partner-soft" },
+      "bubblegum-stamp": { "role": "secondary", "displayName": "Bubblegum Stamp", "canonical": "#ff2e93", "cssVar": "--stamp", "note": "Only where the two overlap.", "tonalRamp": ["oklch(15% 0.06 355)", "oklch(27% 0.11 355)", "oklch(40% 0.16 355)", "oklch(52% 0.21 355)", "oklch(63.5% 0.25 355)", "oklch(74% 0.18 355)", "oklch(86% 0.08 355)", "oklch(95% 0.03 355)"] },
+      "on-stamp": { "role": "secondary", "displayName": "On Stamp", "canonical": "#ffffff", "cssVar": "--on-stamp" },
+      "bubblegum-text": { "role": "secondary", "displayName": "Bubblegum Text", "canonical": "#b0005f", "cssVar": "--both" },
+      "bubblegum-soft": { "role": "secondary", "displayName": "Bubblegum Soft", "canonical": "#ffd6ea", "cssVar": "--both-soft" },
+      "spotlight-both-text": { "role": "secondary", "displayName": "Spotlight Both Text", "canonical": "#ffc2e0", "cssVar": "--both inside .spotlight" },
+      "grape-accent": { "role": "primary", "displayName": "Grape Accent", "canonical": "#6a4cf5", "cssVar": "--accent", "tonalRamp": ["oklch(15% 0.06 285)", "oklch(25% 0.11 285)", "oklch(35% 0.16 285)", "oklch(45% 0.2 285)", "oklch(54% 0.24 285)", "oklch(68% 0.16 285)", "oklch(84% 0.07 285)", "oklch(95% 0.025 285)"] },
+      "on-accent": { "role": "primary", "displayName": "On Accent", "canonical": "#ffffff", "cssVar": "--on-accent" },
+      "grape-soft": { "role": "primary", "displayName": "Grape Soft", "canonical": "#e6e0ff", "cssVar": "--accent-soft" },
+      "grape-muted": { "role": "primary", "displayName": "Grape Muted", "canonical": "#e2dbff", "cssVar": "--accent-muted", "note": "--muted inside .spotlight" },
+      "pop-yellow": { "role": "tertiary", "displayName": "Pop Yellow", "canonical": "#ffd23f", "cssVar": "--pop" },
+      "danger": { "role": "neutral", "displayName": "Danger", "canonical": "#b0101f", "cssVar": "--danger" },
+      "danger-soft": { "role": "neutral", "displayName": "Danger Soft", "canonical": "#ffe1df", "cssVar": "--danger-soft" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles, wordmark and intro on the ground: cream fill, ink stroke max(2px, 0.05em) painted under the fill, text-shadow 0.07em 0.07em 0 ink. Utility: display." },
+      "headline": { "displayName": "Spotlight Head", "purpose": "The spotlight's head: display treatment filled with --pop." },
+      "title": { "displayName": "Ink Head", "purpose": "Section heads and tabs on paper, plain ink. Utility: display-ink." },
+      "numeral": { "displayName": "Numeral", "purpose": "Live clocks, night tickets and Stats tiles, tabular." },
+      "item-title": { "displayName": "Item Title", "purpose": "List entries, title cards, night titles." },
+      "body": { "displayName": "Body", "purpose": "Everything read; tabular figures globally." },
+      "label": { "displayName": "Label", "purpose": "Meta lines, tags, chips, badges." },
+      "button": { "displayName": "Button", "purpose": "The bright .btn only." }
+    },
+    "shadows": [
+      { "name": "panel", "value": "6px 6px 0 var(--outline)", "purpose": "Cards, spotlight, list rows (8px on row hover). --lift." },
+      { "name": "control", "value": "3px 3px 0 var(--outline)", "purpose": "Buttons, selected chips, icon buttons, nav bar; grows on hover, 0 on press. --lift-sm." },
+      { "name": "poster", "value": "4px 4px 0 var(--outline)", "purpose": "Posters, current tab, Stats tiles, checked settings option." },
+      { "name": "nav-pill", "value": "2px 2px 0 var(--outline)", "purpose": "The travelling grape pill." },
+      { "name": "field-focus", "value": "4px 4px 0 var(--accent)", "purpose": "A focused field." },
+      { "name": "peel-sheet", "value": "-16px 0 28px -12px rgb(29 26 43 / 0.35)", "purpose": "Trailing edge of a page peeling away; the only soft shadow." }
+    ],
+    "motion": [
+      { "name": "ease-spring", "value": "cubic-bezier(0.2, 1.4, 0.4, 1)", "purpose": "The one motion clock: presses, hovers, pops, poster morph (420ms), pick-deal. Overshoot once, settle." },
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Plain settles." },
+      { "name": "pop", "value": "0.6s ease-spring, stagger 50ms by --i", "purpose": "Burst: scale 0 / -30deg, 1.15 / 6deg, settle at --r (-8deg)." },
+      { "name": "wiggle", "value": "0.4s", "purpose": ".tilt-row on hover, ±1.5deg around --tilt." },
+      { "name": "bob", "value": "3.2s ease-in-out infinite", "purpose": "Couches; partner delayed 0.6s." },
+      { "name": "blink", "value": "4.5s infinite", "purpose": "Couch eyes; partner delayed 1.7s." },
+      { "name": "squash", "value": "active: translate 3px, scaleX 1.03, scaleY 0.95", "purpose": "Button press." },
+      { "name": "pick-deal", "value": "0.55s ease-spring", "purpose": "A new pick deals in from the right with a spin." },
+      { "name": "nav-pill-travel", "value": "360ms + 80ms per extra step, cubic-bezier(.3,1.5,.5,1); smear 380ms", "purpose": "Pill travels and stretches between sections." },
+      { "name": "jiggle", "value": "300ms, delay 50 + 65ms per tab, cubic-bezier(.3,1.6,.5,1)", "purpose": "Nav tabs passed on the way." },
+      { "name": "intro", "value": "1700ms, once per launch (sessionStorage), skippable by tap or key", "purpose": "Burst spins in with 'Two Couches!', swaps for couches, cover spins open via a burst-shaped hole, burst lands on the measured header logo. Off with reduced motion." },
+      { "name": "whoosh", "value": "out 260ms cubic-bezier(.55,0,.85,.35); in 440ms cubic-bezier(.22,1.2,.36,1), delayed 90 + 75ms per passed section", "purpose": "Forward page transition with speed lines and passed-section previews. Transform and opacity only." },
+      { "name": "peel", "value": "out 360ms (300ms with passed sections) cubic-bezier(.5,0,.75,.4); in 460 + 80ms per passed section cubic-bezier(.2,.9,.3,1)", "purpose": "Back transition: opaque ground sheet peels right, passed sections peel after it 80ms apart, earlier page rises from 0.965 scale." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "40rem" },
+      { "name": "md", "value": "48rem", "note": "Header pill nav from here; bottom tab bar below." },
+      { "name": "lg", "value": "64rem", "note": "Home 12-column grid." },
+      { "name": "xl", "value": "80rem", "note": "Full nav labels." }
+    ],
+    "layout": {
+      "frame": "90rem, padding 16/24/32px",
+      "readingColumn": "48rem unless the page root sets data-wide"
+    }
+  },
+  "components": [
+    {
+      "name": "Bright Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The bright cartoon button that squashes when pressed.",
+      "html": "<button class=\"ds-btn\">I'm ready</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'Luckiest Guy', sans-serif; font-size: 1.05rem; line-height: 1; letter-spacing: 0.04em; color: #1d1a2b; background: #ffd23f; border: 2.5px solid #1d1a2b; border-radius: 14px; padding: 10px 16px 8px; box-shadow: 3px 3px 0 #1d1a2b; cursor: pointer; transition: transform 150ms cubic-bezier(0.2, 1.4, 0.4, 1), box-shadow 150ms cubic-bezier(0.2, 1.4, 0.4, 1); } .ds-btn:hover { transform: translate(-2px, -2px) rotate(-1deg); box-shadow: 5px 5px 0 #1d1a2b; } .ds-btn:active { transform: translate(3px, 3px) scale(1.03, 0.95); box-shadow: 0 0 0 #1d1a2b; } .ds-btn:focus-visible { outline: 3px solid #6a4cf5; outline-offset: 3px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Paper button for secondary actions.",
+      "html": "<button class=\"ds-btn-quiet\">Not now</button>",
+      "css": ".ds-btn-quiet { display: inline-flex; align-items: center; gap: 8px; font-family: Fredoka, sans-serif; font-weight: 600; color: #1d1a2b; background: #fffaf0; border: 2.5px solid #1d1a2b; border-radius: 14px; padding: 6px 14px; box-shadow: 3px 3px 0 #1d1a2b; cursor: pointer; transition: transform 150ms cubic-bezier(0.2, 1.4, 0.4, 1), box-shadow 150ms cubic-bezier(0.2, 1.4, 0.4, 1); } .ds-btn-quiet:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #1d1a2b; } .ds-btn-quiet:active { transform: translate(2px, 2px); box-shadow: none; } .ds-btn-quiet:focus-visible { outline: 3px solid #6a4cf5; outline-offset: 3px; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Filter and toggle chip; grape when aria-pressed / aria-current / aria-checked / checked input.",
+      "html": "<span class=\"ds-row\"><button class=\"ds-chip\" aria-pressed=\"true\"><span class=\"ds-dot\"></span>We can both watch</button><button class=\"ds-chip\" aria-pressed=\"false\">Films</button></span>",
+      "css": ".ds-row { display: flex; gap: 8px; } .ds-chip { display: inline-flex; align-items: center; gap: 6px; font-family: Fredoka, sans-serif; font-size: 15px; font-weight: 600; color: #1d1a2b; background: #fffaf0; border: 2.5px solid #1d1a2b; border-radius: 9999px; padding: 4px 12px; cursor: pointer; transition: transform 150ms cubic-bezier(0.2, 1.4, 0.4, 1); } .ds-chip:hover { transform: translateY(-2px) rotate(-2deg); } .ds-chip[aria-pressed=true] { background: #6a4cf5; color: #fff; box-shadow: 3px 3px 0 #1d1a2b; } .ds-chip:focus-visible { outline: 3px solid #6a4cf5; outline-offset: 3px; } .ds-dot { width: 12px; height: 12px; border-radius: 9999px; border: 2px solid #1d1a2b; background: #ff2e93; }"
+    },
+    {
+      "name": "Tab",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Big outlined view tabs; the current one tips and turns grape.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab\" aria-current=\"page\" href=\"#\">Up next</a><a class=\"ds-tab\" href=\"#\">Watched</a></nav>",
+      "css": ".ds-tabs { display: flex; gap: 12px; } .ds-tab { font-family: 'Luckiest Guy', sans-serif; font-size: 1.6rem; line-height: 1; letter-spacing: 0.03em; color: #1d1a2b; text-decoration: none; background: rgb(255 250 240 / 0.75); border: 3px solid #1d1a2b; border-radius: 16px; padding: 10px 16px 6px; transition: transform 150ms cubic-bezier(0.2, 1.4, 0.4, 1); } .ds-tab:hover { transform: translateY(-2px); background: #fffaf0; } .ds-tab[aria-current=page] { background: #6a4cf5; color: #fff; transform: rotate(-2deg); box-shadow: 4px 4px 0 #1d1a2b; } .ds-tab:focus-visible { outline: 3px solid #6a4cf5; outline-offset: 3px; }"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Paper input; focus drops a grape offset shadow.",
+      "html": "<input class=\"ds-field\" placeholder=\"Search films and series\">",
+      "css": ".ds-field { width: 100%; font-family: Fredoka, sans-serif; font-size: 17px; color: #1d1a2b; background: #fffaf0; border: 3px solid #1d1a2b; border-radius: 14px; padding: 8px 14px; outline: none; transition: box-shadow 150ms; } .ds-field::placeholder { color: #4a4360; } .ds-field:focus { box-shadow: 4px 4px 0 #6a4cf5; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Paper cut-out panel with ink outline and hard shadow; list rows tilt and wiggle.",
+      "html": "<div class=\"ds-card\"><strong class=\"ds-card-title\">The Matrix</strong><span class=\"ds-card-meta\">Film · 1999</span></div>",
+      "css": ".ds-card { display: grid; gap: 4px; font-family: Fredoka, sans-serif; color: #1d1a2b; background: #fffaf0; border: 3px solid #1d1a2b; border-radius: 22px; padding: 20px; box-shadow: 6px 6px 0 #1d1a2b; rotate: -0.5deg; transition: box-shadow 150ms; } .ds-card:hover { box-shadow: 8px 8px 0 #1d1a2b; } .ds-card-title { font-size: 1.5rem; font-weight: 700; } .ds-card-meta { font-size: 0.875rem; color: #4a4360; }"
+    },
+    {
+      "name": "Spotlight",
+      "kind": "card",
+      "refersTo": "spotlight",
+      "description": "The one grape panel per screen, with a pop-filled display head and swapped text tokens.",
+      "html": "<section class=\"ds-spot\"><h2 class=\"ds-spot-head\">Next watch night</h2><p class=\"ds-spot-muted\">in 24 hours</p></section>",
+      "css": ".ds-spot { display: grid; gap: 12px; font-family: Fredoka, sans-serif; color: #fff; background: #6a4cf5; border: 3px solid #1d1a2b; border-radius: 22px; padding: 20px; box-shadow: 6px 6px 0 #1d1a2b; rotate: -1deg; } .ds-spot-head { margin: 0; font-family: 'Luckiest Guy', sans-serif; font-weight: 400; font-size: 2rem; line-height: 0.95; letter-spacing: 0.02em; color: #ffd23f; -webkit-text-stroke: 2px #1d1a2b; paint-order: stroke fill; text-shadow: 0.07em 0.07em 0 #1d1a2b; } .ds-spot-muted { margin: 0; color: #e2dbff; }"
+    },
+    {
+      "name": "Both Burst",
+      "kind": "custom",
+      "refersTo": "burst",
+      "description": "Bubblegum 12-point starburst that pops onto anything you can both watch.",
+      "html": "<span class=\"ds-burst\"><svg viewBox=\"0 0 100 100\"><path d=\"M50 2L58.8 17.2L74 8.4L74 26L91.6 26L82.8 41.2L98 50L82.8 58.8L91.6 74L74 74L74 91.6L58.8 82.8L50 98L41.2 82.8L26 91.6L26 74L8.4 74L17.2 58.8L2 50L17.2 41.2L8.4 26L26 26L26 8.4L41.2 17.2Z\" fill=\"#ff2e93\" stroke=\"#1d1a2b\" stroke-width=\"4\" stroke-linejoin=\"round\"/></svg><span class=\"ds-burst-word\">Both of us!</span></span>",
+      "css": ".ds-burst { position: relative; display: inline-grid; place-items: center; width: 80px; height: 80px; rotate: -8deg; animation: ds-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both; } .ds-burst svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; } .ds-burst-word { position: relative; max-width: 78%; text-align: center; font-family: 'Luckiest Guy', sans-serif; font-size: 15px; line-height: 0.9; color: #fff; -webkit-text-stroke: 1.5px #1d1a2b; paint-order: stroke fill; } @keyframes ds-pop { 0% { scale: 0; rotate: -30deg; } 70% { scale: 1.15; rotate: 6deg; } 100% { scale: 1; rotate: -8deg; } } @media (prefers-reduced-motion: reduce) { .ds-burst { animation: none; } }"
+    },
+    {
+      "name": "Couch Mascot",
+      "kind": "custom",
+      "refersTo": "couch",
+      "description": "One little couch per person in their colour; bobs and blinks, the partner a beat behind.",
+      "html": "<span class=\"ds-couches\"><svg class=\"ds-couch\" width=\"56\" height=\"44\" viewBox=\"0 0 64 50\"><g stroke=\"#1d1a2b\" stroke-width=\"3\"><rect x=\"9\" y=\"8\" width=\"46\" height=\"24\" rx=\"9\" fill=\"#ff8a65\"/><rect x=\"3\" y=\"20\" width=\"14\" height=\"22\" rx=\"6\" fill=\"#ff8a65\"/><rect x=\"47\" y=\"20\" width=\"14\" height=\"22\" rx=\"6\" fill=\"#ff8a65\"/><rect x=\"13\" y=\"28\" width=\"38\" height=\"14\" rx=\"5\" fill=\"#ff8a65\"/><path d=\"M10 42v5M54 42v5\" stroke-linecap=\"round\"/><ellipse cx=\"26\" cy=\"19\" rx=\"2.6\" ry=\"3.4\" fill=\"#1d1a2b\" stroke=\"none\"/><ellipse cx=\"38\" cy=\"19\" rx=\"2.6\" ry=\"3.4\" fill=\"#1d1a2b\" stroke=\"none\"/><path d=\"M28 25q4 3.5 8 0\" fill=\"none\" stroke-width=\"2.4\" stroke-linecap=\"round\"/></g></svg><svg class=\"ds-couch ds-couch-partner\" width=\"56\" height=\"44\" viewBox=\"0 0 64 50\"><g stroke=\"#1d1a2b\" stroke-width=\"3\"><rect x=\"9\" y=\"8\" width=\"46\" height=\"24\" rx=\"9\" fill=\"#5cc8ff\"/><rect x=\"3\" y=\"20\" width=\"14\" height=\"22\" rx=\"6\" fill=\"#5cc8ff\"/><rect x=\"47\" y=\"20\" width=\"14\" height=\"22\" rx=\"6\" fill=\"#5cc8ff\"/><rect x=\"13\" y=\"28\" width=\"38\" height=\"14\" rx=\"5\" fill=\"#5cc8ff\"/><path d=\"M10 42v5M54 42v5\" stroke-linecap=\"round\"/><ellipse cx=\"26\" cy=\"19\" rx=\"2.6\" ry=\"3.4\" fill=\"#1d1a2b\" stroke=\"none\"/><ellipse cx=\"38\" cy=\"19\" rx=\"2.6\" ry=\"3.4\" fill=\"#1d1a2b\" stroke=\"none\"/><path d=\"M28 25q4 3.5 8 0\" fill=\"none\" stroke-width=\"2.4\" stroke-linecap=\"round\"/></g></svg></span>",
+      "css": ".ds-couches { display: inline-flex; align-items: flex-end; } .ds-couch { overflow: visible; transform-origin: bottom center; animation: ds-bob 3.2s ease-in-out infinite; } .ds-couch-partner { margin-left: -8%; animation-delay: 0.6s; } @keyframes ds-bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-1.5deg); } } @media (prefers-reduced-motion: reduce) { .ds-couch { animation: none; } }"
+    },
+    {
+      "name": "Name Tag",
+      "kind": "chip",
+      "refersTo": "name-tag-me",
+      "description": "A person's name on a pill in their colour, always with ink text.",
+      "html": "<span class=\"ds-row\"><span class=\"ds-tag ds-tag-me\">You</span><span class=\"ds-tag ds-tag-partner\">Sam</span></span>",
+      "css": ".ds-row { display: flex; gap: 8px; } .ds-tag { display: inline-flex; align-items: center; font-family: Fredoka, sans-serif; font-size: 0.875rem; font-weight: 700; color: #1d1a2b; border: 2.5px solid #1d1a2b; border-radius: 9999px; padding: 0 10px; } .ds-tag-me { background: #ff8a65; } .ds-tag-partner { background: #5cc8ff; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Saturday Morning for Two",
+    "overview": "The app is a Saturday-morning cartoon about two people on two couches, hours apart. Every screen is a sunny cel: a sunshine-yellow ground with rays fanning down from above the top of the screen, and cream paper panels cut out in thick ink outlines that cast hard, flat ink shadows. The two people are two little couches with faces, one coral and one sky blue, bobbing and blinking a beat apart. A bubblegum starburst pops onto a title only when both of you can watch it. Nothing else is that loud.\n\nThe look is a skin plus a palette, chosen per device and set on <html> before the first paint (data-skin, data-palette, written by LOOK_SCRIPT from localStorage). The skin owns fonts, outline weight, corner radii, shadow offsets, decorations and motion. The palette owns every colour. Components read only the tokens, so a new skin or palette is a new CSS block plus an entry in SKINS / PALETTE_COLORS, not a component rewrite. Today there is one skin, Saturday Morning (saturday), with one palette, Sunburst (sunburst). Sticker Scrapbook, POW! Comic Book and Candy Shop are planned as skins, and more palettes will come from a palette lab.\n\nDensity is relaxed and playful but legible: 17px Fredoka for reading, big cartoon lettering only for page titles, section heads, tabs and numbers. Panels lean a little (about -1 to 1 degrees), and rows wiggle when pointed at. Everything that moves overshoots once and settles. The world rejects the streaming-service dashboard (dark grids, glass, backdrop heroes) and timid \"playful\" SaaS (pastel cards with a mascot sticker on top).",
+    "keyCharacteristics": [
+      "Sunburst ground (yellow plus conic rays) under cream paper panels with 3px ink outlines and hard offset ink shadows.",
+      "One grape spotlight panel per screen. Its display head is filled in pop yellow.",
+      "Coral and sky person colours are fills only (couches, dots, name tags). They never colour text.",
+      "The bubblegum starburst and the stamp colour mean \"both of you\" and nothing else.",
+      "Luckiest Guy lettering with an ink stroke and a hard shadow on the ground; Fredoka for everything you read.",
+      "One spring clock (cubic-bezier(0.2, 1.4, 0.4, 1)): pop, wiggle, squash, bob and blink. Reduced motion turns it all off."
+    ],
+    "rules": [
+      { "name": "The Overlap Rule", "body": "Bubblegum (--stamp, --both) appears only where the two of you overlap: a title you can both stream or both being ready. It is never decoration, never a status like \"under way\", never a generic alert.", "section": "colors" },
+      { "name": "The Fill-Only Rule", "body": "Coral and sky are fills with ink text and an ink outline. They are never text colours, borders or rules.", "section": "colors" },
+      { "name": "The One Spotlight Rule", "body": "One grape spotlight panel per screen, for that screen's moment. Grape elsewhere marks only selection, done states or data, always at small scale.", "section": "colors" },
+      { "name": "The Token Swap Rule", "body": "Text tokens follow their surface. The page, .card, .paper, .field, .chip, .btn and .btn-quiet reset --ink, --muted, --line and --focus to the palette's paper values. .spotlight swaps them: ink becomes on-accent, muted becomes grape-muted, lines become rgb(255 255 255 / 0.35), --both becomes spotlight-both-text and focus becomes pop. A paper element inside the spotlight is readable without extra classes.", "section": "colors" },
+      { "name": "The Ground-or-Paper Rule", "body": "Cartoon lettering on the ground or the spotlight gets the full display treatment (fill, stroke, shadow). On paper it is display-ink: plain ink, no stroke, no shadow.", "section": "typography" },
+      { "name": "The Tabular Rule", "body": "body sets font-variant-numeric: tabular-nums, so times, counts and dates never jitter as they tick.", "section": "typography" },
+      { "name": "The Flat Ink Rule", "body": "Every shadow except the peel sheet is a zero-blur offset in ink. No soft ambient shadows, no glows, no glass.", "section": "elevation" },
+      { "name": "The Press Rule", "body": "Interactive things lift on hover (translate up-left, bigger offset) and land in their shadow on press. Disabled things lose their shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do put every surface on cream paper with a 3px ink outline and a flat ink offset shadow (6px panels, 3px controls, 4px posters).",
+      "Do use bubblegum only where the two of you overlap: the Burst for \"both can watch\", the dot on \"We can both watch\" filters, both being ready.",
+      "Do keep coral and sky as fills with ink text and an ink outline (couches, dots, name tags, ticket dots).",
+      "Do give each screen exactly one grape spotlight for its moment, with its head in pop-filled display lettering.",
+      "Do use full display lettering on the ground and spotlight, and display-ink on paper.",
+      "Do mark selected chips, tabs and options with aria-pressed, aria-current, aria-checked or a checked input, and let the CSS turn them grape.",
+      "Do move on the spring clock (cubic-bezier(0.2, 1.4, 0.4, 1)), animate only transform and opacity in transitions, and gate every loop and entrance behind prefers-reduced-motion: no-preference.",
+      "Do take every colour from tokens, so a new palette changes the whole app.",
+      "Do draw icons as SVG from icons.tsx, and keep pages in the 48rem column unless the root sets data-wide."
+    ],
+    "donts": [
+      "Don't use the bubblegum stamp for statuses, alerts or decoration that isn't about both of you.",
+      "Don't set text in coral or sky. Neither passes contrast as text.",
+      "Don't add soft, blurred or coloured ambient shadows, glass, backdrop blur or dark streaming-dashboard grids. The peel sheet's edge shadow is the only soft one.",
+      "Don't put a second spotlight on a screen, or fill large areas with grape outside it.",
+      "Don't hard-code hex values or use dark: variants in components. Write a palette block instead.",
+      "Don't put stroke-and-shadow display lettering on paper, or plain display-ink on the ground.",
+      "Don't animate blur, filters or fixed backgrounds in page transitions, or play the intro more than once per launch.",
+      "Don't use glyph characters for icons or arrows in strings, or uppercase small tracked labels above headings."
+    ]
+  }
+}

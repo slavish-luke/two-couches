@@ -24,7 +24,7 @@ export function FilterSelect({
 }) {
   const router = useRouter();
   return (
-    <label className="grid gap-1 text-xs font-semibold text-muted">
+    <label className="grid gap-1 text-sm font-bold">
       {label}
       {/* Uncontrolled so the choice shows straight away; remounts when the URL changes it. */}
       <select
@@ -37,7 +37,7 @@ export function FilterSelect({
           const search = params.toString();
           router.push(search ? `${path}?${search}` : path);
         }}
-        className="field py-1.5 text-sm font-normal"
+        className="field cursor-pointer py-1.5 text-[15px] font-medium"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

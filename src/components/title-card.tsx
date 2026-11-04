@@ -19,41 +19,61 @@ export type CardContext = {
 };
 
 /**
- * A poster card for browse-style grids and rows: title, year (or `details` instead), who can watch it and
- * "+ Add". `children` go last, for extra actions.
+ * A poster card for browse-style grids and rows: an outlined poster with who-can-watch popped onto its top
+ * corner, title, year (or `details` instead) and "+ Add". `children` go last, for extra actions. `index`
+ * staggers the bursts popping in along a row or grid.
  */
 export function TitleCard({
   result,
   context,
   className = "",
   details,
+  index = 0,
   children,
 }: {
   result: Pick<SearchResult, "media_type" | "tmdb_id" | "title" | "poster_path" | "release_date">;
   context: CardContext;
   className?: string;
   details?: ReactNode;
+  index?: number;
   children?: ReactNode;
 }) {
+  const href = titleHref(result);
   return (
-    <li className={`grid content-start justify-items-start gap-1.5 ${className}`}>
-      <Link href={titleHref(result)} className="group grid w-full gap-1.5">
-        <Poster path={result.poster_path} title={result.title} size="fluid" language={context.language} />
-        <span className="line-clamp-2 font-semibold leading-snug group-hover:underline">{result.title}</span>
-      </Link>
-      {details ?? (result.release_date && <span className="text-xs text-muted">{result.release_date.slice(0, 4)}</span>)}
-      {context.availability && (
-        <Suspense>
-          <AvailabilityBadge
-            availability={context.availability}
-            titleKey={titleKey(result)}
-            me={context.me}
-            partner={context.them}
-            partnerName={context.them ? context.partnerName : null}
+    <li className={`group/card grid content-start justify-items-start gap-1.5 ${className}`}>
+      <div className="relative mb-1.5 w-full transition duration-200 ease-(--ease-spring) group-hover/card:-translate-y-1.5 group-hover/card:-rotate-2">
+        {/* The title link below is the one for keyboards and screen readers. */}
+        <Link href={href} tabIndex={-1} aria-hidden className="block">
+          <Poster
+            path={result.poster_path}
+            title={result.title}
+            size="fluid"
             language={context.language}
+            className="shadow-[4px_4px_0_var(--outline)]"
           />
-        </Suspense>
-      )}
+        </Link>
+        {context.availability && (
+          <div className="pointer-events-none absolute -top-4 -right-3 flex justify-end">
+            <Suspense>
+              <AvailabilityBadge
+                availability={context.availability}
+                titleKey={titleKey(result)}
+                me={context.me}
+                partner={context.them}
+                partnerName={context.them ? context.partnerName : null}
+                language={context.language}
+                onPoster
+                size="sm"
+                index={index % 12}
+              />
+            </Suspense>
+          </div>
+        )}
+      </div>
+      <Link href={href} className="line-clamp-2 font-bold leading-snug hover:underline">
+        {result.title}
+      </Link>
+      {details ?? (result.release_date && <span className="text-sm text-muted">{result.release_date.slice(0, 4)}</span>)}
       {context.onList && (
         <AddButton
           titleRef={{ media_type: result.media_type, tmdb_id: result.tmdb_id }}

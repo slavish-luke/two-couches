@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Couch } from "@/components/couch";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { MAX_REVIEW_LENGTH, type PartnerReview, type Reviews } from "@/lib/review-rules";
 import { saveReview } from "./actions";
@@ -17,11 +18,11 @@ export function ReviewField(props: {
 }) {
   const t = props.t.reviews.review;
   return (
-    <div className="grid gap-1">
-      <label className="grid gap-1">
-        <span className="flex items-baseline justify-between gap-2 text-sm">
-          <span className="font-semibold">{t.yours}</span>
-          <span className="text-xs text-muted" aria-hidden>
+    <div className="grid gap-1.5">
+      <label className="grid gap-1.5">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="font-bold">{t.yours}</span>
+          <span className="text-xs font-semibold text-muted" aria-hidden>
             {t.count(props.value.length, MAX_REVIEW_LENGTH)}
           </span>
         </span>
@@ -36,11 +37,11 @@ export function ReviewField(props: {
         />
       </label>
       {props.saved && !props.value.trim() ? (
-        <span className="text-xs text-muted">{t.willDelete}</span>
+        <span className="text-sm font-semibold text-danger">{t.willDelete}</span>
       ) : (
         props.partner &&
         props.partner.review.state === "none" && (
-          <span className="text-xs text-muted">{t.hint(props.partner.name)}</span>
+          <span className="text-sm text-muted">{t.hint(props.partner.name)}</span>
         )
       )}
     </div>
@@ -55,16 +56,22 @@ export function PartnerReviewView({ name, review, t }: { name: string; review: P
   const text = t.reviews.review;
   if (review.state === "none") return null;
   if (review.state === "hidden") {
+    // A little nudge from the partner's couch: theirs is waiting under a sheet until you write yours.
     return (
-      <p className="rounded-lg border border-dashed border-partner bg-partner-soft px-3 py-2 text-sm text-partner">
-        {text.partnerHidden(name)}
+      <p className="paper flex items-center gap-3 rounded-control border-[3px] border-dashed border-outline bg-partner-soft px-3 py-2.5 font-semibold">
+        <Couch who="partner" size={40} />
+        <span>{text.partnerHidden(name)}</span>
       </p>
     );
   }
   return (
-    <figure className="grid gap-1 border-l-2 border-partner pl-3">
-      <figcaption className="text-sm font-semibold text-partner">{text.partnerShown(name)}</figcaption>
-      <blockquote className="whitespace-pre-line text-sm">{review.body}</blockquote>
+    <figure className="paper grid gap-2 rounded-control border-[3px] border-outline p-3.5">
+      <figcaption>
+        <span className="inline-flex max-w-full items-center rounded-full border-[2.5px] border-outline bg-partner px-2.5 text-sm font-bold">
+          <span className="truncate">{text.partnerShown(name)}</span>
+        </span>
+      </figcaption>
+      <blockquote className="whitespace-pre-line font-medium">{review.body}</blockquote>
     </figure>
   );
 }
@@ -99,7 +106,7 @@ export function ReviewSection(props: {
         });
       }}
     >
-      <h3 className="text-sm font-semibold">{t.reviews.review.heading}</h3>
+      <h3 className="text-lg font-bold">{t.reviews.review.heading}</h3>
       <ReviewField
         value={value}
         onChange={setDraft}
@@ -108,7 +115,7 @@ export function ReviewSection(props: {
         t={t}
       />
       {dirty && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2.5">
           <button className="btn" disabled={pending}>
             {t.reviews.review.save}
           </button>
@@ -117,7 +124,11 @@ export function ReviewSection(props: {
           </button>
         </div>
       )}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-danger">
+          {error}
+        </p>
+      )}
       {props.partnerName && <PartnerReviewView name={props.partnerName} review={partner} t={t} />}
     </form>
   );

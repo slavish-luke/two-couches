@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, type CSSProperties, type ReactNode } from "react";
+import { Couches } from "@/components/couch";
+import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import type { NightMethod } from "@/lib/night-rules";
 import {
@@ -50,29 +52,40 @@ export function ReadyCheck(props: {
     });
   }
 
+  const textButton =
+    "text-sm font-bold underline underline-offset-4 transition hover:decoration-[3px] disabled:opacity-50";
+
+  // A paper slip of its own, so it reads the same on a card and inside the home page's grape spotlight.
   return (
     <div
       aria-busy={pending}
-      className={`grid gap-2 rounded-lg border p-2.5 text-sm ${both ? "border-both bg-both-soft" : "border-line"}`}
+      className={`paper grid gap-2.5 rounded-control border-[3px] border-outline p-3 text-sm ${both ? "bg-both-soft" : ""}`}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <span className="font-semibold">{t.heading}</span>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <span className="text-base font-bold">{t.heading}</span>
         {both && (
-          <span className="font-semibold text-both">
-            <span aria-hidden>● </span>
-            {t.bothReady}
+          // You're both ready: the two couches turn up, and a bubblegum tag pops in like the BOTH burst.
+          <span className="inline-flex items-center gap-2">
+            <Couches size={34} />
+            <span
+              style={{ "--r": "-3deg", rotate: "var(--r)" } as CSSProperties}
+              className="burst inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-outline bg-stamp px-3 pb-0.5 pt-1 font-display text-base leading-none tracking-[0.03em] text-on-stamp shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
+            >
+              <CheckIcon className="size-4 [stroke-width:3]" />
+              {t.bothReady}
+            </span>
           </span>
         )}
       </div>
 
-      <ul className="grid gap-1.5">
-        <Row person={me} check={mine} colour="text-me" files={files} language={language}>
+      <ul className="grid gap-2">
+        <Row person={me} check={mine} fill="bg-me" files={files} language={language}>
           {mine?.ready_at ? (
             <button
               type="button"
               disabled={pending}
               onClick={() => run(() => setReady(props.nightId, false))}
-              className="text-xs font-semibold text-muted hover:text-ink hover:underline disabled:opacity-50"
+              className={textButton}
             >
               {t.undo}
             </button>
@@ -81,34 +94,38 @@ export function ReadyCheck(props: {
               type="button"
               disabled={pending}
               onClick={() => run(() => setReady(props.nightId, true))}
-              className="btn px-3 py-1 text-sm"
+              className="btn px-3.5 pb-1.5 pt-2 text-base"
             >
               {t.imReady}
             </button>
           )}
           {files && !editing && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setEditing(true)}
-              className="text-xs font-semibold text-partner hover:underline disabled:opacity-50"
-            >
+            <button type="button" disabled={pending} onClick={() => setEditing(true)} className={textButton}>
               {mine?.file_label || mine?.file_seconds ? t.changeFile : t.addFile}
             </button>
           )}
         </Row>
-        {partner && <Row person={partner} check={theirs} colour="text-partner" files={files} language={language} />}
+        {partner && <Row person={partner} check={theirs} fill="bg-partner" files={files} language={language} />}
       </ul>
 
       {!mine?.ready_at && (
-        <p className="text-xs text-muted">{props.method ? t.means[props.method] : t.meansUndecided}</p>
+        <p className="text-muted">{props.method ? t.means[props.method] : t.meansUndecided}</p>
       )}
 
-      {lengths && (
-        <p className={lengths.same ? "text-both" : "font-semibold text-danger"}>
-          {lengths.same ? t.sameLength(formatLength(mine!.file_seconds!)) : t.lengthsDiffer(formatLength(lengths.difference))}
-        </p>
-      )}
+      {lengths &&
+        (lengths.same ? (
+          <p className="flex items-start gap-2 font-semibold">
+            <span
+              aria-hidden
+              className="mt-px grid size-5 shrink-0 place-items-center rounded-full border-2 border-outline bg-accent text-on-accent"
+            >
+              <CheckIcon className="size-3 [stroke-width:3.5]" />
+            </span>
+            {t.sameLength(formatLength(mine!.file_seconds!))}
+          </p>
+        ) : (
+          <p className="font-semibold text-danger">{t.lengthsDiffer(formatLength(lengths.difference))}</p>
+        ))}
 
       {editing && (
         <FileForm
@@ -127,7 +144,7 @@ export function ReadyCheck(props: {
       )}
 
       {error && (
-        <p role="alert" className="text-danger">
+        <p role="alert" className="font-semibold text-danger">
           {error}
         </p>
       )}
@@ -135,11 +152,12 @@ export function ReadyCheck(props: {
   );
 }
 
-/** One person: name, ready or not, the file they have, and (for you) the buttons. */
+/** One person: their name tag, ready or not, the file they have, and (for you) the buttons. */
 function Row(props: {
   person: Person;
   check: Check | undefined;
-  colour: string;
+  /** The person's colour, as a background class. */
+  fill: string;
   files: boolean;
   language: string;
   children?: ReactNode;
@@ -148,11 +166,20 @@ function Row(props: {
   const t = getMessages(props.language).nights.ready;
   const file = [check?.file_label, check?.file_seconds ? formatLength(check.file_seconds) : null].filter(Boolean).join(" · ");
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className={`font-semibold ${props.colour}`}>{props.person.name}</span>
-      <span className={check?.ready_at ? "font-semibold text-both" : "text-muted"}>
-        {check?.ready_at ? `✓ ${t.ready}` : t.notYet}
+    <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+      <span
+        className={`max-w-full truncate rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${props.fill}`}
+      >
+        {props.person.name}
       </span>
+      {check?.ready_at ? (
+        <span className="inline-flex items-center gap-1 rounded-full border-2 border-outline bg-accent py-px pl-1.5 pr-2.5 text-sm font-bold text-on-accent">
+          <CheckIcon className="size-4 [stroke-width:3]" />
+          {t.ready}
+        </span>
+      ) : (
+        <span className="font-semibold text-muted">{t.notYet}</span>
+      )}
       {props.files && <span className="text-muted [overflow-wrap:anywhere]">{file || t.noFile}</span>}
       {props.children}
     </li>
@@ -173,7 +200,7 @@ function FileForm(props: {
   const [length, setLength] = useState(props.check?.file_seconds ? formatLength(props.check.file_seconds) : "");
   return (
     <form
-      className="grid gap-3 border-t border-line pt-3"
+      className="grid gap-3 border-t-2 border-outline/15 pt-3"
       onSubmit={(e) => {
         e.preventDefault();
         props.onSave({ label, length });
@@ -181,7 +208,7 @@ function FileForm(props: {
     >
       <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
         <label className="grid gap-1">
-          <span className="text-xs font-semibold">{t.fileLabel}</span>
+          <span className="text-sm font-semibold">{t.fileLabel}</span>
           <input
             value={label}
             maxLength={MAX_FILE_LABEL_LENGTH}
@@ -191,7 +218,7 @@ function FileForm(props: {
           />
         </label>
         <label className="grid gap-1">
-          <span className="text-xs font-semibold">{t.fileLength}</span>
+          <span className="text-sm font-semibold">{t.fileLength}</span>
           <input
             value={length}
             placeholder="1:52:03"
@@ -200,15 +227,15 @@ function FileForm(props: {
           />
         </label>
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-muted">
         {t.fileLengthNote}
         {props.runtime ? ` ${t.runtime(props.runtime)}` : ""}
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn px-3 py-1 text-sm" disabled={props.pending}>
+        <button className="btn px-3.5 pb-1.5 pt-2 text-base" disabled={props.pending}>
           {props.pending ? t.saving : t.save}
         </button>
-        <button type="button" onClick={props.onCancel} className="text-xs font-semibold text-muted hover:text-ink">
+        <button type="button" onClick={props.onCancel} className="text-sm font-bold underline underline-offset-4">
           {t.cancel}
         </button>
       </div>

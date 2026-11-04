@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { isAppleMobile, registerServiceWorker } from "@/components/pwa";
+import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import { removePushSubscription, savePushSubscription, sendTestPush } from "./actions";
 
@@ -114,7 +115,7 @@ export function NotificationSettings({ vapidKey, language }: { vapidKey: string 
 
   return (
     <div className="grid gap-3">
-      {message && <p className="text-sm text-muted">{message}</p>}
+      {message && <p className="font-medium text-muted">{message}</p>}
       {vapidKey && (status === "off" || status === "on") && (
         <div className="flex flex-wrap gap-2">
           {status === "off" ? (
@@ -134,7 +135,15 @@ export function NotificationSettings({ vapidKey, language }: { vapidKey: string 
         </div>
       )}
       {note && (
-        <p role={note.isError ? "alert" : "status"} className={`text-sm ${note.isError ? "text-danger" : "text-both"}`}>
+        <p
+          role={note.isError ? "alert" : "status"}
+          className={
+            note.isError
+              ? "text-sm font-semibold text-danger"
+              : "inline-flex items-center gap-1.5 justify-self-start rounded-control border-2 border-outline bg-accent-soft px-2.5 py-0.5 text-sm font-bold"
+          }
+        >
+          {!note.isError && <CheckIcon />}
           {note.text}
         </p>
       )}

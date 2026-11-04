@@ -29,11 +29,14 @@ export function VisitForm({ visit, homeCountry, countries, dates, untilLabel, la
   return (
     <div className="grid gap-3">
       {visit && visitName && untilLabel && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-me-soft p-3 text-me">
-          <p className="text-sm font-semibold">{t.current(visitName, untilLabel)}</p>
+        <div className="flex flex-wrap items-center gap-3 rounded-control border-[3px] border-outline bg-me-soft p-3">
+          <p className="flex items-center gap-2 font-bold">
+            <span aria-hidden className="size-3 shrink-0 rounded-full border-2 border-outline bg-me" />
+            {t.current(visitName, untilLabel)}
+          </p>
           <button
             type="button"
-            className="btn-quiet px-3 py-1.5 text-sm"
+            className="btn-quiet text-sm"
             disabled={ending}
             onClick={() => startEnding(async () => setEndState(await endVisit()))}
           >
@@ -42,10 +45,10 @@ export function VisitForm({ visit, homeCountry, countries, dates, untilLabel, la
         </div>
       )}
       {/* Keyed by the visit, so ending or changing it resets the fields. */}
-      <form key={visit ? `${visit.country}:${visit.until}` : "home"} action={save} className="grid gap-3">
+      <form key={visit ? `${visit.country}:${visit.until}` : "home"} action={save} className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold">{t.country}</span>
+          <label className="grid gap-1.5">
+            <span className="font-semibold">{t.country}</span>
             <select name="visiting_country" required defaultValue={visit?.country ?? ""} className="field">
               <option value="" disabled>
                 {t.chooseCountry}
@@ -59,8 +62,8 @@ export function VisitForm({ visit, homeCountry, countries, dates, untilLabel, la
                 ))}
             </select>
           </label>
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold">{t.until}</span>
+          <label className="grid gap-1.5">
+            <span className="font-semibold">{t.until}</span>
             <input
               type="date"
               name="visiting_until"
@@ -72,7 +75,11 @@ export function VisitForm({ visit, homeCountry, countries, dates, untilLabel, la
             />
           </label>
         </div>
-        {(state.error || endState.error) && <p className="text-sm text-danger">{state.error ?? endState.error}</p>}
+        {(state.error || endState.error) && (
+          <p role="alert" className="text-sm font-semibold text-danger">
+            {state.error ?? endState.error}
+          </p>
+        )}
         <button className="btn justify-self-start" disabled={saving}>
           {saving ? t.saving : t.save}
         </button>

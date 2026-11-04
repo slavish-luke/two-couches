@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { CountryChip } from "@/components/country-chip";
+import { Burst } from "@/components/burst";
 import { DismissButton } from "@/components/dismiss-button";
+import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
-import { Poster } from "@/components/poster";
+import { Poster, posterMorph } from "@/components/poster";
 import { RemindButton } from "@/components/remind-button";
 import { getReminderKeys } from "@/lib/alerts";
 import { type Messages } from "@/lib/i18n";
@@ -60,23 +61,46 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
         ? t.title.episodeRuntime(t.title.runtime(title.runtime))
         : t.title.runtime(title.runtime)
       : null,
-    title.genres.join(", ") || null,
   ].filter(Boolean);
 
   return (
-    <div className="grid gap-8">
-      <div className="flex flex-col gap-5 sm:flex-row">
-        <Poster path={title.poster_path} title={title.title} size="lg" language={language} />
-        <div className="grid content-start gap-3">
-          <div className="grid gap-1">
-            <h1 className="font-display text-3xl font-bold leading-tight tracking-tight">{title.title}</h1>
-            {title.original_title !== title.title && <p className="text-muted">{title.original_title}</p>}
-            <p className="text-sm text-muted">{facts.join(" · ")}</p>
+    <div className="grid gap-12">
+      <div className="grid gap-x-9 gap-y-6 sm:grid-cols-[auto_minmax(0,1fr)]">
+        <div className="justify-self-center sm:justify-self-start">
+          <Poster
+            path={title.poster_path}
+            title={title.title}
+            size="lg"
+            eager
+            language={language}
+            morph={posterMorph(ref)}
+            className="-rotate-2 shadow-[7px_7px_0_var(--outline)] sm:h-auto sm:w-[240px]"
+          />
+        </div>
+        <div className="grid min-w-0 content-start gap-4">
+          <div className="grid gap-2">
+            <h1 className="display text-[clamp(2.4rem,5vw,3.6rem)] [overflow-wrap:anywhere]">{title.title}</h1>
+            {title.original_title !== title.title && <p className="text-lg font-semibold text-muted">{title.original_title}</p>}
+            <p className="font-bold">{facts.join(" · ")}</p>
+            {title.genres.length > 0 && (
+              <ul className="flex flex-wrap gap-1.5">
+                {title.genres.map((genre) => (
+                  <li key={genre} className="strand">
+                    {genre}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {title.tagline && <p className="italic text-muted">{title.tagline}</p>}
-          {title.overview && <p>{title.overview}</p>}
+          {title.tagline && <p className="text-lg font-semibold text-muted">{title.tagline}</p>}
+          {title.overview && <p className="max-w-[62ch] text-[1.05rem] font-medium leading-relaxed">{title.overview}</p>}
           {(title.trailer_key || profile.couple_id) && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3 pt-1">
+              {profile.couple_id && (
+                <Link href={`/watch-nights/new?type=${type}&id=${tmdbId}`} className="btn">
+                  {t.nights.plan}
+                </Link>
+              )}
               {title.trailer_key && (
                 <a
                   href={`https://www.youtube.com/watch?v=${title.trailer_key}`}
@@ -85,17 +109,23 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
                   className="btn-quiet"
                 >
                   {t.title.trailer}
+                  <ExternalIcon className="size-4" />
                 </a>
-              )}
-              {profile.couple_id && (
-                <Link href={`/watch-nights/new?type=${type}&id=${tmdbId}`} className="btn-quiet">
-                  {t.nights.plan}
-                </Link>
               )}
             </div>
           )}
         </div>
       </div>
+
+      <Suspense
+        fallback={
+          <p className="card font-semibold text-muted" aria-busy>
+            {t.title.checking}
+          </p>
+        }
+      >
+        <WhereToWatch titleRef={ref} />
+      </Suspense>
 
       {profile.couple_id && (
         <Suspense>
@@ -103,10 +133,6 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
           <ListSync coupleId={profile.couple_id} />
         </Suspense>
       )}
-
-      <Suspense fallback={<p className="text-muted">{t.title.checking}</p>}>
-        <WhereToWatch titleRef={ref} />
-      </Suspense>
     </div>
   );
 }
@@ -122,7 +148,7 @@ async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: n
   const reviews = item ? (await getReviews([item.id], profile.id))[item.id] : null;
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       <ListPanel
         titleRef={titleRef}
         seasons={seasons}
@@ -158,51 +184,62 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
 
   const text = t.title.banner;
   const banner = {
-    both: {
-      heading: text.both.heading,
-      detail: text.both.detail(names(mine), partnerName, names(theirs)),
-      style: "border-both bg-both-soft",
-    },
+    both: { heading: text.both.heading, detail: text.both.detail(names(mine), partnerName, names(theirs)) },
     me: {
       heading: them ? text.me.heading : text.me.headingAlone,
       detail: them ? text.me.detail(names(mine), partnerName, theirCountry) : text.me.detailAlone(names(mine)),
-      style: "border-me bg-me-soft",
     },
     partner: {
       heading: text.partner.heading(partnerName),
       detail: text.partner.detail(partnerName, names(theirs), countryName(me.country, profile.language)),
-      style: "border-partner bg-partner-soft",
     },
-    free: {
-      heading: t.common.watchBadge.free,
-      detail: them ? text.free.detail : text.free.detailAlone,
-      style: "border-line bg-surface",
-    },
-    none: {
-      heading: them ? text.none.heading : text.none.headingAlone,
-      detail: text.none.detail,
-      style: "border-line bg-surface",
-    },
+    free: { heading: t.common.watchBadge.free, detail: them ? text.free.detail : text.free.detailAlone },
+    none: { heading: them ? text.none.heading : text.none.headingAlone, detail: text.none.detail },
   }[verdict];
 
   return (
-    <section className="grid gap-4">
-      <h2 className="font-display text-2xl font-bold tracking-tight">{t.title.whereToWatch}</h2>
-      <div className={`grid gap-1 rounded-xl border-2 p-4 ${banner.style}`}>
-        <p className="font-display text-lg font-semibold">
-          {verdict === "both" && (
-            <span aria-hidden className="text-both">
-              ●{" "}
+    <section className="grid gap-6" aria-labelledby="where-to-watch">
+      <h2 id="where-to-watch" className="display text-[2rem]">
+        {t.title.whereToWatch}
+      </h2>
+
+      {verdict === "both" ? (
+        // The screen's moment, and only when you can both watch it.
+        <div className="spotlight grid items-center gap-x-6 gap-y-3 p-5 sm:-rotate-1 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-6">
+          <span aria-hidden className="justify-self-center">
+            <Burst className="size-32 sm:size-36" textClass="text-[22px] sm:text-[25px]">
+              {t.common.watchBadge.stamp}
+            </Burst>
+          </span>
+          <div className="grid gap-2 text-center sm:text-left">
+            <p className="display text-[clamp(1.9rem,4vw,2.5rem)] [color:var(--pop)]">{banner.heading}</p>
+            <p className="text-lg font-semibold">{banner.detail}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="card flex items-start gap-4">
+          {(verdict === "me" || verdict === "partner") && (
+            // Who can stream it: a filled dot for whoever can.
+            <span aria-hidden className="mt-1 flex shrink-0 gap-1">
+              <span className={`size-4 rounded-full border-[2.5px] border-outline ${verdict === "me" ? "bg-me" : "bg-surface"}`} />
+              {them && (
+                <span
+                  className={`size-4 rounded-full border-[2.5px] border-outline ${verdict === "partner" ? "bg-partner" : "bg-surface"}`}
+                />
+              )}
             </span>
           )}
-          {banner.heading}
-        </p>
-        <p className="text-sm">{banner.detail}</p>
-      </div>
+          <div className="grid gap-1">
+            <p className="display-ink text-2xl">{banner.heading}</p>
+            <p className="font-medium">{banner.detail}</p>
+          </div>
+        </div>
+      )}
+
       {reminded && verdict !== "both" && (
         <RemindButton titleRef={titleRef} reminded={reminded.has(titleKey(titleRef))} language={profile.language} long />
       )}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 sm:gap-5">
         <CountryColumn
           who={t.common.you}
           isMe
@@ -246,45 +283,59 @@ function CountryColumn(props: {
     kind,
     providers: availability?.providers.filter((p) => p.kind === kind) ?? [],
   })).filter((g) => g.providers.length > 0);
-  const paidStyle = isMe ? "border-me bg-me-soft" : "border-partner bg-partner-soft";
+  const paidStyle = isMe ? "bg-me-soft" : "bg-partner-soft";
 
   return (
-    <section className="card grid content-start gap-4">
-      <div className="flex items-center gap-2">
-        <h3 className="font-display text-lg font-semibold">{props.who}</h3>
-        <CountryChip code={watcher.country} name={country} isMe={isMe} />
-        <span className="text-sm text-muted">{country}</span>
+    <section className="card grid content-start gap-5">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <h3
+          title={country}
+          className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-3 py-0.5 text-lg font-bold ${isMe ? "bg-me" : "bg-partner"}`}
+        >
+          <span className="truncate">{props.who}</span>
+          <span className="shrink-0 opacity-75">· {watcher.country}</span>
+        </h3>
+        <span className="font-semibold text-muted">{country}</span>
       </div>
 
       {!availability ? (
-        <p className="text-sm text-muted">{t.title.couldntCheck(country)}</p>
+        <p className="font-medium text-muted">{t.title.couldntCheck(country)}</p>
       ) : groups.length === 0 ? (
-        <p className="text-sm text-muted">{t.title.notAvailable(country)}</p>
+        <p className="font-medium text-muted">{t.title.notAvailable(country)}</p>
       ) : (
         groups.map(({ kind, providers }) => (
           <div key={kind} className="grid gap-2">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{t.title.kinds[kind]}</h4>
+            <h4 className="font-bold">{t.title.kinds[kind]}</h4>
             <ul className="flex flex-wrap gap-2">
               {providers.map((p) => {
                 const pays = kind === "flatrate" && watcher.services.includes(p.provider_id);
                 return (
                   <li
                     key={p.provider_id}
-                    className={`flex items-center gap-2 rounded-lg border p-1.5 pr-2.5 text-sm ${pays ? `${paidStyle} font-semibold` : "border-line"}`}
+                    className={`flex items-center gap-2 rounded-full border-[2.5px] border-outline py-1 pl-1 pr-3 text-sm font-semibold ${
+                      pays ? `${paidStyle} shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]` : "bg-surface"
+                    }`}
                     title={pays ? (isMe ? t.title.youPay(p.name) : t.title.theyPay(props.who, p.name)) : undefined}
                   >
-                    {p.logo_path && (
+                    {p.logo_path ? (
                       <Image
                         src={tmdbImage(p.logo_path, "w92")}
                         alt=""
-                        width={24}
-                        height={24}
+                        width={28}
+                        height={28}
                         unoptimized
-                        className="rounded"
+                        className="size-7 rounded-full border-2 border-outline"
                       />
+                    ) : (
+                      <span aria-hidden className="size-7 rounded-full border-2 border-outline bg-surface" />
                     )}
                     {p.name}
-                    {pays && <span aria-label={isMe ? t.title.youPayLabel : t.title.theyPayLabel}>✓</span>}
+                    {pays && (
+                      <>
+                        <CheckIcon className="size-4" />
+                        <span className="sr-only">{isMe ? t.title.youPayLabel : t.title.theyPayLabel}</span>
+                      </>
+                    )}
                   </li>
                 );
               })}
@@ -294,7 +345,7 @@ function CountryColumn(props: {
       )}
 
       {availability && (
-        <p className="text-xs text-muted">
+        <p className="border-t-2 border-outline/15 pt-3 text-sm text-muted">
           {t.title.checked(
             new Intl.DateTimeFormat(props.language, {
               day: "numeric",
@@ -307,7 +358,12 @@ function CountryColumn(props: {
           {availability.link && (
             <>
               {" · "}
-              <a href={availability.link} target="_blank" rel="noopener noreferrer" className="underline">
+              <a
+                href={availability.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-ink underline underline-offset-4"
+              >
                 {t.title.justWatch}
               </a>
             </>

@@ -50,7 +50,7 @@ export function DataSaverSettings({ language }: { language: string }) {
         {DATA_SAVER_MODES.map((option) => (
           <label
             key={option}
-            className="cursor-pointer rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-muted transition hover:text-ink has-checked:border-ink has-checked:bg-ink has-checked:text-bg has-focus-visible:ring-2 has-focus-visible:ring-partner/40"
+            className="chip cursor-pointer px-4 has-focus-visible:outline-3 has-focus-visible:outline-offset-3 has-focus-visible:outline-accent"
           >
             <input
               type="radio"
@@ -64,7 +64,7 @@ export function DataSaverSettings({ language }: { language: string }) {
           </label>
         ))}
       </div>
-      {mode === "auto" && status && <p className="text-sm text-muted">{status === "saving" ? t.savingNow : t.cantDetect}</p>}
+      {mode === "auto" && status && <p className="font-medium text-muted">{status === "saving" ? t.savingNow : t.cantDetect}</p>}
     </fieldset>
   );
 }

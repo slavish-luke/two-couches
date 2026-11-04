@@ -11,7 +11,7 @@ const en = {
   },
   /** A series' typical episode length, from runtime(). */
   episodeRuntime: (runtime: string) => `${runtime} episodes`,
-  trailer: "Watch the trailer ↗",
+  trailer: "Watch the trailer",
   checking: "Checking where you can watch it…",
   whereToWatch: "Where to watch",
   banner: {
@@ -123,7 +123,7 @@ const tr: typeof en = {
     return h ? `${h} sa${m ? ` ${m} dk` : ""}` : `${m} dk`;
   },
   episodeRuntime: (runtime: string) => `Bölüm başı ${runtime}`,
-  trailer: "Fragmanı izle ↗",
+  trailer: "Fragmanı izle",
   checking: "Nerede izlenebileceğine bakılıyor…",
   whereToWatch: "Nerede izlenir",
   banner: {

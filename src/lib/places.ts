@@ -62,6 +62,21 @@ export function countryName(code: string, language: string) {
 }
 
 /** "Sat 8:00 pm" in the given zone. */
+/** Minutes ahead of UTC in a time zone at this moment, e.g. 180 for "GMT+03:00". */
+function utcOffsetMinutes(date: Date, timeZone: string) {
+  const name = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" })
+    .formatToParts(date)
+    .find((part) => part.type === "timeZoneName")?.value;
+  const match = name?.match(/GMT([+-])(\d{2}):(\d{2})/);
+  if (!match) return 0;
+  return (match[1] === "-" ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3]));
+}
+
+/** How many hours apart two clocks are right now (can be fractional, e.g. 6.5), always positive. */
+export function hoursApart(date: Date, zoneA: string, zoneB: string) {
+  return Math.abs(utcOffsetMinutes(date, zoneA) - utcOffsetMinutes(date, zoneB)) / 60;
+}
+
 export function formatLocalTime(date: Date, timeZone: string, language: string) {
   return new Intl.DateTimeFormat(language, {
     weekday: "short",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackIcon } from "@/components/icons";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/page-loading";
@@ -53,11 +54,11 @@ async function NewWatchNight({ searchParams }: Pick<PageProps<"/watch-nights/new
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-2">
-        <Link href="/watch-nights" className="text-sm font-semibold text-muted hover:text-ink">
-          {t.nights.form.back}
+      <div className="grid gap-3">
+        <Link href="/watch-nights" className="group inline-flex items-center gap-1.5 justify-self-start font-bold underline underline-offset-4">
+          <BackIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:-translate-x-1" /> {t.nights.form.back}
         </Link>
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t.nights.form.newHeading}</h1>
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.nights.form.newHeading}</h1>
       </div>
       <NightForm
         nightId={null}

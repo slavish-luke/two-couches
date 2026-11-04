@@ -1,6 +1,9 @@
+import { NameTag } from "@/components/name-tag";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { Couches } from "@/components/couch";
+import { StarIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
@@ -62,30 +65,28 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
   const nothingWatched = stats.films + stats.series === 0;
   const number = (value: number) => new Intl.NumberFormat(language).format(value);
 
-  const chip = (active: boolean) =>
-    `rounded-full border px-3 py-1 transition ${active ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`;
-
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-9">
       <ListSync coupleId={profile.couple_id} />
-      <div className="grid gap-3">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t.stats.heading}</h1>
-        <nav aria-label={t.stats.periodsLabel} className="flex flex-wrap gap-2 text-sm font-semibold">
+      <div className="grid gap-4">
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.stats.heading}</h1>
+        <nav aria-label={t.stats.periodsLabel} className="flex flex-wrap gap-2">
           {[...years, "all" as const].map((year) => (
             <Link
               key={year}
               href={year === thisYear ? "/stats" : `/stats?year=${year}`}
               aria-current={period === year ? "page" : undefined}
-              className={chip(period === year)}
+              className="chip"
             >
               {year === "all" ? t.stats.allTime : year}
             </Link>
           ))}
         </nav>
-        <p className="text-muted">{t.stats.intro(period === "all" ? null : period)}</p>
+        <p className="font-medium text-muted">{t.stats.intro(period === "all" ? null : period)}</p>
       </div>
 
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* The headline numbers: the one spotlight on this screen. */}
+      <dl className="spotlight grid grid-cols-2 gap-4 p-5 sm:grid-cols-4 sm:p-6">
         {(
           [
             ["films", number(stats.films)],
@@ -94,23 +95,29 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
             ["nights", number(stats.nights)],
           ] as const
         ).map(([key, value]) => (
-          <div key={key} className="card grid content-start gap-1 p-4">
-            <dt className="text-sm text-muted">{t.stats.tiles[key]}</dt>
-            <dd className="font-display text-3xl font-semibold tabular-nums">
+          <div
+            key={key}
+            className="paper grid min-w-0 content-start justify-items-center gap-1 rounded-control border-[3px] border-outline px-3 pb-3 pt-2 text-center shadow-[4px_4px_0_var(--outline)] odd:-rotate-2 even:rotate-1"
+          >
+            <dd className="display-ink order-2 text-[clamp(2.8rem,6vw,3.8rem)] leading-none">
               {key === "hours" && stats.minutesIncomplete && stats.minutes > 0 && (
-                <span className="mr-1 align-middle font-sans text-sm font-normal text-muted">{t.stats.atLeast}</span>
+                <span className="mb-1 block font-sans text-sm font-semibold text-muted">
+                  {t.stats.atLeast}
+                </span>
               )}
               {value}
             </dd>
+            <dt className="order-1 text-sm font-bold leading-snug">{t.stats.tiles[key]}</dt>
           </div>
         ))}
       </dl>
 
       {nothingWatched ? (
-        <div className="card grid justify-items-center gap-1 py-10 text-center">
-          <p className="font-semibold">{period === "all" ? t.stats.empty.heading : t.stats.empty.year(period)}</p>
-          {period === "all" && <p className="text-sm text-muted">{t.stats.empty.body}</p>}
-          <Link href="/?view=watched" className="mt-1 text-sm font-semibold text-partner">
+        <div className="card grid justify-items-center gap-3 py-10 text-center">
+          <Couches size={56} />
+          <p className="display-ink text-2xl">{period === "all" ? t.stats.empty.heading : t.stats.empty.year(period)}</p>
+          {period === "all" && <p className="max-w-[28rem] text-muted">{t.stats.empty.body}</p>}
+          <Link href="/?view=watched" className="btn-quiet mt-1">
             {t.stats.empty.openList}
           </Link>
         </div>
@@ -143,8 +150,8 @@ function MonthChart({ months, language, t }: { months: number[]; language: strin
     new Intl.DateTimeFormat(language, { month, timeZone: "UTC" }).format(new Date(Date.UTC(2000, i, 1)));
   return (
     <section className="card grid gap-4">
-      <h2 className="font-display text-lg font-semibold">{t.stats.months.heading}</h2>
-      <ol className="grid h-36 grid-cols-12 items-end gap-0.5 border-b border-line">
+      <h2 className="display-ink text-2xl">{t.stats.months.heading}</h2>
+      <ol className="grid h-40 grid-cols-12 items-end gap-1 border-b-[3px] border-outline sm:gap-2">
         {months.map((count, i) => (
           <li
             key={i}
@@ -153,25 +160,27 @@ function MonthChart({ months, language, t }: { months: number[]; language: strin
             className="group relative flex h-full flex-col items-center justify-end outline-none"
           >
             {count > 0 && i === busiest && (
-              <span aria-hidden className="mb-1 text-xs font-semibold tabular-nums text-muted">
+              <span aria-hidden className="display-ink mb-1 text-lg tabular-nums">
                 {count}
               </span>
             )}
+            {count > 0 && (
+              <span
+                aria-hidden
+                style={{ height: `calc(${(count / max) * 100}% - ${i === busiest ? "1.75rem" : "0px"})` }}
+                className="-mb-[3px] min-h-3 w-full max-w-9 origin-bottom rounded-t-control border-[3px] border-outline bg-accent transition duration-200 ease-(--ease-spring) group-hover:scale-y-105 group-hover:-rotate-2 group-focus-visible:-rotate-2"
+              />
+            )}
             <span
               aria-hidden
-              style={{ height: `${(count / max) * 100}%` }}
-              className="w-full max-w-6 rounded-t bg-both transition group-hover:opacity-80 group-focus-visible:opacity-80"
-            />
-            <span
-              aria-hidden
-              className="pointer-events-none invisible absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-semibold text-bg group-hover:visible group-focus-visible:visible"
+              className="pointer-events-none invisible absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-full border-[2.5px] border-outline bg-surface px-2.5 py-0.5 text-sm font-bold text-ink shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] group-hover:visible group-focus-visible:visible"
             >
               {t.stats.months.count(name(i, "long"), count)}
             </span>
           </li>
         ))}
       </ol>
-      <div aria-hidden className="-mt-2 grid grid-cols-12 gap-0.5 text-center text-xs text-muted">
+      <div aria-hidden className="-mt-2 grid grid-cols-12 gap-1 text-center text-sm font-bold text-muted sm:gap-2">
         {months.map((_, i) => (
           <span key={i}>{name(i, "narrow")}</span>
         ))}
@@ -186,14 +195,17 @@ function GenreBars({ genres, t }: { genres: { id: number; name: string; count: n
   const max = genres[0].count;
   return (
     <section className="card grid gap-4">
-      <h2 className="font-display text-lg font-semibold">{t.stats.genres.heading}</h2>
+      <h2 className="display-ink text-2xl">{t.stats.genres.heading}</h2>
       <ol className="grid gap-3">
         {genres.map((genre) => (
-          <li key={genre.id} className="grid grid-cols-[minmax(6rem,9rem)_1fr] items-center gap-3 text-sm">
-            <span className="truncate">{genre.name}</span>
-            <span className="flex items-center gap-2">
-              <span style={{ width: `${(genre.count / max) * 100}%` }} className="h-4 max-w-[calc(100%-2rem)] rounded-r bg-both" />
-              <span className="font-semibold tabular-nums">{genre.count}</span>
+          <li key={genre.id} className="grid grid-cols-[minmax(5.5rem,9rem)_1fr] items-center gap-3">
+            <span className="truncate font-semibold">{genre.name}</span>
+            <span className="flex items-center gap-2.5">
+              <span
+                style={{ width: `${(genre.count / max) * 100}%` }}
+                className="h-7 min-w-7 max-w-[calc(100%-2.5rem)] rounded-full border-[3px] border-outline bg-accent shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
+              />
+              <span className="display-ink text-xl tabular-nums">{genre.count}</span>
             </span>
           </li>
         ))}
@@ -219,53 +231,65 @@ function Ratings({
     value === null ? (
       <span className="text-muted">{t.stats.ratings.noRatings}</span>
     ) : (
-      <span className="font-semibold tabular-nums">
-        {new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value)} ★
+      <span className="inline-flex items-center gap-1.5">
+        <span className="display-ink text-3xl tabular-nums">
+          {new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value)}
+        </span>
+        <StarIcon filled className="size-6" />
       </span>
     );
   const both = (entry: StatsEntry) =>
     partner && (
-      <span className="flex flex-wrap gap-x-3 text-sm">
-        <span>
-          {t.common.you} <Stars rating={entry.ratings[meId]} who={t.common.you} language={language} />
+      <span className="grid gap-1">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <NameTag name={t.common.you} who="me" />
+          <Stars rating={entry.ratings[meId]} who={t.common.you} language={language} />
         </span>
-        <span>
-          {partner.name} <Stars rating={entry.ratings[partner.id]} who={partner.name} language={language} />
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <NameTag name={partner.name} who="partner" />
+          <Stars rating={entry.ratings[partner.id]} who={partner.name} language={language} />
         </span>
       </span>
     );
   const titleRow = (entry: StatsEntry) => (
-    <Link href={titleHref(entry)} className="flex items-center gap-3 rounded-lg p-1 transition hover:bg-bg">
-      <Poster path={entry.poster_path} title={entry.title} size="xs" language={language} />
-      <span className="grid gap-0.5">
-        <span className="font-semibold leading-snug">{entry.title}</span>
+    <Link
+      href={titleHref(entry)}
+      className="group flex h-full items-center gap-3.5 rounded-control border-[2.5px] border-outline bg-surface p-2.5 transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-1 hover:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
+    >
+      <Poster path={entry.poster_path} title={entry.title} size="sm" language={language} />
+      <span className="grid min-w-0 gap-1.5">
+        <span className="text-lg font-bold leading-snug group-hover:underline">{entry.title}</span>
         {both(entry)}
       </span>
     </Link>
   );
 
   return (
-    <section className="card grid gap-5">
-      <h2 className="font-display text-lg font-semibold">{t.stats.ratings.heading}</h2>
-      <div className="grid gap-1">
-        <h3 className="text-sm text-muted">{t.stats.ratings.average}</h3>
-        <dl className="flex flex-wrap gap-x-6 gap-y-1">
-          <div className="flex gap-2">
-            <dt>{t.common.you}</dt>
+    <section className="card grid gap-6">
+      <h2 className="display-ink text-2xl">{t.stats.ratings.heading}</h2>
+      <div className="grid gap-2">
+        <h3 className="font-bold">{t.stats.ratings.average}</h3>
+        <dl className="flex flex-wrap gap-3">
+          <div className="flex min-w-0 items-center gap-3 rounded-control border-[2.5px] border-outline px-3 py-2">
+            <dt>
+              <NameTag name={t.common.you} who="me" />
+            </dt>
             <dd>{average(stats.averages.me)}</dd>
           </div>
           {partner && (
-            <div className="flex gap-2">
-              <dt>{partner.name}</dt>
+            <div className="flex min-w-0 items-center gap-3 rounded-control border-[2.5px] border-outline px-3 py-2">
+              <dt>
+                <NameTag name={partner.name} who="partner" />
+              </dt>
               <dd>{average(stats.averages.partner)}</dd>
             </div>
           )}
         </dl>
       </div>
       {stats.favourites.length > 0 && (
-        <div className="grid gap-2">
-          <h3 className="text-sm text-muted">{t.stats.ratings.favourites}</h3>
-          <ol className="grid gap-1">
+        <div className="grid gap-2.5">
+          <h3 className="font-bold">{t.stats.ratings.favourites}</h3>
+          <ol className="grid gap-3 sm:grid-cols-2">
             {stats.favourites.map((entry) => (
               <li key={entry.id}>{titleRow(entry)}</li>
             ))}
@@ -273,18 +297,19 @@ function Ratings({
         </div>
       )}
       {stats.split && (
-        <div className="grid gap-2">
-          <h3 className="text-sm text-muted">
-            {t.stats.ratings.split} · {t.stats.ratings.splitIntro}
-          </h3>
-          {titleRow(stats.split)}
+        <div className="grid gap-2.5">
+          <div>
+            <h3 className="font-bold">{t.stats.ratings.split}</h3>
+            <p className="text-sm text-muted">{t.stats.ratings.splitIntro}</p>
+          </div>
+          <div className="sm:max-w-[calc(50%-0.375rem)]">{titleRow(stats.split)}</div>
         </div>
       )}
     </section>
   );
 }
 
-/** One thin bar split between the two of you (ochre and teal), named in the legend below it. */
+/** One chunky bar split between the two of you, each part in that person's colour, named below it. */
 function AddedBar({ added, partnerName, t }: { added: { me: number; partner: number }; partnerName: string; t: Messages }) {
   const total = added.me + added.partner;
   const parts = [
@@ -292,24 +317,30 @@ function AddedBar({ added, partnerName, t }: { added: { me: number; partner: num
     { key: "partner", name: partnerName, count: added.partner, color: "bg-partner" },
   ].filter((part) => part.count > 0);
   return (
-    <section className="card grid gap-3">
+    <section className="card grid gap-4">
       <div className="grid gap-1">
-        <h2 className="font-display text-lg font-semibold">{t.stats.added.heading}</h2>
-        <p className="text-sm text-muted">{t.stats.added.intro}</p>
+        <h2 className="display-ink text-2xl">{t.stats.added.heading}</h2>
+        <p className="text-muted">{t.stats.added.intro}</p>
       </div>
       <div
         role="img"
         aria-label={parts.map((part) => t.stats.added.total(part.name, part.count)).join(", ")}
-        className="flex h-2 gap-0.5"
+        className="flex h-10 overflow-hidden rounded-full border-[3px] border-outline shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
       >
-        {parts.map((part) => (
-          <span key={part.key} style={{ width: `${(part.count / total) * 100}%` }} className={`rounded-full ${part.color}`} />
+        {parts.map((part, i) => (
+          <span
+            key={part.key}
+            style={{ width: `${(part.count / total) * 100}%` }}
+            className={`grid place-items-center ${part.color} ${i > 0 ? "border-l-[3px] border-outline" : ""}`}
+          >
+            <span className="display-ink text-xl leading-none text-ink">{part.count}</span>
+          </span>
         ))}
       </div>
-      <ul aria-hidden className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+      <ul aria-hidden className="flex flex-wrap gap-x-5 gap-y-1.5">
         {parts.map((part) => (
-          <li key={part.key} className="flex items-center gap-2">
-            <span className={`size-2.5 rounded-full ${part.color}`} />
+          <li key={part.key} className="flex items-center gap-2 font-semibold">
+            <span className={`size-3 rounded-full border-2 border-outline ${part.color}`} />
             {t.stats.added.total(part.name, part.count)}
           </li>
         ))}

@@ -1,11 +1,14 @@
 /** Home page (the shared list) and the search page. */
 const en = {
   people: {
+    label: "Both clocks",
     noName: "No name yet",
     localTime: (time: string) => `${time} local time`,
+    /** Between the two clocks on the home page. */
+    apart: (hours: number) => (hours === 0 ? "Same time" : `${hours} h apart`),
     settingUp: "Still setting up",
     waiting: "Waiting for your partner",
-    shareInvite: "Share your invite code →",
+    shareInvite: "Share your invite code",
   },
   viewsLabel: "List views",
   views: { next: "Up next", watched: "Watched", dropped: "Dropped" },
@@ -29,16 +32,21 @@ const en = {
     heading: "Search",
     failed: "Search isn't working right now. Try again in a minute.",
     noResults: (query: string) => `No films or series match “${query}”.`,
+    /** Before anything has been searched for. */
+    prompt: "Find a film or series and see where each of you can stream it.",
+    noResultsHint: "Check the spelling, or try the original title.",
   },
 };
 
 const tr: typeof en = {
   people: {
+    label: "İki saat",
     noName: "Henüz isim yok",
     localTime: (time: string) => `Yerel saat ${time}`,
+    apart: (hours: number) => (hours === 0 ? "Aynı saat" : `${hours} saat fark`),
     settingUp: "Kurulum sürüyor",
     waiting: "Partnerin bekleniyor",
-    shareInvite: "Davet kodunu paylaş →",
+    shareInvite: "Davet kodunu paylaş",
   },
   viewsLabel: "Liste görünümleri",
   views: { next: "Sıradakiler", watched: "İzlenenler", dropped: "Bırakılanlar" },
@@ -61,6 +69,8 @@ const tr: typeof en = {
     heading: "Arama",
     failed: "Arama şu an çalışmıyor. Bir dakika sonra tekrar dene.",
     noResults: (query: string) => `“${query}” ile eşleşen film ya da dizi yok.`,
+    prompt: "Bir film ya da dizi bul, ikinizin de nerede izleyebileceğini gör.",
+    noResultsHint: "Yazımı kontrol et ya da orijinal adını dene.",
   },
 };
 

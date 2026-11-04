@@ -1,8 +1,10 @@
 import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type CSSProperties } from "react";
 import { AddButton } from "@/components/add-button";
+import { Couches } from "@/components/couch";
+import { ArrowIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
@@ -54,8 +56,9 @@ function pickHref(state: PickState, changes: Partial<PickState>) {
   return query ? `/pick?${query}` : "/pick";
 }
 
+/** A chip link, grape while it's the current choice (drawn here: the chip class selects on aria-pressed). */
 const chip = (active: boolean) =>
-  `rounded-full border px-3 py-1 transition ${active ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`;
+  `chip ${active ? "bg-accent text-on-accent shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]" : ""}`;
 
 async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "searchParams">) {
   const [profile, partner, params, { language, t }] = await Promise.all([
@@ -108,29 +111,38 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <ListSync coupleId={profile.couple_id} />
-      <div className="grid gap-2">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{text.heading}</h1>
-        <p className="text-muted">{text.intro}</p>
+      <div className="grid gap-3">
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{text.heading}</h1>
+        <p className="max-w-[60ch] text-lg font-medium">{text.intro}</p>
       </div>
 
-      <section className="grid gap-3" aria-labelledby="pick-time">
-        <h2 id="pick-time" className="font-semibold">
+      <section className="card grid gap-4" aria-labelledby="pick-time">
+        <h2 id="pick-time" className="display-ink text-2xl">
           {text.time.label}
         </h2>
-        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+        <div className="flex flex-wrap items-center gap-2">
           {QUICK_MINUTES.map((m) => (
-            <Link key={m} href={pickHref(state, { time: String(m), another: 0 })} className={chip(state.time === String(m))}>
+            <Link
+              key={m}
+              href={pickHref(state, { time: String(m), another: 0 })}
+              aria-current={state.time === String(m) ? "true" : undefined}
+              className={chip(state.time === String(m))}
+            >
               {t.title.runtime(m)}
             </Link>
           ))}
-          <Link href={pickHref(state, { time: "late", another: 0 })} className={chip(state.time === "late")}>
+          <Link
+            href={pickHref(state, { time: "late", another: 0 })}
+            aria-current={state.time === "late" ? "true" : undefined}
+            className={chip(state.time === "late")}
+          >
             {text.time.late}
           </Link>
         </div>
-        <Form action="/pick" className="flex max-w-xs items-end gap-2">
-          <label className="grid flex-1 gap-1 text-sm font-semibold">
+        <Form action="/pick" className="flex max-w-xs items-end gap-2.5">
+          <label className="grid flex-1 gap-1.5 text-sm font-bold">
             {text.time.custom}
             <input
               name="time"
@@ -141,26 +153,24 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
               max={MAX_MINUTES}
               step={5}
               defaultValue={choice?.kind === "minutes" && !(QUICK_MINUTES as readonly number[]).includes(choice.minutes) ? choice.minutes : undefined}
-              className="field text-base font-normal"
+              className="field text-base font-medium"
             />
           </label>
           {state.everything && them && <input type="hidden" name="all" value="1" />}
-          <button className="btn-quiet">{text.time.go}</button>
+          <button className="btn-quiet py-2">{text.time.go}</button>
         </Form>
       </section>
 
       {summary && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-semibold">{summary}</p>
+          <p className="text-lg font-bold">{summary}</p>
           {them && minutes !== null && (
             <Link
               href={pickHref(state, { everything: !state.everything, another: 0 })}
-              className={`text-sm font-semibold ${chip(!state.everything)}`}
+              className="chip"
               aria-pressed={!state.everything}
             >
-              <span aria-hidden className={state.everything ? "text-both" : ""}>
-                ●{" "}
-              </span>
+              <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
               {text.bothOnly}
             </Link>
           )}
@@ -168,7 +178,12 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
       )}
 
       {minutes !== null && (
-        <Suspense key={pickHref(state, {})} fallback={<div aria-busy className="h-80 rounded-xl bg-line/60 motion-safe:animate-pulse" />}>
+        <Suspense
+          key={pickHref(state, {})}
+          fallback={
+            <div aria-busy className="h-80 rounded-panel border-[3px] border-outline bg-surface/60 motion-safe:animate-pulse" />
+          }
+        >
           <PickResult
             couple={{
               coupleId: profile.couple_id,
@@ -221,18 +236,19 @@ async function PickResult(props: {
 
   if (!result) {
     return (
-      <div className="card grid justify-items-center gap-2 py-10 text-center">
-        <p className="font-semibold">{t.pick.empty.heading(t.title.runtime(minutes))}</p>
-        {list.length === 0 && <p className="text-sm text-muted">{t.pick.empty.noList}</p>}
-        {failed && <p className="text-sm text-muted">{t.pick.failed}</p>}
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm font-semibold">
+      <div className="card grid justify-items-center gap-3 px-6 py-10 text-center">
+        <Couches size={56} />
+        <p className="display-ink text-2xl">{t.pick.empty.heading(t.title.runtime(minutes))}</p>
+        {list.length === 0 && <p className="max-w-[48ch] text-muted">{t.pick.empty.noList}</p>}
+        {failed && <p className="max-w-[48ch] text-muted">{t.pick.failed}</p>}
+        <div className="flex flex-wrap justify-center gap-3 pt-1">
           {!state.everything && (
-            <Link href={pickHref(state, { everything: true, another: 0 })} className="text-partner">
+            <Link href={pickHref(state, { everything: true, another: 0 })} className="btn-quiet">
               {t.pick.empty.tryEverything}
             </Link>
           )}
           {state.time !== "late" && minutes < MAX_MINUTES && (
-            <Link href={pickHref(state, { time: String(Math.min(MAX_MINUTES, minutes + 30)), another: 0 })} className="text-partner">
+            <Link href={pickHref(state, { time: String(Math.min(MAX_MINUTES, minutes + 30)), another: 0 })} className="btn">
               {t.pick.empty.tryLonger}
             </Link>
           )}
@@ -296,50 +312,100 @@ function PickCard(props: {
   const theirs = props.partner ? names(props.partner) : "";
   const ref = { media_type: item.media_type, tmdb_id: item.tmdb_id };
 
+  const tags = [item.release_date?.slice(0, 4), t.common.mediaType[item.media_type], lengthFor(item, t)].filter(Boolean);
+
   return (
-    // Phones: a small poster beside the details, actions across the bottom. Wider: actions under the details.
-    <article className="card grid grid-cols-[7rem_1fr] gap-x-4 gap-y-4 p-4 sm:grid-cols-[200px_1fr] sm:grid-rows-[auto_1fr] sm:gap-x-6 sm:p-5">
-      <Link href={titleHref(item)} className="self-start sm:row-span-2">
-        <Poster path={item.poster_path} title={item.title} size="fluid" language={language} />
-      </Link>
-      <div className="grid min-w-0 content-start gap-3">
-        {props.wrapped && <p className="text-sm text-muted">{text.wrapped}</p>}
-        <div className="grid gap-1">
-          <h2 className="font-display text-2xl font-semibold leading-tight">
-            <Link href={titleHref(item)} className="hover:underline">
+    // The screen's one spotlight. Phones: a small poster beside the details, actions across the bottom.
+    // Wider: a big poster, actions under the details.
+    <>
+      <article
+        style={{ "--tilt": "-0.75deg", rotate: "var(--tilt)" } as CSSProperties}
+        className="pick-deal spotlight grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-4 gap-y-5 p-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:gap-x-7 sm:p-6"
+      >
+        <Link
+          href={titleHref(item)}
+          className="self-start transition duration-150 ease-(--ease-spring) hover:-translate-y-1 sm:row-span-2"
+        >
+          <Poster
+            path={item.poster_path}
+            title={item.title}
+            size="fluid"
+            eager
+            language={language}
+            className="-rotate-2 shadow-[6px_6px_0_var(--outline)]"
+          />
+        </Link>
+        <div className="grid min-w-0 content-start gap-3">
+          {props.wrapped && <p className="text-sm font-semibold text-muted">{text.wrapped}</p>}
+          <h2 className="display text-[clamp(1.8rem,4vw,2.75rem)] [color:var(--pop)] [overflow-wrap:anywhere]">
+            <Link href={titleHref(item)} className="decoration-[3px] underline-offset-[6px] hover:underline">
               {item.title}
             </Link>
           </h2>
-          <p className="text-sm text-muted">
-            {[item.release_date?.slice(0, 4), t.common.mediaType[item.media_type], lengthFor(item, t)].filter(Boolean).join(" · ")}
-          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => (
+              <li key={tag} className="paper rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold">
+                {tag}
+              </li>
+            ))}
+          </ul>
+          {reason && <p className="font-semibold">{reason}</p>}
+          <div className="grid justify-items-start gap-2 text-sm">
+            <WatchBadge verdict={item.verdict} partnerName={props.partnerName} language={language} size="lg" />
+            {mine && <ServiceLine who="me" text={text.services.you(mine)} />}
+            {theirs && props.partnerName && <ServiceLine who="partner" text={text.services.partner(props.partnerName, theirs)} />}
+          </div>
         </div>
-        {reason && <p className="text-sm">{reason}</p>}
-        <div className="grid justify-items-start gap-1 text-sm">
-          <WatchBadge verdict={item.verdict} partnerName={props.partnerName} language={language} />
-          {mine && <span className="text-me">{text.services.you(mine)}</span>}
-          {theirs && props.partnerName && <span className="text-partner">{text.services.partner(props.partnerName, theirs)}</span>}
+        <div className="col-span-2 grid content-start gap-3 sm:col-span-1 sm:col-start-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link href={titleHref(item)} className="btn">
+              {text.watchNow}
+              <ArrowIcon className="size-4" />
+            </Link>
+            <Link href={`/watch-nights/new?type=${item.media_type}&id=${item.tmdb_id}`} className="btn-quiet">
+              {text.planIt}
+            </Link>
+            <Link href={props.anotherHref} scroll={false} className="group btn-quiet">
+              <DiceIcon className="size-5 transition-transform duration-300 ease-(--ease-spring) group-hover:rotate-[100deg]" />
+              {text.another}
+            </Link>
+            {item.source === "forYou" && <AddButton titleRef={ref} onList={false} language={language} />}
+          </div>
+          {props.startOverHref && (
+            <Link href={props.startOverHref} scroll={false} className="justify-self-start text-sm font-bold underline underline-offset-4">
+              {text.startOver}
+            </Link>
+          )}
         </div>
-      </div>
-      <div className="col-span-2 grid content-start gap-3 sm:col-span-1 sm:col-start-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href={titleHref(item)} className="btn">
-            {text.watchNow}
-          </Link>
-          <Link href={`/watch-nights/new?type=${item.media_type}&id=${item.tmdb_id}`} className="btn-quiet">
-            {text.planIt}
-          </Link>
-          <Link href={props.anotherHref} scroll={false} className="btn-quiet">
-            {text.another}
-          </Link>
-          {item.source === "forYou" && <AddButton titleRef={ref} onList={false} language={language} />}
-        </div>
-        {props.startOverHref && (
-          <Link href={props.startOverHref} scroll={false} className="justify-self-start text-sm font-semibold text-muted hover:text-ink">
-            {text.startOver}
-          </Link>
-        )}
-      </div>
-    </article>
+      </article>
+    </>
+  );
+}
+
+/** Who streams it on what: a dot in the person's colour, then the services. */
+function ServiceLine({ who, text }: { who: "me" | "partner"; text: string }) {
+  return (
+    <span className="flex items-center gap-2 font-semibold">
+      <span aria-hidden className={`size-3 shrink-0 rounded-full border-2 border-outline ${who === "me" ? "bg-me" : "bg-partner"}`} />
+      {text}
+    </span>
+  );
+}
+
+/** A die showing five, for "Another". */
+function DiceIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className={`inline-block shrink-0 ${className}`}>
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="var(--surface)" stroke="currentColor" strokeWidth={2} />
+      {[
+        [8.5, 8.5],
+        [15.5, 8.5],
+        [12, 12],
+        [8.5, 15.5],
+        [15.5, 15.5],
+      ].map(([cx, cy]) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.6} fill="currentColor" />
+      ))}
+    </svg>
   );
 }

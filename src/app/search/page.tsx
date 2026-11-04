@@ -1,24 +1,22 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { AddButton } from "@/components/add-button";
-import { AvailabilityBadge } from "@/components/availability-badge";
+import { Couches } from "@/components/couch";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
-import { Poster } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
+import { TitleCard, type CardContext } from "@/components/title-card";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getListKeys } from "@/lib/list";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, searchTitles, type SearchResult } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
-import { titleHref, titleKey, type Watcher } from "@/lib/watch";
+import { titleKey, type Watcher } from "@/lib/watch";
 
 export const generateMetadata = localisedTitle("search");
 
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PageLoading variant="posters" />}>
       <Search searchParams={searchParams} />
     </Suspense>
   );
@@ -51,52 +49,54 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
   // Started now, awaited by each badge, so results render before availability is known.
   const availability = getAvailability(results, them ? [me.country, them.country] : [me.country]);
 
+  const card: CardContext = {
+    language,
+    availability,
+    me,
+    them,
+    partnerName: partner?.display_name || t.common.yourPartner,
+    onList,
+  };
+
   return (
     <div className="grid gap-6">
-      <h1 className="font-display text-3xl font-bold tracking-tight">{t.list.search.heading}</h1>
+      <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.list.search.heading}</h1>
       <SearchBox query={query} autoFocus={!query} language={language} />
       {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
 
       {failed ? (
-        <p className="text-danger">{t.list.search.failed}</p>
-      ) : query && results.length === 0 ? (
-        <p className="text-muted">{t.list.search.noResults(query)}</p>
+        <div className="card grid justify-items-center gap-3 px-6 py-10 text-center">
+          <Couches size={56} />
+          <p role="alert" className="font-semibold text-danger">
+            {t.list.search.failed}
+          </p>
+        </div>
+      ) : !query || results.length === 0 ? (
+        <div className="card grid justify-items-center gap-2 px-6 py-10 text-center">
+          <Couches size={56} className="mb-2" />
+          {query ? (
+            <>
+              <p className="display-ink max-w-md text-2xl">{t.list.search.noResults(query)}</p>
+              <p className="max-w-sm font-medium text-muted">{t.list.search.noResultsHint}</p>
+            </>
+          ) : (
+            <p className="max-w-sm font-medium text-muted">{t.list.search.prompt}</p>
+          )}
+        </div>
       ) : (
-        <ul className="grid gap-3">
-          {results.map((r) => (
-            <li key={titleKey(r)} className="card flex items-start gap-3 p-3 transition hover:border-muted">
-              <Link href={titleHref(r)} className="flex min-w-0 flex-1 gap-4">
-                <Poster path={r.poster_path} title={r.title} size="sm" language={language} />
-                <div className="grid min-w-0 content-start gap-1">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-display text-lg font-semibold leading-snug">{r.title}</span>
-                    <span className="text-sm text-muted">
-                      {r.release_date?.slice(0, 4)} {t.common.mediaType[r.media_type]}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 text-sm text-muted">{r.overview}</p>
-                  <Suspense>
-                    <div>
-                      <AvailabilityBadge
-                        availability={availability}
-                        titleKey={titleKey(r)}
-                        me={me}
-                        partner={them}
-                        partnerName={partner?.display_name ?? null}
-                        language={language}
-                      />
-                    </div>
-                  </Suspense>
-                </div>
-              </Link>
-              {onList && (
-                <AddButton
-                  titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }}
-                  onList={onList.has(titleKey(r))}
-                  language={language}
-                />
-              )}
-            </li>
+        <ul className="grid grid-cols-2 gap-x-5 gap-y-8 pt-3 sm:grid-cols-3 md:grid-cols-4">
+          {results.map((r, i) => (
+            <TitleCard
+              key={titleKey(r)}
+              result={r}
+              context={card}
+              index={i}
+              details={
+                <span className="text-sm font-medium text-muted">
+                  {[r.release_date?.slice(0, 4), t.common.mediaType[r.media_type]].filter(Boolean).join(" · ")}
+                </span>
+              }
+            />
           ))}
         </ul>
       )}

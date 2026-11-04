@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { StarPicker } from "@/app/title/[type]/[id]/list-panel";
+import { NameTag } from "@/components/name-tag";
+import { CheckIcon } from "@/components/icons";
 import { Poster } from "@/components/poster";
 import { Stars } from "@/components/stars";
 import { getMessages } from "@/lib/i18n";
@@ -65,16 +67,24 @@ export function WrapupCard(props: {
   }
 
   return (
-    <li className="card grid gap-4 p-4" aria-busy={pending}>
+    <li className="card grid gap-5" aria-busy={pending}>
       <div className="flex items-start gap-4">
-        <Poster path={title.poster_path} title={title.title} size="sm" language={language} />
-        <div className="grid min-w-0 content-start gap-1">
-          <h2 className="font-display text-xl font-semibold leading-snug">
-            <Link href={titleHref(title)} className="hover:underline">
+        <Link href={titleHref(title)} className="shrink-0 transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:rotate-0">
+          <Poster
+            path={title.poster_path}
+            title={title.title}
+            size="sm"
+            language={language}
+            className="-rotate-3 shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
+          />
+        </Link>
+        <div className="grid min-w-0 content-start gap-1.5">
+          <h2 className="display-ink text-2xl [overflow-wrap:anywhere]">
+            <Link href={titleHref(title)} className="decoration-[3px] underline-offset-4 hover:underline">
               {text.heading(title.title)}
             </Link>
           </h2>
-          <p className="text-sm text-muted">
+          <p className="text-sm font-semibold text-muted">
             {text.when(formatDay(new Date(night.starts_at), props.timeZone, language))}
           </p>
         </div>
@@ -89,30 +99,37 @@ export function WrapupCard(props: {
       >
         {isFilm ? (
           item?.status === "watched" ? (
-            <p className="text-sm font-semibold">
-              <span aria-hidden className="text-both">
-                ✓{" "}
+            <p className="flex items-center gap-2 font-semibold">
+              <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-outline bg-accent text-on-accent">
+                <CheckIcon className="size-3.5" />
               </span>
               {item.watched_on ? text.alreadyWatched(formatDate(item.watched_on, language)) : text.alreadyWatchedNoDate}
             </p>
           ) : (
-            <label className="flex items-center gap-2 font-semibold">
+            // A chip that turns grape when ticked.
+            <label className="chip cursor-pointer justify-self-start py-1.5 pr-4 text-base has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-(--focus)">
               <input
                 type="checkbox"
                 checked={watched}
                 onChange={(e) => setWatched(e.target.checked)}
                 disabled={pending}
-                className="size-4 accent-(--both)"
+                className="peer sr-only"
               />
+              <span
+                aria-hidden
+                className="grid size-5 place-items-center rounded-full border-2 border-outline bg-surface text-transparent peer-checked:bg-pop peer-checked:text-ink"
+              >
+                <CheckIcon className="size-3.5" />
+              </span>
               {text.markWatched}
             </label>
           )
         ) : (
           <fieldset className="grid gap-2">
-            <legend className="mb-1 text-sm font-semibold">{text.watchedUpTo}</legend>
+            <legend className="mb-1.5 font-bold">{text.watchedUpTo}</legend>
             <div className="flex flex-wrap items-end gap-3">
               <label className="grid gap-1">
-                <span className="text-xs text-muted">{t.title.panel.season}</span>
+                <span className="text-sm font-semibold">{t.title.panel.season}</span>
                 <input
                   type="number"
                   min={1}
@@ -123,7 +140,7 @@ export function WrapupCard(props: {
                 />
               </label>
               <label className="grid gap-1">
-                <span className="text-xs text-muted">{t.title.panel.episode}</span>
+                <span className="text-sm font-semibold">{t.title.panel.episode}</span>
                 <input
                   type="number"
                   min={1}
@@ -135,22 +152,26 @@ export function WrapupCard(props: {
               </label>
             </div>
             {partnerMovedOn && partner && current && (
-              <p className="text-xs text-muted">
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <span aria-hidden className="size-3 shrink-0 rounded-full border-2 border-outline bg-partner" />
                 {text.partnerMovedOn(partner.name, t.common.progress(current.season, current.episode))}
               </p>
             )}
           </fieldset>
         )}
 
-        <div className="grid gap-1">
-          <span className="text-sm font-semibold">
-            {text.yourRating} <span className="font-normal text-muted">({text.optional})</span>
+        <div className="grid gap-1.5">
+          <span className="font-bold">
+            {text.yourRating} <span className="text-sm font-semibold text-muted">({text.optional})</span>
           </span>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <StarPicker rating={rating} disabled={pending} onRate={setRating} t={t} />
             {partner && partnerRating && (
-              <span className="text-sm">
-                {partner.name}: <Stars rating={partnerRating} who={partner.name} language={language} />
+              <span className="flex flex-wrap items-center gap-2">
+                <NameTag name={partner.name} who="partner" />
+                <span className="text-2xl leading-none">
+                  <Stars rating={partnerRating} who={partner.name} language={language} />
+                </span>
               </span>
             )}
           </div>
@@ -168,10 +189,14 @@ export function WrapupCard(props: {
           <PartnerReviewView name={partner.name} review={reviews.partner} t={t} />
         )}
 
-        {!item && <p className="text-xs text-muted">{text.notOnList}</p>}
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {!item && <p className="text-sm text-muted">{text.notOnList}</p>}
+        {error && (
+          <p role="alert" className="text-sm font-semibold text-danger">
+            {error}
+          </p>
+        )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <button className="btn" disabled={pending}>
             {pending ? text.saving : text.save}
           </button>

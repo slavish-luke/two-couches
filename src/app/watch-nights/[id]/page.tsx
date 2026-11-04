@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackIcon } from "@/components/icons";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSync } from "@/components/list-sync";
@@ -48,11 +49,11 @@ async function EditWatchNight({ params }: Pick<PageProps<"/watch-nights/[id]">, 
   return (
     <div className="grid gap-6">
       <ListSync coupleId={profile.couple_id} />
-      <div className="grid gap-2">
-        <Link href="/watch-nights" className="text-sm font-semibold text-muted hover:text-ink">
-          {t.nights.form.back}
+      <div className="grid gap-3">
+        <Link href="/watch-nights" className="group inline-flex items-center gap-1.5 justify-self-start font-bold underline underline-offset-4">
+          <BackIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:-translate-x-1" /> {t.nights.form.back}
         </Link>
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t.nights.form.editHeading}</h1>
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.nights.form.editHeading}</h1>
       </div>
       <NightForm
         // A change saved on the other screen arrives through ListSync; start again from it.

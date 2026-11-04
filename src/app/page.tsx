@@ -2,18 +2,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AvailabilityBadge } from "@/components/availability-badge";
-import { CountryChip } from "@/components/country-chip";
+import { Couch, Couches } from "@/components/couch";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
-import { Poster } from "@/components/poster";
+import { Poster, posterMorph } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
 import { Stars } from "@/components/stars";
+import { VenueClock } from "@/components/venue-clock";
+import { ArrowIcon } from "@/components/icons";
 import { getList, type ListEntry } from "@/lib/list";
 import { getWatchNights } from "@/lib/nights";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { formatDate, localDate, type ListStatus } from "@/lib/list-rules";
-import { countryName, formatLocalTime } from "@/lib/places";
+import { countryName, hoursApart } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { getAvailability } from "@/lib/titles";
@@ -26,7 +28,7 @@ import { NightCard } from "./watch-nights/night-card";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PageLoading variant="home" wide />}>
       <OurList searchParams={searchParams} />
     </Suspense>
   );
@@ -87,77 +89,107 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
     getI18n(),
   ]);
   const now = new Date();
+  const people = [members?.find((m) => m.id === profile.id), members?.find((m) => m.id !== profile.id)];
+  const [mine, theirs] = people;
 
   return (
-    <div className="grid gap-8">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {[members?.find((m) => m.id === profile.id), members?.find((m) => m.id !== profile.id)].map((person, i) =>
-          person ? (
-            <div key={person.id} className="card grid gap-1">
-              <div className="flex items-center gap-2">
-                <span className="font-display text-lg font-semibold">{person.display_name || t.list.people.noName}</span>
-                {person.country && (
-                  <CountryChip
-                    code={person.country}
-                    name={countryName(person.country, profile.language)}
-                    isMe={person.id === profile.id}
-                  />
+    <div data-wide className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-8 lg:grid-cols-12">
+      <aside className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
+        <section
+          aria-label={t.list.people.label}
+          className="card grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 px-3 pb-4 pt-3"
+        >
+          {people.map((person, i) => {
+            const slot = i === 0 ? "col-start-1" : "col-start-3";
+            if (!person) {
+              return (
+                <Link
+                  key={i}
+                  href="/couple"
+                  className={`${slot} row-start-1 grid justify-items-center gap-1.5 self-center text-center`}
+                >
+                  <span className="font-bold">{t.list.people.waiting}</span>
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-muted underline underline-offset-4">
+                    {t.list.people.shareInvite} <ArrowIcon />
+                  </span>
+                </Link>
+              );
+            }
+            const isMe = person.id === profile.id;
+            return (
+              <div key={person.id} className={`${slot} row-start-1 grid min-w-0 justify-items-center gap-1.5 text-center`}>
+                <Couch who={isMe ? "me" : "partner"} size={58} />
+                <span
+                  className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${isMe ? "bg-me" : "bg-partner"}`}
+                >
+                  <span className="truncate">{isMe ? t.common.you : person.display_name || t.list.people.noName}</span>
+                  {person.country && (
+                    <span title={countryName(person.country, profile.language)} className="shrink-0 opacity-75">
+                      · {person.country}
+                    </span>
+                  )}
+                </span>
+                {person.country ? (
+                  <VenueClock timeZone={person.time_zone} language={profile.language} serverNow={now.getTime()} />
+                ) : (
+                  <span className="text-sm text-muted">{t.list.people.settingUp}</span>
                 )}
                 <VisitChip person={person} language={profile.language} now={now} />
               </div>
-              <span className="text-sm text-muted">
-                {person.country
-                  ? t.list.people.localTime(formatLocalTime(now, person.time_zone, profile.language))
-                  : t.list.people.settingUp}
-              </span>
-            </div>
-          ) : (
-            <Link key={i} href="/couple" className="card grid gap-1 border-dashed hover:border-partner">
-              <span className="font-display text-lg font-semibold">{t.list.people.waiting}</span>
-              <span className="text-sm text-muted">{t.list.people.shareInvite}</span>
-            </Link>
-          ),
-        )}
-      </div>
+            );
+          })}
+          {mine?.country && theirs?.country && (
+            <span className="col-start-2 row-start-1 mb-12 -rotate-6 self-center whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-3 pb-1 pt-1.5 font-display text-base leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)]">
+              {t.list.people.apart(hoursApart(now, mine.time_zone, theirs.time_zone))}
+            </span>
+          )}
+        </section>
 
-      <AfterNight />
-      {partner && (
-        <Suspense>
-          <NextNight
-            coupleId={profile.couple_id}
-            me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
-            partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
-            locales={
-              partner.country
-                ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
-                : [tmdbLocale(profile.language, profile.home_country)]
-            }
-          />
-        </Suspense>
-      )}
-
-      <SearchBox language={language} />
-      <Suspense><PickLink /></Suspense>
-
-      <ListSync coupleId={profile.couple_id} />
-      <ListSection
-        coupleId={profile.couple_id}
-        me={{ id: profile.id, country: profile.country, services: profile.services }}
-        locale={tmdbLocale(profile.language, profile.home_country)}
-        language={profile.language}
-        timeZone={profile.time_zone}
-        partner={
-          partner?.country
-            ? {
-                id: partner.id,
-                name: partner.display_name || t.common.yourPartner,
-                watcher: { country: partner.country, services: partner.services },
-                locale: tmdbLocale(partner.language, partner.home_country),
+        {partner && (
+          <Suspense>
+            <NextNight
+              coupleId={profile.couple_id}
+              me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
+              partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
+              locales={
+                partner.country
+                  ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
+                  : [tmdbLocale(profile.language, profile.home_country)]
               }
-            : null
-        }
-        params={params}
-      />
+            />
+          </Suspense>
+        )}
+        <AfterNight />
+
+        <div className="grid gap-4">
+          <SearchBox language={language} />
+          <Suspense>
+            <PickLink />
+          </Suspense>
+        </div>
+      </aside>
+
+      <div className="min-w-0 lg:col-span-7 xl:col-span-8">
+        <ListSync coupleId={profile.couple_id} />
+        <ListSection
+          coupleId={profile.couple_id}
+          me={{ id: profile.id, country: profile.country, services: profile.services }}
+          locale={tmdbLocale(profile.language, profile.home_country)}
+          language={profile.language}
+          timeZone={profile.time_zone}
+          partner={
+            partner?.country
+              ? {
+                  id: partner.id,
+                  name: partner.display_name || t.common.yourPartner,
+                  watcher: { country: partner.country, services: partner.services },
+                  locale: tmdbLocale(partner.language, partner.home_country),
+                }
+              : null
+          }
+          params={params}
+        />
+      </div>
     </div>
   );
 }
@@ -171,19 +203,32 @@ async function NextNight(props: {
 }) {
   const [{ language, t }, [night]] = await Promise.all([getI18n(), getWatchNights(props.coupleId, props.locales, { limit: 1 })]);
   return (
-    <section className="grid gap-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-lg font-semibold">{t.nights.next.heading}</h2>
-        <Link href={night ? "/watch-nights" : "/watch-nights/new"} className="text-sm font-semibold text-partner">
+    <section className="spotlight grid -rotate-1 gap-4 p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 className="display text-[2rem] [color:var(--pop)]">{t.nights.next.heading}</h2>
+        <Link
+          href={night ? "/watch-nights" : "/watch-nights/new"}
+          className="group inline-flex items-center gap-1 font-bold underline underline-offset-4"
+        >
           {night ? t.nights.next.all : t.nights.next.planOne}
+          <ArrowIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
         </Link>
       </div>
       {night ? (
         <ul>
-          <NightCard night={night} me={props.me} partner={props.partner} now={new Date()} language={language} t={t} />
+          <NightCard
+            night={night}
+            me={props.me}
+            partner={props.partner}
+            now={new Date()}
+            language={language}
+            t={t}
+            className=""
+            listing
+          />
         </ul>
       ) : (
-        <p className="card py-3 text-sm text-muted">{t.nights.next.none}</p>
+        <p className="text-muted">{t.nights.next.none}</p>
       )}
     </section>
   );
@@ -227,50 +272,56 @@ async function ListSection(props: {
     shown = shown.filter((e) => whoCanWatch(me, partner?.watcher ?? null, byTitle[titleKey(e)] ?? {}).verdict === "both");
   }
 
-  const chip = (active: boolean) =>
-    `rounded-full border px-3 py-1 transition ${active ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`;
   const isFiltered = Boolean(filters.category || filters.type || filters.both);
 
   return (
-    <section className="grid gap-4">
-      <h1 className="font-display text-3xl font-bold tracking-tight">{t.common.nav.list}</h1>
+    <section className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <h1 className="sr-only">{t.common.nav.list}</h1>
 
-      <nav aria-label={t.list.viewsLabel} className="flex gap-1 border-b border-line">
-        {(Object.keys(VIEWS) as View[]).map((view) => (
-          <Link
-            key={view}
-            href={filtersHref(filters, { view })}
-            aria-current={filters.view === view ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 font-semibold ${
-              filters.view === view ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            {t.list.views[view]} <span className="font-normal text-muted">{inView(view).length}</span>
-          </Link>
-        ))}
+      <nav aria-label={t.list.viewsLabel}>
+        <ul className="-mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:none]">
+          {(Object.keys(VIEWS) as View[]).map((view) => (
+            <li key={view} className="shrink-0">
+              <Link
+                href={filtersHref(filters, { view })}
+                aria-current={filters.view === view ? "page" : undefined}
+                className="tab flex items-center gap-2"
+              >
+                {t.list.views[view]}
+                <span className="rounded-full border-2 border-outline bg-surface px-1.5 font-sans text-sm font-bold leading-snug text-ink">
+                  {inView(view).length}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
 
       {entries.length > 0 && (
-        <div className="flex flex-wrap gap-2 text-sm font-semibold">
+        <div className="flex flex-wrap gap-2">
           {partner && (
-            <Link href={filtersHref(filters, { both: !filters.both })} className={chip(filters.both)} aria-pressed={filters.both}>
-              <span aria-hidden className={filters.both ? "" : "text-both"}>
-                ●{" "}
-              </span>
+            <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-pressed={filters.both}>
+              <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
               {t.list.bothFilter}
             </Link>
           )}
-          <Link href={filtersHref(filters, { type: filters.type === "movie" ? null : "movie" })} className={chip(filters.type === "movie")}>
-            {t.common.mediaTypePlural.movie}
-          </Link>
-          <Link href={filtersHref(filters, { type: filters.type === "tv" ? null : "tv" })} className={chip(filters.type === "tv")}>
-            {t.common.mediaTypePlural.tv}
-          </Link>
+          {(["movie", "tv"] as const).map((type) => (
+            <Link
+              key={type}
+              href={filtersHref(filters, { type: filters.type === type ? null : type })}
+              className="chip"
+              aria-pressed={filters.type === type}
+            >
+              {t.common.mediaTypePlural[type]}
+            </Link>
+          ))}
+          {categories.length > 0 && <span aria-hidden className="mx-1 w-[3px] self-stretch rounded-full bg-outline/25" />}
           {categories.map((name) => (
             <Link
               key={name}
               href={filtersHref(filters, { category: filters.category === name ? null : name })}
-              className={chip(filters.category === name)}
+              className="chip"
+              aria-pressed={filters.category === name}
             >
               {name}
             </Link>
@@ -279,49 +330,47 @@ async function ListSection(props: {
       )}
 
       {shown.length === 0 ? (
-        <div className="card grid justify-items-center gap-1 py-12 text-center">
+        <div className="card grid justify-items-center gap-2 px-6 py-12 text-center">
+          <Couches size={64} className="mb-2" />
           {entries.length === 0 ? (
             <>
-              <p className="font-semibold">{t.list.empty.heading}</p>
-              <p className="text-sm text-muted">{t.list.empty.body}</p>
+              <p className="display-ink text-3xl">{t.list.empty.heading}</p>
+              <p className="max-w-sm text-muted">{t.list.empty.body}</p>
             </>
           ) : isFiltered ? (
             <>
               <p className="font-semibold">{t.list.empty.noMatches}</p>
-              <Link href={filtersHref(filters, { category: null, type: null, both: false })} className="text-sm font-semibold text-partner">
+              <Link href={filtersHref(filters, { category: null, type: null, both: false })} className="btn-quiet text-sm">
                 {t.list.empty.clearFilters}
               </Link>
             </>
           ) : (
-            <p className="text-sm text-muted">{t.list.empty[filters.view]}</p>
+            <p className="text-muted">{t.list.empty[filters.view]}</p>
           )}
         </div>
       ) : (
-        <ul className="grid gap-3">
-          {shown.map((entry) => (
-            <li key={entry.id}>
-              <Link href={titleHref(entry)} className="card flex gap-4 p-3 transition hover:border-muted">
-                <Poster path={entry.poster_path} title={entry.title} size="sm" language={language} />
-                <div className="grid min-w-0 content-start gap-1.5">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-display text-lg font-semibold leading-snug">{entry.title}</span>
-                    <span className="text-sm text-muted">
-                      {entry.release_date?.slice(0, 4)} {t.common.mediaType[entry.media_type]}
+        <ul className="grid gap-4">
+          {shown.map((entry, i) => (
+            <li key={entry.id} className="tilt-row">
+              <Link
+                href={titleHref(entry)}
+                className="card group relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 p-3 transition-shadow duration-150 hover:shadow-[8px_8px_0_var(--outline)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:p-4"
+              >
+                <Poster
+                  path={entry.poster_path}
+                  title={entry.title}
+                  size="sm"
+                  language={language}
+                  morph={posterMorph(entry)}
+                  className="self-start sm:w-20"
+                />
+                <div className="grid min-w-0 content-start gap-1 max-sm:pr-12">
+                  <span className="text-xl font-bold leading-tight group-hover:underline sm:text-2xl">{entry.title}</span>
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
+                    <span>
+                      {t.common.mediaType[entry.media_type]}
+                      {entry.release_date && ` · ${entry.release_date.slice(0, 4)}`}
                     </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    {entry.status === "watching" && (
-                      <span className="font-semibold">
-                        {t.common.statuses.watching}
-                        {entry.season && entry.episode
-                          ? ` · ${t.list.upTo(t.common.progress(entry.season, entry.episode))}`
-                          : ""}
-                      </span>
-                    )}
-                    {filters.view === "watched" && (
-                      <WatchedLine entry={entry} me={me} partner={partner} language={language} />
-                    )}
                     {filters.view !== "watched" && (
                       <Suspense>
                         <AvailabilityBadge
@@ -331,21 +380,55 @@ async function ListSection(props: {
                           partner={partner?.watcher ?? null}
                           partnerName={partner?.name ?? null}
                           language={language}
+                          part="proof"
                         />
                       </Suspense>
                     )}
-                    {entry.categories.map((name) => (
-                      <span key={name} className="rounded-full bg-partner-soft px-2 py-0.5 text-xs text-partner">
-                        {name}
+                    {entry.status === "watching" && (
+                      <span className="max-w-full rounded-full border-2 border-outline bg-accent-soft px-2 text-sm font-bold leading-snug">
+                        {t.common.statuses.watching}
+                        {entry.season && entry.episode
+                          ? ` · ${t.list.upTo(t.common.progress(entry.season, entry.episode))}`
+                          : ""}
                       </span>
-                    ))}
-                  </div>
-
-                  {entry.notes && <p className="line-clamp-2 text-sm">{entry.notes}</p>}
-                  <p className="text-xs text-muted">
+                    )}
+                  </span>
+                  {entry.categories.length > 0 && (
+                    <span className="mt-0.5 flex flex-wrap gap-1.5">
+                      {entry.categories.map((name) => (
+                        <span key={name} className="strand">
+                          {name}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                  {filters.view === "watched" && (
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                      <WatchedLine entry={entry} me={me} partner={partner} language={language} />
+                    </span>
+                  )}
+                  {entry.notes && <p className="line-clamp-2 max-w-prose text-sm">{entry.notes}</p>}
+                  <p className="text-sm text-muted">
                     {addedLine(t, entry, me.id, partner, formatDate(localDate(props.timeZone, new Date(entry.created_at)), language))}
                   </p>
                 </div>
+                {/* Phones: the burst hangs off the card's corner; the dots tag follows the details. */}
+                {filters.view !== "watched" && (
+                  <div className="max-sm:col-start-2 max-sm:mt-2 max-sm:has-[.burst]:absolute max-sm:has-[.burst]:-right-2 max-sm:has-[.burst]:-top-4 max-sm:has-[.burst]:mt-0 sm:pl-2">
+                    <Suspense>
+                      <AvailabilityBadge
+                        availability={availability}
+                        titleKey={titleKey(entry)}
+                        me={me}
+                        partner={partner?.watcher ?? null}
+                        partnerName={partner?.name ?? null}
+                        language={language}
+                        onPoster
+                        index={Math.min(i, 12)}
+                      />
+                    </Suspense>
+                  </div>
+                )}
               </Link>
             </li>
           ))}

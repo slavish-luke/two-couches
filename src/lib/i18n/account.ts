@@ -1,5 +1,5 @@
 import type { DataSaverMode } from "../data-saver";
-import type { Theme } from "../theme";
+import type { Palette, Skin } from "../theme";
 
 /** Sign-in, settings, pairing (couple) and their actions' messages. */
 const en = {
@@ -28,6 +28,7 @@ const en = {
   },
   settings: {
     heading: "Settings",
+    profile: "Your profile",
     welcome: "Welcome",
     intro: "Your country, time zone and the services you pay for.",
     welcomeIntro: "Tell us where you watch from, so we can check what's streaming for you.",
@@ -60,7 +61,12 @@ const en = {
   },
   appearance: {
     heading: "Appearance",
-    options: { system: "Match device", light: "Light", dark: "Dark" } satisfies Record<Theme, string>,
+    intro: "How the app looks on this device. Each look keeps the same roles: a colour for you, one for your partner, and a starburst for what you can both watch.",
+    look: "Look",
+    colours: "Colours",
+    skins: { saturday: "Saturday Morning" } satisfies Record<Skin, string>,
+    skinNotes: { saturday: "Sunny cartoon panels, thick outlines and a bubblegum starburst." } satisfies Record<Skin, string>,
+    palettes: { sunburst: "Sunburst" } satisfies Record<Palette, string>,
   },
   dataSaver: {
     heading: "Data saver",
@@ -110,6 +116,8 @@ const en = {
       after: ", and enter it. Once they’ve joined, you’ll both see the same list.",
     },
     inviteCode: "Invite code",
+    copy: "Copy code",
+    copied: "Copied!",
     joining: "Joining…",
     join: "Join",
     /** Keyed by the error code join_couple() raises. */
@@ -148,6 +156,7 @@ const tr: typeof en = {
   },
   settings: {
     heading: "Ayarlar",
+    profile: "Profilin",
     welcome: "Hoş geldin",
     intro: "Ülken, saat dilimin ve abone olduğun platformlar.",
     welcomeIntro: "Nereden izlediğini söyle, böylece senin için nelerin yayında olduğuna bakabilelim.",
@@ -180,7 +189,12 @@ const tr: typeof en = {
   },
   appearance: {
     heading: "Görünüm",
-    options: { system: "Cihaza uy", light: "Açık", dark: "Koyu" },
+    intro: "Uygulamanın bu cihazdaki görünümü. Her görünüm aynı rolleri korur: sana bir renk, partnerine bir renk, ikinizin de izleyebildikleri için bir yıldız patlaması.",
+    look: "Tarz",
+    colours: "Renkler",
+    skins: { saturday: "Cumartesi Sabahı" },
+    skinNotes: { saturday: "Güneşli çizgi film panelleri, kalın çizgiler ve sakız pembesi bir yıldız patlaması." },
+    palettes: { sunburst: "Güneş Patlaması" },
   },
   dataSaver: {
     heading: "Veri tasarrufu",
@@ -229,6 +243,8 @@ const tr: typeof en = {
       after: " sayfasını açsın ve kodu girsin. Katıldığında ikiniz de aynı listeyi göreceksiniz.",
     },
     inviteCode: "Davet kodu",
+    copy: "Kodu kopyala",
+    copied: "Kopyalandı!",
     joining: "Katılınıyor…",
     join: "Katıl",
     joinErrors: {

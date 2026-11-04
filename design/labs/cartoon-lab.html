@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartoon Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Bangers&family=Dela+Gothic+One&family=Fredoka:wght@400..700&family=Luckiest+Guy&family=Nunito:wght@500..900&family=Rubik:wght@400..800&family=Shantell+Sans:wght@400..800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #121214; color: #f2f2f2; font-family: Nunito, system-ui, sans-serif; }
+  .lab-head { position: sticky; top: 0; z-index: 50; background: #121214ee; backdrop-filter: blur(8px); padding: 12px 24px; display: flex; gap: 10px 24px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #2a2a30; }
+  .lab-head h1 { margin: 0; font: 400 24px "Luckiest Guy", sans-serif; letter-spacing: .03em; color: #ffd84a; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tabs button { font: 800 14px Nunito, sans-serif; color: #f2f2f2; background: #222228; border: 2px solid #34343c; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: #ffd84a; color: #1b1b1b; border-color: #ffd84a; }
+  .note { padding: 18px 24px 6px; max-width: 1500px; margin: 0 auto; display: grid; gap: 6px; }
+  .note h2 { margin: 0; font: 400 34px "Luckiest Guy", sans-serif; letter-spacing: .02em; }
+  .note p { margin: 0; color: #b9b9c4; max-width: 85ch; line-height: 1.5; }
+  .note .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .note .tags span { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 99px; background: #26262c; color: #d8d8e0; }
+  .stage { padding: 16px 24px 48px; max-width: 1500px; margin: 0 auto; }
+  .screen { border-radius: 14px; overflow: hidden; }
+  img { display: block; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  /* ---------- shared bits ---------- */
+  .poster { background: #ddd center/cover; aspect-ratio: 2/3; }
+  .couch .eye { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+  .couch.b .eye { animation-delay: 1.7s; }
+  .couch { animation: bob 3.2s ease-in-out infinite; transform-origin: bottom center; }
+  .couch.b { animation-delay: .6s; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-1.5deg); } }
+  @keyframes pop { 0% { transform: scale(0) rotate(-30deg); } 70% { transform: scale(1.15) rotate(6deg); } 100% { transform: scale(1) rotate(var(--r, -6deg)); } }
+  @keyframes wiggle { 0%, 100% { rotate: var(--tilt, 0deg); } 25% { rotate: calc(var(--tilt, 0deg) - 2deg); } 75% { rotate: calc(var(--tilt, 0deg) + 2deg); } }
+  @keyframes spin { to { rotate: 360deg; } }
+
+  /* ============ 1. SATURDAY MORNING ============ */
+  .sat { --ink: #1d1a2b; --paper: #fffaf0; --sun: #ffd23f; --me: #ff8a65; --pt: #5cc8ff; --both: #ff2e93; --grape: #7b61ff;
+    background: var(--sun); color: var(--ink); font-family: Fredoka, sans-serif; position: relative; padding-bottom: 36px; }
+  .sat::before { content: ""; position: absolute; inset: 0; background: repeating-conic-gradient(from 0deg at 50% -10%, #ffc61a 0 6deg, transparent 6deg 12deg); opacity: .9; pointer-events: none; }
+  .sat > * { position: relative; }
+  .sat .top { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; }
+  .sat .logo { display: flex; align-items: center; gap: 12px; font: 400 40px "Luckiest Guy", sans-serif; letter-spacing: .02em; color: var(--paper); -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); rotate: -2deg; }
+  .sat nav { display: flex; gap: 10px; }
+  .sat nav a { font-weight: 700; font-size: 17px; padding: 8px 16px; border: 3px solid var(--ink); border-radius: 999px; background: var(--paper); box-shadow: 3px 3px 0 var(--ink); color: var(--ink); text-decoration: none; transition: transform .15s; }
+  .sat nav a:hover { transform: translate(-2px, -2px) rotate(-2deg); box-shadow: 5px 5px 0 var(--ink); }
+  .sat nav a.on { background: var(--grape); color: #fff; }
+  .sat .grid { display: grid; grid-template-columns: 5fr 7fr; gap: 28px; padding: 8px 32px; }
+  .sat .box { background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); }
+  .sat .clocks { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; padding: 18px 18px 14px; gap: 8px; }
+  .sat .clock { display: grid; justify-items: center; gap: 2px; }
+  .sat .clock b { font: 400 54px "Luckiest Guy", sans-serif; line-height: 1; letter-spacing: .02em; }
+  .sat .clock small { font-weight: 600; font-size: 14px; }
+  .sat .name { font-weight: 700; padding: 2px 12px; border: 2.5px solid var(--ink); border-radius: 99px; }
+  .sat .apart { font: 400 18px "Luckiest Guy", sans-serif; background: var(--grape); color: #fff; border: 3px solid var(--ink); border-radius: 99px; padding: 6px 12px; rotate: -6deg; align-self: center; box-shadow: 3px 3px 0 var(--ink); }
+  .sat .night { margin-top: 26px; background: var(--grape); color: #fff; padding: 18px; display: grid; gap: 12px; rotate: -1deg; }
+  .sat .night h3 { margin: 0; font: 400 32px "Luckiest Guy", sans-serif; letter-spacing: .02em; color: var(--sun); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); }
+  .sat .night .row { display: flex; gap: 14px; align-items: center; }
+  .sat .night .poster { width: 74px; border: 3px solid var(--ink); border-radius: 10px; }
+  .sat .tickets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; }
+  .sat .ticket { background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; padding: 6px 10px; display: grid; }
+  .sat .ticket b { font: 400 30px "Luckiest Guy", sans-serif; line-height: 1; }
+  .sat .ticket span { font-size: 12px; font-weight: 600; }
+  .sat .btn { justify-self: start; font: 400 20px "Luckiest Guy", sans-serif; letter-spacing: .04em; background: var(--sun); color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; padding: 8px 18px 5px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer; transition: transform .12s; }
+  .sat .btn:hover { transform: translate(-2px, -2px) scale(1.04) rotate(-2deg); }
+  .sat .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .sat .views { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .sat .views span { font: 400 30px "Luckiest Guy", sans-serif; padding: 6px 16px 2px; border: 3px solid var(--ink); border-radius: 16px; background: var(--paper); box-shadow: 4px 4px 0 var(--ink); }
+  .sat .views span.on { background: var(--pt); rotate: -2deg; }
+  .sat .views span:not(.on) { opacity: .75; box-shadow: none; }
+  .sat .list { display: grid; gap: 14px; }
+  .sat .item { --tilt: 0deg; display: grid; grid-template-columns: 80px 1fr auto; gap: 16px; align-items: center; padding: 12px 16px; rotate: var(--tilt); }
+  .sat .item:nth-child(2n) { --tilt: .6deg; } .sat .item:nth-child(2n+1) { --tilt: -.5deg; }
+  .sat .item:hover { animation: wiggle .4s; }
+  .sat .item .poster { border: 3px solid var(--ink); border-radius: 10px; }
+  .sat .item h4 { margin: 0; font: 700 24px Fredoka, sans-serif; }
+  .sat .item p { margin: 2px 0 0; font-size: 15px; font-weight: 500; }
+  .sat .chipz { display: flex; gap: 6px; margin-top: 6px; }
+  .sat .chipz span { font-size: 13px; font-weight: 600; border: 2px solid var(--ink); border-radius: 99px; padding: 0 9px; background: #fff; }
+  .sat .burst { --r: -8deg; width: 92px; height: 92px; display: grid; place-items: center; animation: pop .6s cubic-bezier(.2,1.4,.4,1) both; }
+  .sat .burst svg { position: absolute; width: 92px; height: 92px; }
+  .sat .burst b { position: relative; font: 400 21px "Luckiest Guy", sans-serif; color: #fff; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; line-height: .9; text-align: center; }
+  .sat .dots { display: flex; gap: 5px; align-items: center; font-weight: 700; font-size: 14px; }
+  .sat .dots i { width: 14px; height: 14px; border: 2.5px solid var(--ink); border-radius: 99px; display: block; }
+  .sat .strip { margin: 26px 32px 0; padding: 18px; }
+  .sat .strip h3 { margin: 0 0 12px; font: 400 36px "Luckiest Guy", sans-serif; }
+  .sat .cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .sat .cards > div { position: relative; transition: transform .2s; }
+  .sat .cards > div:hover { transform: translateY(-6px) rotate(-2deg); }
+  .sat .cards .poster { border: 3px solid var(--ink); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); }
+  .sat .cards p { margin: 8px 0 0; font-weight: 700; }
+  .sat .cards .burst { position: absolute; top: -18px; right: -14px; width: 64px; height: 64px; }
+  .sat .cards .burst svg { width: 64px; height: 64px; }
+  .sat .cards .burst b { font-size: 15px; }
+
+  /* ============ 2. POW! COMIC ============ */
+  .pow { --ink: #111; --paper: #fffdf3; --cy: #00b2f0; --mg: #ff2f8e; --yl: #ffe14d; --me: #ff9f1c; --pt: #00b2f0;
+    background: var(--paper); color: var(--ink); font-family: "Shantell Sans", sans-serif; padding: 18px; position: relative; }
+  .pow::before { content: ""; position: absolute; inset: 0; background: radial-gradient(#00000014 1.2px, transparent 1.4px) 0 0/9px 9px; pointer-events: none; }
+  .pow > * { position: relative; }
+  .pow .page { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+  .pow .panel { border: 4px solid var(--ink); background: #fff; position: relative; overflow: hidden; }
+  .pow .title { grid-column: span 12; background: var(--yl); display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; }
+  .pow .title .logo { font: 400 56px Bangers, sans-serif; letter-spacing: .04em; color: var(--mg); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); rotate: -2deg; }
+  .pow .title nav { display: flex; gap: 18px; font: 400 22px Bangers, sans-serif; letter-spacing: .06em; }
+  .pow .title nav .on { background: var(--ink); color: var(--yl); padding: 0 8px; rotate: -3deg; }
+  .pow .clocks { grid-column: span 5; background: linear-gradient(135deg, #cdeffd 0 50%, #ffe0ec 50%); padding: 18px; min-height: 260px; display: grid; grid-template-columns: 1fr 1fr; align-items: end; }
+  .pow .who { display: grid; justify-items: center; gap: 10px; }
+  .pow .bubble { position: relative; background: #fff; border: 3px solid var(--ink); border-radius: 50% / 45%; padding: 14px 18px; text-align: center; font-weight: 700; font-size: 14px; line-height: 1.2; }
+  .pow .bubble b { display: block; font: 400 40px Bangers, sans-serif; letter-spacing: .03em; }
+  .pow .bubble::after { content: ""; position: absolute; bottom: -16px; left: 40%; border: 9px solid transparent; border-top: 14px solid var(--ink); }
+  .pow .who.b .bubble::after { left: 50%; }
+  .pow .caption { position: absolute; top: 0; left: 0; background: var(--yl); border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); padding: 4px 10px; font: 400 18px Bangers, sans-serif; letter-spacing: .05em; }
+  .pow .night { grid-column: span 7; background: var(--cy); padding: 44px 18px 18px; display: grid; grid-template-columns: 110px 1fr; gap: 16px; }
+  .pow .night .poster { border: 3px solid var(--ink); }
+  .pow .night h3 { margin: 0; font: 400 40px Bangers, sans-serif; letter-spacing: .04em; color: #fff; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); }
+  .pow .times { display: flex; gap: 10px; margin: 8px 0; }
+  .pow .times div { background: #fff; border: 3px solid var(--ink); padding: 4px 10px; }
+  .pow .times b { font: 400 30px Bangers, sans-serif; display: block; letter-spacing: .03em; }
+  .pow .times span { font-size: 12px; font-weight: 600; }
+  .pow .btn { font: 400 24px Bangers, sans-serif; letter-spacing: .06em; background: var(--mg); color: #fff; border: 3px solid var(--ink); padding: 4px 18px; box-shadow: 4px 4px 0 var(--ink); rotate: -2deg; display: inline-block; cursor: pointer; transition: transform .12s; }
+  .pow .btn:hover { transform: scale(1.08) rotate(2deg); }
+  .pow .listpanel { grid-column: span 12; padding: 44px 18px 18px; background: #fff; }
+  .pow .views { position: absolute; top: 0; left: 0; display: flex; }
+  .pow .views span { font: 400 24px Bangers, sans-serif; letter-spacing: .05em; padding: 4px 14px; border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); background: #fff; }
+  .pow .views span.on { background: var(--mg); color: #fff; }
+  .pow .strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .pow .cell { position: relative; border: 3px solid var(--ink); background: var(--paper); padding: 8px; display: grid; gap: 8px; transition: transform .15s; }
+  .pow .cell:hover { transform: rotate(-1.5deg) scale(1.02); }
+  .pow .cell .poster { border: 3px solid var(--ink); }
+  .pow .cell h4 { margin: 0; font: 400 26px Bangers, sans-serif; letter-spacing: .04em; }
+  .pow .cell p { margin: 0; font-size: 13px; }
+  .pow .boom { --r: -10deg; position: absolute; top: 18px; right: -6px; width: 104px; height: 80px; display: grid; place-items: center; animation: pop .55s cubic-bezier(.2,1.5,.4,1) both; }
+  .pow .boom svg { position: absolute; inset: 0; }
+  .pow .boom b { position: relative; font: 400 26px Bangers, sans-serif; color: var(--yl); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; letter-spacing: .05em; }
+  .pow .only { position: absolute; top: 20px; right: 8px; background: #fff; border: 3px solid var(--ink); border-radius: 50%; padding: 6px 12px; font-weight: 800; font-size: 12px; }
+  .pow .sfx { position: absolute; font: 400 64px Bangers, sans-serif; color: var(--yl); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; rotate: -12deg; right: 24px; bottom: 6px; opacity: .95; }
+
+  /* ============ 3. STICKER SCRAPBOOK ============ */
+  .stk { --ink: #2a1f3d; --bg: #cdb8ff; --pink: #ff8fc7; --blue: #6fd3ff; --sun: #ffe03a; --mint: #8ff0c4; --me: #ff8fc7; --pt: #6fd3ff;
+    background: var(--bg) radial-gradient(#ffffff59 1.5px, transparent 1.6px) 0 0/22px 22px; color: var(--ink); font-family: Nunito, sans-serif; padding: 22px 30px 40px; }
+  .stk .sticker { background: #fff; border-radius: 22px; box-shadow: 0 0 0 5px #fff, 0 10px 18px -8px #2a1f3d66; }
+  .stk .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; }
+  .stk .logo { font: 400 46px "Bagel Fat One", sans-serif; color: var(--ink); background: var(--sun); padding: 4px 20px; border-radius: 999px; box-shadow: 0 0 0 5px #fff, 0 10px 18px -8px #2a1f3d66; rotate: -3deg; display: flex; gap: 10px; align-items: center; }
+  .stk nav { display: flex; gap: 12px; }
+  .stk nav a { font: 400 18px "Bagel Fat One", sans-serif; color: var(--ink); text-decoration: none; padding: 6px 16px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 4px #ffffff99; transition: transform .2s; }
+  .stk nav a:nth-child(odd) { rotate: 2deg; } .stk nav a:nth-child(even) { rotate: -2deg; }
+  .stk nav a:hover { transform: scale(1.1); }
+  .stk nav a.on { background: var(--pink); box-shadow: 0 0 0 4px #fff; }
+  .stk .grid { display: grid; grid-template-columns: 5fr 7fr; gap: 34px; }
+  .stk .clocks { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .stk .clock { padding: 16px; display: grid; gap: 4px; position: relative; text-align: center; }
+  .stk .clock.a { background: var(--pink); rotate: -3deg; } .stk .clock.b { background: var(--blue); rotate: 3deg; }
+  .stk .clock b { font: 400 50px "Bagel Fat One", sans-serif; line-height: 1; }
+  .stk .clock small { font-weight: 800; }
+  .stk .tape { position: absolute; top: -12px; left: 50%; width: 80px; height: 24px; translate: -50% 0; background: #fff8b8cc; rotate: -4deg; box-shadow: 0 1px 2px #0001; }
+  .stk .apart { justify-self: center; grid-column: span 2; font: 400 18px "Bagel Fat One", sans-serif; background: var(--sun); padding: 4px 16px; border-radius: 99px; box-shadow: 0 0 0 4px #fff; rotate: -2deg; margin-top: -6px; }
+  .stk .night { margin-top: 30px; padding: 20px; display: grid; gap: 12px; background: #fff; rotate: 1deg; position: relative; }
+  .stk .night h3 { margin: 0; font: 400 32px "Bagel Fat One", sans-serif; }
+  .stk .night .row { display: flex; gap: 16px; }
+  .stk .polaroid { background: #fff; padding: 8px 8px 26px; box-shadow: 0 6px 14px -6px #0005; rotate: -4deg; width: 110px; flex: none; }
+  .stk .times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-self: start; flex: 1; }
+  .stk .times div { border-radius: 16px; padding: 6px 12px; }
+  .stk .times b { font: 400 28px "Bagel Fat One", sans-serif; display: block; line-height: 1.1; }
+  .stk .times span { font-size: 12px; font-weight: 800; }
+  .stk .btn { justify-self: start; font: 400 20px "Bagel Fat One", sans-serif; background: var(--mint); color: var(--ink); border: 0; border-radius: 999px; padding: 8px 22px; box-shadow: 0 0 0 4px #fff, 0 8px 14px -6px #2a1f3d66; cursor: pointer; transition: transform .2s cubic-bezier(.2,1.6,.4,1); }
+  .stk .btn:hover { transform: scale(1.08) rotate(-3deg); }
+  .stk .views { display: flex; gap: 12px; margin-bottom: 20px; }
+  .stk .views span { font: 400 28px "Bagel Fat One", sans-serif; padding: 4px 18px; border-radius: 999px; background: #ffffff8c; }
+  .stk .views span.on { background: #fff; box-shadow: 0 0 0 5px var(--sun); rotate: -2deg; }
+  .stk .list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+  .stk .item { padding: 14px; display: grid; grid-template-columns: 90px 1fr; gap: 14px; position: relative; transition: transform .25s cubic-bezier(.2,1.6,.4,1); }
+  .stk .item:nth-child(4n+1) { rotate: -1.5deg; } .stk .item:nth-child(4n+2) { rotate: 1.2deg; } .stk .item:nth-child(4n+3) { rotate: .8deg; } .stk .item:nth-child(4n) { rotate: -1deg; }
+  .stk .item:hover { transform: scale(1.04) rotate(-1deg); }
+  .stk .item .poster { border-radius: 12px; }
+  .stk .item h4 { margin: 0; font: 400 22px "Bagel Fat One", sans-serif; line-height: 1.1; }
+  .stk .item p { margin: 4px 0 0; font-weight: 700; font-size: 14px; opacity: .8; }
+  .stk .star { --r: 10deg; position: absolute; right: -18px; top: -20px; width: 76px; height: 76px; display: grid; place-items: center; animation: pop .6s cubic-bezier(.2,1.6,.4,1) both; filter: drop-shadow(0 4px 6px #2a1f3d55); }
+  .stk .star svg { position: absolute; inset: 0; }
+  .stk .star b { position: relative; font: 400 15px "Bagel Fat One", sans-serif; }
+  .stk .duo { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 3px; }
+  .stk .duo i { width: 16px; height: 16px; border-radius: 99px; border: 3px solid #fff; box-shadow: 0 0 0 1.5px #2a1f3d33; display: block; }
+  .stk .foryou { margin-top: 34px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
+  .stk .foryou .polaroid { width: auto; padding-bottom: 10px; position: relative; transition: transform .25s cubic-bezier(.2,1.6,.4,1); }
+  .stk .foryou .polaroid:nth-child(odd) { rotate: 3deg; }
+  .stk .foryou .polaroid:hover { transform: translateY(-8px) rotate(-4deg) scale(1.04); }
+  .stk .foryou p { margin: 8px 0 0; font: 400 15px "Bagel Fat One", sans-serif; text-align: center; }
+
+  /* ============ 4. CANDY SHOP (kawaii pop × dense modules) ============ */
+  .cdy { --ink: #2b124c; --bg: #fff1f8; --hot: #ff4fa3; --lime: #c8f53b; --tang: #ff9a1f; --grape: #8a5cff; --sky: #4cc9ff; --me: #ffb0d6; --pt: #9fe3ff;
+    background: var(--bg); color: var(--ink); font-family: Rubik, sans-serif; padding: 18px 22px 30px; }
+  .cdy .top { display: flex; align-items: center; justify-content: space-between; background: var(--hot); border-radius: 22px; padding: 10px 14px 10px 20px; margin-bottom: 14px; }
+  .cdy .logo { font: 400 32px "Dela Gothic One", sans-serif; color: #fff; display: flex; gap: 10px; align-items: center; letter-spacing: -.01em; }
+  .cdy nav { display: flex; gap: 6px; }
+  .cdy nav a { font: 700 15px Rubik, sans-serif; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 14px; transition: background .15s; }
+  .cdy nav a:hover { background: #ffffff33; }
+  .cdy nav a.on { background: #fff; color: var(--hot); }
+  .cdy .mosaic { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+  .cdy .mod { border-radius: 22px; padding: 14px; position: relative; }
+  .cdy .tab { position: absolute; top: -10px; left: 14px; font: 400 13px "Dela Gothic One", sans-serif; background: var(--ink); color: #fff; padding: 3px 10px; border-radius: 99px; }
+  .cdy .hello { grid-column: span 4; background: var(--lime); display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 8px; padding-top: 22px; }
+  .cdy .pal { display: grid; justify-items: center; gap: 2px; }
+  .cdy .pal b { font: 400 34px "Dela Gothic One", sans-serif; line-height: 1; }
+  .cdy .pal small { font-weight: 700; font-size: 13px; }
+  .cdy .gap { grid-column: span 2; text-align: center; font: 400 14px "Dela Gothic One", sans-serif; background: #fff; border-radius: 99px; padding: 3px; }
+  .cdy .next { grid-column: span 5; background: var(--grape); color: #fff; display: grid; grid-template-columns: 96px 1fr; gap: 14px; padding-top: 22px; }
+  .cdy .next .poster { border-radius: 14px; }
+  .cdy .next h3 { margin: 0 0 6px; font: 400 26px "Dela Gothic One", sans-serif; }
+  .cdy .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cdy .pills span { background: #ffffff26; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 13px; }
+  .cdy .pills b { font: 400 22px "Dela Gothic One", sans-serif; display: block; }
+  .cdy .btn { font: 400 16px "Dela Gothic One", sans-serif; background: var(--lime); color: var(--ink); border: 0; border-radius: 14px; padding: 8px 16px; cursor: pointer; transition: transform .18s cubic-bezier(.2,1.6,.4,1); box-shadow: 0 4px 0 #6f8f12; }
+  .cdy .btn:hover { transform: translateY(-2px) scale(1.04); }
+  .cdy .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #6f8f12; }
+  .cdy .pick { grid-column: span 3; background: var(--tang); display: grid; align-content: space-between; padding-top: 22px; }
+  .cdy .pick b { font: 400 24px "Dela Gothic One", sans-serif; line-height: 1.1; }
+  .cdy .pick .dice { width: 56px; height: 56px; background: #fff; border-radius: 14px; display: grid; grid-template-columns: repeat(2, 1fr); padding: 10px; gap: 8px; justify-self: end; rotate: 12deg; animation: wiggle 2s infinite; }
+  .cdy .pick .dice i { background: var(--ink); border-radius: 99px; }
+  .cdy .listmod { grid-column: span 12; background: #fff; border: 3px solid #ffd3ea; padding-top: 22px; }
+  .cdy .views { display: flex; gap: 8px; margin-bottom: 12px; }
+  .cdy .views span { font: 400 18px "Dela Gothic One", sans-serif; padding: 6px 14px; border-radius: 14px; background: #ffe3f1; }
+  .cdy .views span.on { background: var(--ink); color: #fff; }
+  .cdy .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .cdy .tile { background: var(--bg); border-radius: 18px; padding: 10px; display: grid; grid-template-columns: 70px 1fr; gap: 10px; position: relative; transition: transform .2s cubic-bezier(.2,1.6,.4,1); }
+  .cdy .tile:hover { transform: translateY(-4px) rotate(-1deg); }
+  .cdy .tile .poster { border-radius: 10px; }
+  .cdy .tile h4 { margin: 0; font: 700 17px Rubik, sans-serif; line-height: 1.15; }
+  .cdy .tile p { margin: 4px 0 0; font-size: 12px; font-weight: 600; opacity: .75; }
+  .cdy .yay { --r: -8deg; position: absolute; right: -8px; top: -10px; font: 400 14px "Dela Gothic One", sans-serif; background: var(--lime); padding: 4px 10px; border-radius: 12px; border: 3px solid var(--ink); animation: pop .5s cubic-bezier(.2,1.6,.4,1) both; }
+  .cdy .soft { position: absolute; right: 10px; bottom: 8px; display: flex; gap: 3px; }
+  .cdy .soft i { width: 12px; height: 12px; border-radius: 99px; display: block; border: 2px solid var(--ink); }
+  .cdy .fy { grid-column: span 12; background: var(--sky); padding-top: 22px; }
+  .cdy .fyrow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .cdy .fyrow > div { background: #fff; border-radius: 16px; padding: 8px; position: relative; transition: transform .2s cubic-bezier(.2,1.6,.4,1); }
+  .cdy .fyrow > div:hover { transform: translateY(-6px) rotate(1.5deg); }
+  .cdy .fyrow .poster { border-radius: 10px; }
+  .cdy .fyrow p { margin: 6px 2px 0; font-weight: 800; font-size: 14px; }
+</style>
+</head>
+<body>
+<header class="lab-head">
+  <h1>Cartoon Lab</h1>
+  <div class="tabs" id="tabs"></div>
+</header>
+<section class="note" id="note"></section>
+<section class="stage"><div class="screen" id="screen"></div></section>
+
+<script>
+const P = (p) => `https://image.tmdb.org/t/p/w342${p}`;
+const IMG = { bb: P("/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"), mx: P("/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg"), inc: P("/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg"), fc: P("/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg") };
+const poster = (src, extra = "") => `<div class="poster" style="background-image:url(${src})${extra}"></div>`;
+
+// The mascot: a little couch with a face. One per person, in their colour.
+function couch(color, cls = "", size = 64, ink = "#1d1a2b", stroke = 3) {
+  return `<svg class="couch ${cls}" width="${size}" height="${size * .78}" viewBox="0 0 64 50" aria-hidden="true">
+    <rect x="9" y="8" width="46" height="24" rx="9" fill="${color}" stroke="${ink}" stroke-width="${stroke}"/>
+    <rect x="3" y="20" width="14" height="22" rx="6" fill="${color}" stroke="${ink}" stroke-width="${stroke}"/>
+    <rect x="47" y="20" width="14" height="22" rx="6" fill="${color}" stroke="${ink}" stroke-width="${stroke}"/>
+    <rect x="13" y="28" width="38" height="14" rx="5" fill="${color}" stroke="${ink}" stroke-width="${stroke}"/>
+    <path d="M10 42v5M54 42v5" stroke="${ink}" stroke-width="${stroke}" stroke-linecap="round"/>
+    <ellipse class="eye" cx="26" cy="19" rx="2.6" ry="3.4" fill="${ink}"/>
+    <ellipse class="eye" cx="38" cy="19" rx="2.6" ry="3.4" fill="${ink}"/>
+    <path d="M28 25q4 3.5 8 0" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="21" cy="24" r="2.6" fill="#ff5c8a" opacity=".45"/><circle cx="43" cy="24" r="2.6" fill="#ff5c8a" opacity=".45"/>
+  </svg>`;
+}
+function burstPath(points, r1, r2, cx, cy) {
+  let d = "";
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 ? r2 : r1, a = (Math.PI * i) / points - Math.PI / 2;
+    d += `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }
+  return d + "Z";
+}
+
+const DIRECTIONS = [
+  {
+    id: "sat", name: "Saturday Morning",
+    pitch: "Your list as a Saturday-morning cartoon. Sunburst yellow, thick ink outlines, chunky hard shadows, a starburst that pops onto anything you can both watch. Buttons squash when you press them, rows wiggle when you point at them.",
+    tags: ["Luckiest Guy + Fredoka", "Sunburst yellow · grape · bubblegum burst", "Thick outlines, hard shadows", "Pop, wiggle, squash"],
+    render() {
+      const burst = (big = true) => `<div class="burst"><svg viewBox="0 0 100 100"><path d="${burstPath(12, 48, 34, 50, 50)}" fill="#ff2e93" stroke="#1d1a2b" stroke-width="4" stroke-linejoin="round"/></svg><b>BOTH${big ? "<br>OF US!" : "!"}</b></div>`;
+      const dots = (a, b, label) => `<div class="dots"><i style="background:${a ? "var(--me)" : "#fff"}"></i><i style="background:${b ? "var(--pt)" : "#fff"}"></i>${label}</div>`;
+      const item = (src, t, f, mark, chips = "") => `<div class="box item">${poster(src)}<div><h4>${t}</h4><p>${f}</p>${chips}</div>${mark}</div>`;
+      return `<div class="sat">
+        <div class="top"><div class="logo">${couch("#ff8a65", "a", 54)}${couch("#5cc8ff", "b", 54)}Two Couches</div>
+          <nav><a class="on" href="#">Our list</a><a href="#">Browse</a><a href="#">Coming soon</a><a href="#">Watch nights</a><a href="#">Stats</a></nav></div>
+        <div class="grid">
+          <div>
+            <div class="box clocks">
+              <div class="clock"><span class="name" style="background:var(--me)">You · GB</span><b>10:30<small>am</small></b><small>Wednesday</small></div>
+              <div class="apart">13 h apart!</div>
+              <div class="clock"><span class="name" style="background:var(--pt)">Sam · NZ</span><b>11:30<small>pm</small></b><small>Wednesday</small></div>
+            </div>
+            <div class="box night"><h3>Next watch night!</h3>
+              <div class="row">${poster(IMG.inc)}<div class="tickets"><div class="ticket"><span>YOU · Thu 5 Nov</span><b>1:00 PM</b></div><div class="ticket"><span>SAM · Fri 6 Nov</span><b>2:00 AM</b></div></div></div>
+              <button class="btn">I'm ready!</button></div>
+          </div>
+          <div>
+            <div class="views"><span class="on">Up next 4</span><span>Watched</span><span>Dropped</span></div>
+            <div class="list">
+              ${item(IMG.bb, "Breaking Bad", "Series · Watching, up to S1 E3 · Netflix", burst(), `<div class="chipz"><span>Crime</span><span>Binge it</span></div>`)}
+              ${item(IMG.mx, "The Matrix", "Film · 1999", dots(false, false, "Nowhere yet"))}
+              ${item(IMG.inc, "Inception", "Film · 2010", dots(false, true, "Only Sam"))}
+              ${item(IMG.fc, "Fight Club", "Film · 1999 · Netflix", burst())}
+            </div>
+          </div>
+        </div>
+        <div class="box strip"><h3>Picked for you two</h3><div class="cards">
+          ${[IMG.mx, IMG.fc, IMG.inc, IMG.bb, IMG.mx, IMG.fc].map((s, i) => `<div>${poster(s)}${i % 2 ? "" : burst(false)}<p>${["The Matrix", "Fight Club", "Inception", "Breaking Bad", "The Matrix", "Fight Club"][i]}</p></div>`).join("")}
+        </div></div>
+      </div>`;
+    },
+  },
+  {
+    id: "pow", name: "POW! Comic Book",
+    pitch: "Every screen is a comic-book page: panels with gutters, halftone dots, caption boxes, and the two clocks are speech bubbles. When you can both watch something it gets a BOOM! sound-effect burst. Bold CMYK colours on newsprint.",
+    tags: ["Bangers + Shantell Sans (handwriting with a bounce)", "Cyan · magenta · yellow on newsprint", "Panels, bubbles, halftone", "Burst-in sound effects"],
+    render() {
+      const boom = `<div class="boom"><svg viewBox="0 0 104 80"><path d="${burstPath(11, 50, 30, 52, 40).replace(/(\d+\.\d) /g, (m) => m)}" fill="#ff2f8e" stroke="#111" stroke-width="3.5" stroke-linejoin="round" transform="scale(1 .78) translate(0 11)"/></svg><b>BOTH!</b></div>`;
+      const cell = (src, t, f, mark) => `<div class="cell">${poster(src)}<h4>${t}</h4><p>${f}</p>${mark}</div>`;
+      return `<div class="pow"><div class="page">
+        <div class="panel title"><div class="logo">Two Couches</div><nav><span class="on">Our list</span><span>Browse</span><span>Coming soon</span><span>Watch nights</span><span>Stats</span></nav></div>
+        <div class="panel clocks"><span class="caption">Meanwhile, 13 hours apart…</span>
+          <div class="who"><div class="bubble">It's<b>10:30 AM</b>here in GB!</div>${couch("#ff9f1c", "a", 86, "#111", 3.5)}</div>
+          <div class="who b"><div class="bubble">And<b>11:30 PM</b>in NZ!</div>${couch("#00b2f0", "b", 86, "#111", 3.5)}</div></div>
+        <div class="panel night"><span class="caption">Next watch night</span>${poster(IMG.inc)}
+          <div><h3>Inception!</h3><div class="times"><div><span>YOU · THU</span><b>1:00 PM</b></div><div><span>SAM · FRI</span><b>2:00 AM</b></div></div><span class="btn">I'm ready!</span></div>
+          <span class="sfx">ZZZ?</span></div>
+        <div class="panel listpanel"><div class="views"><span class="on">Up next (4)</span><span>Watched</span><span>Dropped</span></div>
+          <div class="strip">
+            ${cell(IMG.bb, "Breaking Bad", "Series · up to S1 E3 · Netflix", boom)}
+            ${cell(IMG.mx, "The Matrix", "Film · 1999", "")}
+            ${cell(IMG.inc, "Inception", "Film · 2010", `<span class="only">Only Sam!</span>`)}
+            ${cell(IMG.fc, "Fight Club", "Film · 1999 · Netflix", boom)}
+          </div></div>
+      </div></div>`;
+    },
+  },
+  {
+    id: "stk", name: "Sticker Scrapbook",
+    pitch: "Your shared scrapbook: everything is a puffy die-cut sticker with a white border, stuck on at an angle, with washi tape and polaroid posters. Lilac paper, bubblegum and sky for you two, a sunny star sticker for 'both'. Things boing when you touch them.",
+    tags: ["Bagel Fat One + Nunito", "Lilac · bubblegum · sky · sunshine · mint", "Die-cut stickers, tape, polaroids", "Springy, boingy hover"],
+    render() {
+      const star = `<div class="star"><svg viewBox="0 0 100 100"><path d="${burstPath(5, 48, 22, 50, 52)}" fill="#ffe03a" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg><b>BOTH</b></div>`;
+      const duo = (a, b) => `<div class="duo"><i style="background:${a ? "var(--me)" : "#ffffff"}"></i><i style="background:${b ? "var(--pt)" : "#ffffff"}"></i></div>`;
+      const item = (src, t, f, extra) => `<div class="sticker item">${poster(src)}<div><h4>${t}</h4><p>${f}</p></div>${extra}</div>`;
+      return `<div class="stk">
+        <div class="top"><div class="logo">${couch("#ff8fc7", "a", 46, "#2a1f3d")}Two Couches${couch("#6fd3ff", "b", 46, "#2a1f3d")}</div>
+          <nav><a class="on" href="#">Our list</a><a href="#">Browse</a><a href="#">Soon</a><a href="#">Nights</a><a href="#">Stats</a></nav></div>
+        <div class="grid">
+          <div>
+            <div class="clocks">
+              <div class="sticker clock a"><span class="tape"></span><small>YOU · GB</small><b>10:30</b><small>Wednesday morning</small></div>
+              <div class="sticker clock b"><span class="tape"></span><small>SAM · NZ</small><b>11:30</b><small>Wednesday night</small></div>
+              <span class="apart">13 hours apart</span>
+            </div>
+            <div class="sticker night"><h3>Next watch night</h3>
+              <div class="row"><div class="polaroid">${poster(IMG.inc)}</div>
+                <div class="times"><div style="background:var(--me)"><span>YOU · THU 5 NOV</span><b>1:00 pm</b></div><div style="background:var(--pt)"><span>SAM · FRI 6 NOV</span><b>2:00 am</b></div></div></div>
+              <button class="btn">I'm ready!</button></div>
+          </div>
+          <div>
+            <div class="views"><span class="on">Up next · 4</span><span>Watched</span><span>Dropped</span></div>
+            <div class="list">
+              ${item(IMG.bb, "Breaking Bad", "Series · up to S1 E3 · Netflix", star)}
+              ${item(IMG.mx, "The Matrix", "Film · 1999", duo(false, false))}
+              ${item(IMG.inc, "Inception", "Film · 2010 · only Sam", duo(false, true))}
+              ${item(IMG.fc, "Fight Club", "Film · 1999 · Netflix", star)}
+            </div>
+          </div>
+        </div>
+        <div class="foryou">${[IMG.mx, IMG.fc, IMG.inc, IMG.bb, IMG.mx, IMG.fc].map((s, i) => `<div class="polaroid">${poster(s)}<p>${["The Matrix", "Fight Club", "Inception", "Breaking Bad", "The Matrix", "Fight Club"][i]}</p>${i % 2 ? "" : star}</div>`).join("")}</div>
+      </div>`;
+    },
+  },
+  {
+    id: "cdy", name: "Candy Shop",
+    pitch: "A packed, happy Japanese-style pop shop: lots of rounded candy-coloured boxes, each with a little tab, fitting loads on one screen. Hot pink, lime, tangerine, grape and sky. Your couches are little shop mascots. (Fused from the 'dense Japanese web' challenger.)",
+    tags: ["Dela Gothic One + Rubik", "Hot pink · lime · tangerine · grape · sky", "Dense rounded modules with tabs", "Springy, pressable buttons"],
+    render() {
+      const yay = `<span class="yay">BOTH!!</span>`;
+      const soft = (a, b) => `<div class="soft"><i style="background:${a ? "var(--me)" : "#fff"}"></i><i style="background:${b ? "var(--pt)" : "#fff"}"></i></div>`;
+      const tile = (src, t, f, extra) => `<div class="tile">${poster(src)}<div><h4>${t}</h4><p>${f}</p></div>${extra}</div>`;
+      return `<div class="cdy">
+        <div class="top"><div class="logo">${couch("#ffb0d6", "a", 44, "#2b124c")}${couch("#9fe3ff", "b", 44, "#2b124c")}Two Couches</div>
+          <nav><a class="on" href="#">Our list</a><a href="#">Browse</a><a href="#">Coming soon</a><a href="#">Watch nights</a><a href="#">Stats</a></nav></div>
+        <div class="mosaic">
+          <div class="mod hello"><span class="tab">Right now</span>
+            <div class="pal">${couch("#ffb0d6", "a", 60, "#2b124c")}<b>10:30</b><small>You · GB · am</small></div>
+            <div class="pal">${couch("#9fe3ff", "b", 60, "#2b124c")}<b>11:30</b><small>Sam · NZ · pm</small></div>
+            <div class="gap">13 h apart</div></div>
+          <div class="mod next"><span class="tab">Next watch night</span>${poster(IMG.inc)}
+            <div><h3>Inception</h3><div class="pills"><span>You · Thu<b>1:00 PM</b></span><span>Sam · Fri<b>2:00 AM</b></span></div><button class="btn">I'm ready!</button></div></div>
+          <div class="mod pick"><span class="tab">Tonight?</span><b>Pick something<br>for tonight</b><div class="dice"><i></i><i></i><i></i><i></i></div></div>
+          <div class="mod listmod"><span class="tab">Our list</span>
+            <div class="views"><span class="on">Up next 4</span><span>Watched</span><span>Dropped</span></div>
+            <div class="tiles">
+              ${tile(IMG.bb, "Breaking Bad", "Series · S1 E3 · Netflix", yay)}
+              ${tile(IMG.mx, "The Matrix", "Film · 1999", soft(false, false))}
+              ${tile(IMG.inc, "Inception", "Film · 2010 · only Sam", soft(false, true))}
+              ${tile(IMG.fc, "Fight Club", "Film · 1999 · Netflix", yay)}
+            </div></div>
+          <div class="mod fy"><span class="tab">For you two</span><div class="fyrow">
+            ${[IMG.mx, IMG.fc, IMG.inc, IMG.bb, IMG.mx, IMG.fc].map((s, i) => `<div>${poster(s)}<p>${["The Matrix", "Fight Club", "Inception", "Breaking Bad", "The Matrix", "Fight Club"][i]}</p>${i % 2 ? "" : yay}</div>`).join("")}
+          </div></div>
+        </div>
+      </div>`;
+    },
+  },
+];
+
+const tabs = document.getElementById("tabs");
+function show(i) {
+  const d = DIRECTIONS[i];
+  document.getElementById("note").innerHTML = `<h2>${d.name}</h2><p>${d.pitch}</p><div class="tags">${d.tags.map((t) => `<span>${t}</span>`).join("")}</div>`;
+  document.getElementById("screen").innerHTML = d.render();
+  tabs.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", String(i === j)));
+  try { localStorage.setItem("cartoon", d.id); } catch {}
+}
+DIRECTIONS.forEach((d, i) => { const b = document.createElement("button"); b.textContent = d.name; b.onclick = () => show(i); tabs.append(b); });
+addEventListener("keydown", (e) => {
+  const cur = [...tabs.children].findIndex((b) => b.getAttribute("aria-pressed") === "true");
+  if (e.key === "ArrowRight") show((cur + 1) % DIRECTIONS.length);
+  if (e.key === "ArrowLeft") show((cur - 1 + DIRECTIONS.length) % DIRECTIONS.length);
+});
+let start = Math.max(0, DIRECTIONS.findIndex((d) => "#" + d.id === location.hash));
+if (!location.hash) try { start = Math.max(0, DIRECTIONS.findIndex((d) => d.id === localStorage.getItem("cartoon"))); } catch {}
+show(start);
+</script>
+</body>
+</html>

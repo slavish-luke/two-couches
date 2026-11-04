@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { isAppleMobile, isInstalled, useInstallPrompt } from "@/components/pwa";
+import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 
 const noSubscription = () => () => {};
@@ -18,7 +19,14 @@ export function InstallSettings({ language }: { language: string }) {
   const t = getMessages(language).account.install;
 
   if (!device) return null;
-  if (device === "installed") return <p className="text-sm text-both">{t.installed}</p>;
+  if (device === "installed") {
+    return (
+      <p className="inline-flex items-center gap-1.5 justify-self-start rounded-full border-2 border-outline bg-accent-soft px-2.5 py-0.5 text-sm font-bold">
+        <CheckIcon />
+        {t.installed}
+      </p>
+    );
+  }
   if (install) {
     return (
       <button type="button" onClick={install} className="btn justify-self-start">
@@ -26,5 +34,5 @@ export function InstallSettings({ language }: { language: string }) {
       </button>
     );
   }
-  return <p className="text-sm text-muted">{device === "ios" ? t.ios : t.other}</p>;
+  return <p className="font-medium text-muted">{device === "ios" ? t.ios : t.other}</p>;
 }

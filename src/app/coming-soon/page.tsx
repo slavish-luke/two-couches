@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
-import { CountryChip } from "@/components/country-chip";
+import { Burst } from "@/components/burst";
+import { Couches } from "@/components/couch";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
@@ -124,17 +125,23 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
     <div className="grid gap-8">
       <ListSync coupleId={coupleId} />
       {newCount > 0 && <MarkAlertsSeen />}
-      <div className="grid gap-2">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t.upcoming.heading}</h1>
-        <p className="text-muted">{t.upcoming.intro}</p>
+      <div className="grid gap-3">
+        <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.upcoming.heading}</h1>
+        <p className="max-w-[65ch] font-medium text-muted">{t.upcoming.intro}</p>
       </div>
 
-      <section className="grid gap-3">
-        <h2 className="font-display text-lg font-semibold">{t.upcoming.alerts.heading}</h2>
+      {/* New alerts are the news here, so they get the screen's spotlight; with none it's a quiet card. */}
+      <section className={alerts.length === 0 ? "card grid gap-3" : "spotlight grid -rotate-1 gap-4 p-5"}>
+        <h2 className={alerts.length === 0 ? "display-ink text-2xl" : "display text-[2rem] [color:var(--pop)]"}>
+          {t.upcoming.alerts.heading}
+        </h2>
         {alerts.length === 0 ? (
-          <p className="card text-sm text-muted">{t.upcoming.alerts.empty}</p>
+          <div className="grid justify-items-start gap-3 sm:flex sm:items-center sm:gap-4">
+            <Couches size={48} />
+            <p className="max-w-prose font-medium text-muted">{t.upcoming.alerts.empty}</p>
+          </div>
         ) : (
-          <ul className="grid gap-2">
+          <ul className="grid gap-3">
             {alerts.map((alert) => (
               <AlertRow
                 key={alert.id}
@@ -148,19 +155,20 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
         )}
       </section>
 
-      <nav aria-label={t.upcoming.typesLabel} className="flex gap-1 border-b border-line">
-        {(["movie", "tv"] as const).map((mediaType) => (
-          <Link
-            key={mediaType}
-            href={mediaType === "movie" ? "/coming-soon" : `/coming-soon?type=${mediaType}`}
-            aria-current={type === mediaType ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 font-semibold ${
-              type === mediaType ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            {t.common.mediaTypePlural[mediaType]}
-          </Link>
-        ))}
+      <nav aria-label={t.upcoming.typesLabel}>
+        <ul className="-mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:none]">
+          {(["movie", "tv"] as const).map((mediaType) => (
+            <li key={mediaType} className="shrink-0">
+              <Link
+                href={mediaType === "movie" ? "/coming-soon" : `/coming-soon?type=${mediaType}`}
+                aria-current={type === mediaType ? "page" : undefined}
+                className="tab block"
+              >
+                {t.common.mediaTypePlural[mediaType]}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
 
       {remindersOfType.length > 0 && (
@@ -173,7 +181,7 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
         </Row>
       )}
 
-      <Suspense fallback={<p className="text-muted">{t.upcoming.loading}</p>}>
+      <Suspense fallback={<p className="font-semibold text-muted motion-safe:animate-pulse">{t.upcoming.loading}</p>}>
         {type === "movie" ? <FilmSections context={context} /> : <SeriesSections context={context} />}
       </Suspense>
     </div>
@@ -190,19 +198,21 @@ function AlertRow(props: {
   const { heading, detail } = describeAlert(alert, props.viewerId, props.partner, context.t.upcoming.alerts);
   const day = alert.created_at.slice(0, 10);
   return (
-    <li className="card flex items-center gap-3 p-3">
+    <li className="paper tilt-row relative flex items-center gap-4 rounded-control border-[3px] border-outline p-3 pr-4">
       <Poster path={alert.poster_path} title={alert.title} size="sm" language={context.language} />
-      <div className="grid min-w-0 gap-0.5">
-        <Link href={titleHref(alert)} className="font-semibold hover:underline">
+      <div className="grid min-w-0 flex-1 gap-0.5">
+        <Link href={titleHref(alert)} className="text-lg font-bold leading-tight hover:underline">
           {alert.title}
         </Link>
-        <p className={`text-sm font-semibold ${alert.kind === "both" ? "text-both" : ""}`}>
-          {alert.kind === "both" && <span aria-hidden>● </span>}
-          {heading}
-        </p>
-        {detail && <p className="text-sm text-muted">{detail}</p>}
-        <p className="text-xs text-muted">{shortDate(day, context.today, context.language)}</p>
+        <p className="font-semibold">{heading}</p>
+        {detail && <p className="text-sm font-medium text-muted">{detail}</p>}
+        <p className="text-[13px] font-medium text-muted">{shortDate(day, context.today, context.language)}</p>
       </div>
+      {alert.kind === "both" && (
+        <Burst className="size-16 shrink-0 max-sm:absolute max-sm:-right-3 max-sm:-top-4" textClass="text-[13px]">
+          <span aria-hidden>{context.t.common.watchBadge.stampShort}</span>
+        </Burst>
+      )}
     </li>
   );
 }
@@ -210,18 +220,22 @@ function AlertRow(props: {
 /** A heading and a horizontally scrolling row of cards. */
 function Row({ heading, note, children }: { heading: string; note?: string; children: ReactNode }) {
   return (
-    <section className="grid gap-3">
-      <h2 className="flex flex-wrap items-baseline gap-x-2 font-display text-lg font-semibold">
-        {heading}
-        {note && <span className="font-sans text-sm font-normal text-muted">{note}</span>}
-      </h2>
-      <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">{children}</ul>
+    <section className="grid gap-1">
+      <h2 className="display text-[2rem]">{heading}</h2>
+      {note && <p className="max-w-[65ch] text-sm font-medium text-muted">{note}</p>}
+      {/* Room above for the bursts and below for the hover lift and shadows, which the scroller would clip. */}
+      <ul className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 pt-6">{children}</ul>
     </section>
   );
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="card text-sm text-muted">{text}</p>;
+  return (
+    <div className="card flex items-center gap-4">
+      <Couches size={48} />
+      <p className="font-medium text-muted">{text}</p>
+    </div>
+  );
 }
 
 /** Films in cinemas and coming to digital in either country, with the date in each. */
@@ -284,13 +298,24 @@ function ReleaseLines(props: {
 }) {
   const { countries, language, today, t } = props.context;
   return (
-    <ul className="grid gap-0.5 text-xs">
+    <ul className="grid justify-items-start gap-1">
       {countries.map((country, i) => {
         const date = props.releases?.[country]?.[props.kind];
         return (
-          <li key={country} className="flex items-center gap-1.5">
-            <CountryChip code={country} name={countryName(country, language)} isMe={i === 0} />
-            <span className={date ? "" : "text-muted"}>{date ? shortDate(date, today, language) : t.upcoming.noDate}</span>
+          // A split tag: the country in that person's colour, then its date there.
+          <li
+            key={country}
+            className="flex items-stretch overflow-hidden rounded-full border-2 border-outline bg-surface text-[13px] font-semibold leading-snug"
+          >
+            <span
+              title={countryName(country, language)}
+              className={`border-r-2 border-outline px-1.5 font-bold ${i === 0 ? "bg-me" : "bg-partner"}`}
+            >
+              {country}
+            </span>
+            <span className={`px-1.5 ${date ? "" : "text-muted"}`}>
+              {date ? shortDate(date, today, language) : t.upcoming.noDate}
+            </span>
           </li>
         );
       })}
@@ -335,12 +360,16 @@ async function SeriesSections({ context }: { context: PageContext }) {
                 context={card}
                 className="w-36 shrink-0 snap-start"
                 details={
-                  <span className="grid text-xs">
+                  <span className="grid justify-items-start gap-1 text-[13px]">
                     <span className="font-semibold">
                       {t.common.progress(episode.season, episode.episode)} ·{" "}
                       {shortDate(episode.air_date, context.today, context.language)}
                     </span>
-                    {episode.episode === 1 && <span className="text-both">{t.upcoming.seasonPremiere}</span>}
+                    {episode.episode === 1 && (
+                      <span className="rounded-full border-2 border-outline bg-accent-soft px-2 font-bold leading-snug">
+                        {t.upcoming.seasonPremiere}
+                      </span>
+                    )}
                   </span>
                 }
               />

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intro Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@500..700&family=Bangers&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #1d1a2b; overflow: hidden; font-family: Fredoka, sans-serif; }
+  /* The app underneath: the Saturday Morning mock from the Cartoon Lab. */
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+  .controls { position: fixed; z-index: 100; left: 50%; bottom: 18px; translate: -50% 0; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; background: #1d1a2bee; padding: 10px; border-radius: 18px; box-shadow: 0 10px 30px #0008; }
+  .controls button { font: 700 15px Fredoka, sans-serif; border: 3px solid #1d1a2b; background: #fffaf0; border-radius: 999px; padding: 8px 14px; cursor: pointer; box-shadow: 3px 3px 0 #000; }
+  .controls button:hover { background: #ffd23f; }
+  .controls .label { color: #fffaf0; font-weight: 600; align-self: center; padding: 0 6px; font-size: 14px; }
+  .controls select { font: 600 14px Fredoka, sans-serif; border-radius: 999px; padding: 6px 10px; }
+
+  .intro { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+  .intro svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .word { position: absolute; left: 50%; top: 50%; translate: -50% -50%; font: 400 clamp(48px, 9vw, 120px) "Luckiest Guy", sans-serif; color: #fffaf0; -webkit-text-stroke: 5px #1d1a2b; paint-order: stroke fill; text-shadow: 7px 7px 0 #1d1a2b; white-space: nowrap; letter-spacing: .02em; }
+  .word.small { font-size: clamp(22px, 3vw, 36px); -webkit-text-stroke: 3px #1d1a2b; text-shadow: 4px 4px 0 #1d1a2b; }
+
+  /* A: Spin-burst open: the burst spins in, holds with the logo, then becomes a hole that spins open onto the app. */
+  .A .fill { animation: a-fill 1.45s cubic-bezier(.7, 0, .2, 1) forwards; }
+  .A .hole { transform-box: fill-box; transform-origin: center; animation: a-hole 1.45s cubic-bezier(.7, 0, .2, 1) forwards; }
+  .A .burst { transform-box: fill-box; transform-origin: center; animation: a-burst 1.45s forwards; }
+  .A .word { animation: a-word 1.45s forwards; }
+  @keyframes a-burst { 0% { transform: scale(0) rotate(-200deg); } 32% { transform: scale(1.12) rotate(14deg); } 40% { transform: scale(.96) rotate(-4deg); } 52% { transform: scale(1) rotate(0); } 62% { transform: scale(1) rotate(0); opacity: 1; } 64% { opacity: 0; } 100% { opacity: 0; } }
+  @keyframes a-word { 0%, 18% { opacity: 0; scale: .2; rotate: -12deg; } 34% { opacity: 1; scale: 1.15; rotate: 4deg; } 44% { scale: .95; rotate: -2deg; } 52%, 60% { scale: 1; rotate: -3deg; opacity: 1; } 66% { opacity: 0; scale: 1.4; } 100% { opacity: 0; } }
+  @keyframes a-hole { 0%, 62% { transform: scale(0) rotate(0); } 100% { transform: scale(9) rotate(220deg); } }
+  @keyframes a-fill { 0%, 100% { opacity: 1; } }
+
+  /* B: Spin-shrink into the logo: a giant burst covers the screen, spins and shrinks into the corner where the logo lives. */
+  .B .cover { transform-box: fill-box; transform-origin: center; animation: b-cover 1.35s cubic-bezier(.75, 0, .25, 1) forwards; }
+  .B .word { animation: b-word 1.35s forwards; }
+  @keyframes b-cover { 0% { transform: translate(0, 0) scale(4.5) rotate(0); } 35% { transform: translate(0, 0) scale(4.5) rotate(40deg); } 100% { transform: translate(var(--tx), var(--ty)) scale(.12) rotate(540deg); opacity: 1; } }
+  @keyframes b-word { 0% { opacity: 0; scale: .5; } 14% { opacity: 1; scale: 1.1; } 26% { scale: 1; } 40% { opacity: 1; scale: 1; } 52% { opacity: 0; scale: .2; } 100% { opacity: 0; } }
+
+  /* C: Bat-swirl: speed lines, a spinning couch emblem rushes at the camera, then a white flash cuts to the app. */
+  .C { background: repeating-conic-gradient(from 0deg, #ff2e93 0 8deg, #ffd23f 8deg 16deg); animation: c-bg 1.5s forwards; }
+  .C .emblem { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; animation: c-emblem 1.5s cubic-bezier(.5, 0, .9, .4) forwards; }
+  .C .flash { position: absolute; inset: 0; background: #fffaf0; opacity: 0; animation: c-flash 1.5s forwards; }
+  @keyframes c-bg { 0% { rotate: 0deg; scale: 2; } 85% { rotate: 260deg; scale: 2; opacity: 1; } 86%, 100% { opacity: 0; } }
+  @keyframes c-emblem { 0% { transform: scale(.05) rotate(-720deg); } 70% { transform: scale(1.1) rotate(0); } 80% { transform: scale(1) rotate(-6deg); } 86% { transform: scale(9) rotate(10deg); opacity: 1; } 87%, 100% { opacity: 0; } }
+  @keyframes c-flash { 0%, 84% { opacity: 0; } 86% { opacity: 1; } 100% { opacity: 0; } }
+
+
+  /* D: A into B. The burst spins in with the name, the name swaps for the couches, then the cover spins open
+     while the burst whirls up into the logo's place. 1.7 s. */
+  .D .hole { transform-box: fill-box; transform-origin: center; animation: d-hole 1.7s cubic-bezier(.7, 0, .2, 1) forwards; }
+  .D .fly { animation: d-fly 1.7s cubic-bezier(.65, 0, .25, 1) forwards; }
+  .D .spin { transform-box: fill-box; transform-origin: center; animation: d-spin 1.7s forwards; }
+  .D .couches { transform-box: fill-box; transform-origin: center; animation: d-couches 1.7s forwards; }
+  .D .word { animation: d-word 1.7s forwards; }
+  @keyframes d-spin {
+    0% { transform: scale(0) rotate(-200deg); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+    26% { transform: scale(1.12) rotate(14deg); }
+    32% { transform: scale(.96) rotate(-4deg); }
+    40%, 46% { transform: scale(1) rotate(0); animation-timing-function: cubic-bezier(.6, 0, .3, 1); }
+    90% { transform: scale(1) rotate(540deg); opacity: 1; }
+    100% { transform: scale(1) rotate(560deg); opacity: 0; }
+  }
+  @keyframes d-fly { 0%, 46% { transform: translate(0, 0) scale(1); } 90%, 100% { transform: translate(var(--tx), var(--ty)) scale(var(--s)); } }
+  @keyframes d-word { 0%, 12% { opacity: 0; scale: .2; rotate: -12deg; } 27% { opacity: 1; scale: 1.15; rotate: 4deg; } 34% { scale: .95; rotate: -2deg; } 40%, 44% { scale: 1; rotate: -3deg; opacity: 1; } 50% { opacity: 0; scale: 1.5; rotate: -8deg; } 100% { opacity: 0; } }
+  @keyframes d-couches { 0%, 44% { transform: scale(0) rotate(-20deg); } 54% { transform: scale(1.2) rotate(8deg); } 60% { transform: scale(1) rotate(0); } 100% { transform: scale(1); } }
+  @keyframes d-hole { 0%, 50% { transform: scale(0) rotate(0); } 92%, 100% { transform: scale(10) rotate(-260deg); } }
+
+  .done { display: none; }
+  @media (prefers-reduced-motion: reduce) { .intro { display: none; } }
+</style>
+</head>
+<body>
+<iframe id="app" src="cartoon-lab.html#sat" title="The app"></iframe>
+<div id="stage"></div>
+<div class="controls">
+  <span class="label">Play:</span>
+  <button data-v="A">A · Spin-burst opens</button>
+  <button data-v="B">B · Spins into the logo</button>
+  <button data-v="C">C · Bat-swirl rush</button>
+  <button data-v="D" style="background:#ffd23f">D · A into the logo</button>
+  <span class="label">Speed</span>
+  <select id="speed"><option value="1">Normal</option><option value="0.5">Slow-mo</option><option value="1.5">Snappy</option></select>
+</div>
+<script>
+// A spiky burst path around (cx, cy).
+function burst(points, r1, r2, cx, cy) {
+  let d = "";
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 ? r2 : r1, a = (Math.PI * i) / points - Math.PI / 2;
+    d += `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }
+  return d + "Z";
+}
+const couch = (c, x) => `<g transform="translate(${x} 0)"><rect x="9" y="8" width="46" height="24" rx="9" fill="${c}" stroke="#1d1a2b" stroke-width="3"/><rect x="3" y="20" width="14" height="22" rx="6" fill="${c}" stroke="#1d1a2b" stroke-width="3"/><rect x="47" y="20" width="14" height="22" rx="6" fill="${c}" stroke="#1d1a2b" stroke-width="3"/><rect x="13" y="28" width="38" height="14" rx="5" fill="${c}" stroke="#1d1a2b" stroke-width="3"/><path d="M10 42v5M54 42v5" stroke="#1d1a2b" stroke-width="3" stroke-linecap="round"/><ellipse cx="26" cy="19" rx="2.6" ry="3.4" fill="#1d1a2b"/><ellipse cx="38" cy="19" rx="2.6" ry="3.4" fill="#1d1a2b"/><path d="M28 25q4 3.5 8 0" fill="none" stroke="#1d1a2b" stroke-width="2.4" stroke-linecap="round"/></g>`;
+
+const VARIANTS = {
+  A: () => {
+    const w = innerWidth, h = innerHeight, cx = w / 2, cy = h / 2, r = Math.min(w, h) * .42;
+    return `<div class="intro A">
+      <svg viewBox="0 0 ${w} ${h}"><defs><mask id="m"><rect width="${w}" height="${h}" fill="#fff"/><path class="hole" d="${burst(14, r, r * .72, cx, cy)}" fill="#000"/></mask></defs>
+        <rect class="fill" width="${w}" height="${h}" fill="#7b61ff" mask="url(#m)"/>
+        <path class="burst" d="${burst(14, r, r * .72, cx, cy)}" fill="#ff2e93" stroke="#1d1a2b" stroke-width="8" stroke-linejoin="round"/></svg>
+      <div class="word">Two Couches!</div></div>`;
+  },
+  B: () => {
+    const w = innerWidth, h = innerHeight, cx = w / 2, cy = h / 2, r = Math.max(w, h) * .5;
+    // Lands where the logo sits in the app's header (top-left).
+    const tx = 120 - cx, ty = 108 - cy;
+    return `<div class="intro B">
+      <svg viewBox="0 0 ${w} ${h}"><g class="cover" style="--tx:${tx}px;--ty:${ty}px"><path d="${burst(16, r * .5, r * .38, cx, cy)}" fill="#ffd23f" stroke="#1d1a2b" stroke-width="2" stroke-linejoin="round"/><g transform="translate(${cx - 32} ${cy - 13}) scale(.5)">${couch("#ff8a65", 0)}${couch("#5cc8ff", 64)}</g></g></svg></div>`;
+  },
+  D: () => {
+    const w = innerWidth, h = innerHeight, cx = w / 2, cy = h / 2, r = Math.min(w, h) * .42;
+    // Where the logo's couches sit in the app below (the mock's header), and how small the burst ends up there.
+    const lx = 112, ly = 292, s = 78 / (2 * r);
+    const cw = r * 1.15, k = cw / 128;
+    return `<div class="intro D">
+      <svg viewBox="0 0 ${w} ${h}"><defs><mask id="md"><rect width="${w}" height="${h}" fill="#fff"/><path class="hole" d="${burst(14, r, r * .72, cx, cy)}" fill="#000"/></mask></defs>
+        <rect width="${w}" height="${h}" fill="#7b61ff" mask="url(#md)"/>
+        <g class="fly" style="--tx:${lx - cx}px;--ty:${ly - cy}px;--s:${s};transform-origin:${cx}px ${cy}px">
+          <path class="spin" d="${burst(14, r, r * .72, cx, cy)}" fill="#ff2e93" stroke="#1d1a2b" stroke-width="8" stroke-linejoin="round"/>
+          <g class="couches"><g transform="translate(${cx - cw / 2} ${cy - 25 * k}) scale(${k})">${couch("#ff8a65", 0)}${couch("#5cc8ff", 64)}</g></g>
+        </g></svg>
+      <div class="word">Two Couches!</div></div>`;
+  },
+  C: () => `<div class="intro C"><svg class="emblem" viewBox="0 0 100 100"><path d="${burst(12, 48, 36, 50, 50)}" fill="#fffaf0" stroke="#1d1a2b" stroke-width="3.5" stroke-linejoin="round"/><g transform="translate(18 36) scale(.5)">${couch("#ff8a65", 0)}${couch("#5cc8ff", 64)}</g></svg><div class="flash"></div></div>`,
+};
+
+const stage = document.getElementById("stage");
+function play(v) {
+  const speed = +document.getElementById("speed").value;
+  stage.innerHTML = VARIANTS[v]();
+  const el = stage.firstElementChild;
+  el.querySelectorAll("*").forEach((n) => { n.style.animationDuration = ""; });
+  requestAnimationFrame(() => el.getAnimations({ subtree: true }).forEach((a) => (a.playbackRate = speed)));
+  setTimeout(() => (stage.innerHTML = ""), 1800 / speed + 100);
+}
+document.querySelectorAll("[data-v]").forEach((b) => (b.onclick = () => play(b.dataset.v)));
+setTimeout(() => play("D"), 600);
+</script>
+</body>
+</html>
