@@ -267,7 +267,7 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
             {t.title.panel.watchedSeasonStart(nextSeason)}
           </button>
         )}
-        <button className="px-1 text-sm font-bold underline underline-offset-4" onClick={() => setEditing(true)}>
+        <button className="tap-area px-1 text-sm font-bold underline underline-offset-4" onClick={() => setEditing(true)}>
           {t.title.panel.edit}
         </button>
       </div>
@@ -417,7 +417,7 @@ function RemoveButton({ pending, onRemove, t }: { pending: boolean; onRemove: ()
 
   if (!confirming) {
     return (
-      <button className="text-sm font-bold text-danger underline underline-offset-4" onClick={() => setConfirming(true)}>
+      <button className="tap-area text-sm font-bold text-danger underline underline-offset-4" onClick={() => setConfirming(true)}>
         {t.title.panel.remove}
       </button>
     );

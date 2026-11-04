@@ -7,7 +7,7 @@
 
 /** Each skin and its palettes, the first being the skin's standard one. */
 export const SKINS = {
-  saturday: ["sunburst"],
+  saturday: ["sunburst", "pool", "lime", "grape", "tangerine", "bubblegum", "sky", "nightowl"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type Skin = keyof typeof SKINS;
@@ -26,6 +26,13 @@ export const INTRO_KEY = "intro-played";
  */
 export const PALETTE_COLORS = {
   sunburst: { ground: "#ffd23f", paper: "#fffaf0", ink: "#1d1a2b", accent: "#6a4cf5", both: "#ff2e93", me: "#ff8a65", partner: "#5cc8ff" },
+  pool: { ground: "#4fd6e4", paper: "#fffaf0", ink: "#1d1a2b", accent: "#b82a18", both: "#ff2e93", me: "#ffa04d", partner: "#c3a1ff" },
+  lime: { ground: "#b8ef45", paper: "#fffaf0", ink: "#1d1a2b", accent: "#2440c9", both: "#ff2e93", me: "#ff8a3d", partner: "#5cc8ff" },
+  grape: { ground: "#a389ff", paper: "#fffaf0", ink: "#1d1a2b", accent: "#ff8a1f", both: "#a8f02e", me: "#ffe14d", partner: "#ff9ccd" },
+  tangerine: { ground: "#ff9d42", paper: "#fffaf0", ink: "#1d1a2b", accent: "#1d5fc2", both: "#ff2e93", me: "#9be34a", partner: "#5cc8ff" },
+  bubblegum: { ground: "#ff9ccd", paper: "#fffaf0", ink: "#1d1a2b", accent: "#6a4cf5", both: "#a8f02e", me: "#ffb03a", partner: "#5cc8ff" },
+  sky: { ground: "#7cc9ff", paper: "#fffaf0", ink: "#1d1a2b", accent: "#b52219", both: "#ff2e93", me: "#ff8a65", partner: "#9be34a" },
+  nightowl: { ground: "#272056", paper: "#f6eddc", ink: "#0e0b1f", accent: "#ff9a3d", both: "#ff3d9a", me: "#ff8a65", partner: "#5cc8ff" },
 } as const satisfies Record<Palette, Record<"ground" | "paper" | "ink" | "accent" | "both" | "me" | "partner", string>>;
 
 const GROUNDS = Object.fromEntries(Object.entries(PALETTE_COLORS).map(([palette, colors]) => [palette, colors.ground]));

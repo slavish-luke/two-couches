@@ -132,7 +132,7 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
 
       {/* New alerts are the news here, so they get the screen's spotlight; with none it's a quiet card. */}
       <section className={alerts.length === 0 ? "card grid gap-3" : "spotlight grid -rotate-1 gap-4 p-5"}>
-        <h2 className={alerts.length === 0 ? "display-ink text-2xl" : "display text-[2rem] [color:var(--pop)]"}>
+        <h2 className={alerts.length === 0 ? "display-ink text-2xl" : "display-pop text-[2rem]"}>
           {t.upcoming.alerts.heading}
         </h2>
         {alerts.length === 0 ? (

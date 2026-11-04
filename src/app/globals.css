@@ -7,7 +7,9 @@
  *
  * Colour roles: --me and --partner fill each person's marks (couch, dot, name tag); --stamp is the loud
  * "both" fill, only for what you can both watch; --both is that colour made safe for text; --accent fills
- * the one spotlight panel per screen and selected controls; --pop is the bright button colour.
+ * the one spotlight panel per screen and selected controls (--on-accent, --accent-muted, --accent-line and
+ * --accent-both are the spotlight's text tokens, --accent-head its heading); --pop is the bright button
+ * colour; --blush is the couches' cheeks.
  */
 
 /* Saturday Morning: a Saturday-morning cartoon. Thick ink outlines, hard offset shadows, springy motion. */
@@ -43,10 +45,236 @@
   --accent: #6a4cf5;
   --on-accent: #ffffff;
   --accent-soft: #e6e0ff;
-  --accent-muted: #e2dbff;
+  --accent-muted: #f1edff;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #ffebf5;
+  --accent-head: #ffd23f;
   --pop: #ffd23f;
   --danger: #b0101f;
   --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Pool Party: Swimming-pool aqua with ripply rays, a tomato-red spotlight, a tangerine and a lilac couch. */
+[data-palette="pool"] {
+  --p-bg: #4fd6e4;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --ray: #3cc9d8;
+  --outline: #1d1a2b;
+  --me: #ffa04d;
+  --me-soft: #ffe3c9;
+  --partner: #c3a1ff;
+  --partner-soft: #eee3ff;
+  --stamp: #ff2e93;
+  --on-stamp: #ffffff;
+  --both: #b0005f;
+  --both-soft: #ffd6ea;
+  --accent: #b82a18;
+  --on-accent: #ffffff;
+  --accent-soft: #ffe0da;
+  --accent-muted: #ffe6e1;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #ffe0f0;
+  --accent-head: #ffe14d;
+  --pop: #ffe14d;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Lime Fizz: Fizzy lime-soda green, a cobalt spotlight, an orange and a sky couch. */
+[data-palette="lime"] {
+  --p-bg: #b8ef45;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --ray: #a9e334;
+  --outline: #1d1a2b;
+  --me: #ff8a3d;
+  --me-soft: #ffdcc4;
+  --partner: #5cc8ff;
+  --partner-soft: #d4f0ff;
+  --stamp: #ff2e93;
+  --on-stamp: #ffffff;
+  --both: #b0005f;
+  --both-soft: #ffd6ea;
+  --accent: #2440c9;
+  --on-accent: #ffffff;
+  --accent-soft: #dde3ff;
+  --accent-muted: #d6deff;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #ffc2e0;
+  --accent-head: #fff15c;
+  --pop: #fff15c;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Grape Jelly: The grape becomes the sky: lilac-purple ground, and the spotlight turns into a warm tangerine with ink writing. */
+[data-palette="grape"] {
+  --p-bg: #a389ff;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --g-muted: #2a2440;
+  --ray: #9679fb;
+  --outline: #1d1a2b;
+  --me: #ffe14d;
+  --me-soft: #fff6c7;
+  --partner: #ff9ccd;
+  --partner-soft: #ffe1f0;
+  --stamp: #a8f02e;
+  --on-stamp: #1d1a2b;
+  --both: #3a6b00;
+  --both-soft: #e4f9c6;
+  --accent: #ff8a1f;
+  --on-accent: #1d1a2b;
+  --accent-soft: #ffe3c7;
+  --accent-muted: #4d2600;
+  --accent-line: rgb(29 26 43 / 0.3);
+  --accent-both: #1f3d00;
+  --accent-head: #fffaf0;
+  --pop: #6ee7bf;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Tangerine: Orange-lolly ground, a deep-blue spotlight, a lime and a sky couch. */
+[data-palette="tangerine"] {
+  --p-bg: #ff9d42;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --g-muted: #3f3855;
+  --ray: #ff8f2b;
+  --outline: #1d1a2b;
+  --me: #9be34a;
+  --me-soft: #e3f8cc;
+  --partner: #5cc8ff;
+  --partner-soft: #d4f0ff;
+  --stamp: #ff2e93;
+  --on-stamp: #ffffff;
+  --both: #b0005f;
+  --both-soft: #ffd6ea;
+  --accent: #1d5fc2;
+  --on-accent: #ffffff;
+  --accent-soft: #d8e6ff;
+  --accent-muted: #d3e5ff;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #ffe0f0;
+  --accent-head: #ffe14d;
+  --pop: #ffe14d;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Bubblegum: Pink is the ground here, so 'both' switches to an electric-lime burst. */
+[data-palette="bubblegum"] {
+  --p-bg: #ff9ccd;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --ray: #ff8cc4;
+  --outline: #1d1a2b;
+  --me: #ffb03a;
+  --me-soft: #ffe8c4;
+  --partner: #5cc8ff;
+  --partner-soft: #d4f0ff;
+  --stamp: #a8f02e;
+  --on-stamp: #1d1a2b;
+  --both: #3a6b00;
+  --both-soft: #e4f9c6;
+  --accent: #6a4cf5;
+  --on-accent: #ffffff;
+  --accent-soft: #e6e0ff;
+  --accent-muted: #f1edff;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #e4ffb8;
+  --accent-head: #ffe14d;
+  --pop: #ffe14d;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Big Sky: Clear-sky blue with rays, a fire-engine-red spotlight, a coral and a lime couch. */
+[data-palette="sky"] {
+  --p-bg: #7cc9ff;
+  --p-surface: #fffaf0;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --ray: #69befc;
+  --outline: #1d1a2b;
+  --me: #ff8a65;
+  --me-soft: #ffdccf;
+  --partner: #9be34a;
+  --partner-soft: #e3f8cc;
+  --stamp: #ff2e93;
+  --on-stamp: #ffffff;
+  --both: #b0005f;
+  --both-soft: #ffd6ea;
+  --accent: #b52219;
+  --on-accent: #ffffff;
+  --accent-soft: #ffdeda;
+  --accent-muted: #ffe4e0;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #ffe0f0;
+  --accent-head: #ffd23f;
+  --pop: #ffd23f;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Night Owl: For evenings: a deep-indigo night sky with stars instead of rays, slightly softer paper, and a lamp-orange spotlight. */
+[data-palette="nightowl"] {
+  --p-bg: #272056;
+  --p-surface: #f6eddc;
+  --p-ink: #1d1a2b;
+  --p-muted: #4a4360;
+  --p-line: rgb(29 26 43 / 0.2);
+  --g-ink: #f6eddc;
+  --g-muted: #c6bdf0;
+  --ray: transparent;
+  --star: rgb(255 243 196 / 0.45);
+  --outline: #0e0b1f;
+  --me: #ff8a65;
+  --me-soft: #ffdccf;
+  --partner: #5cc8ff;
+  --partner-soft: #d4f0ff;
+  --stamp: #ff3d9a;
+  --on-stamp: #ffffff;
+  --both: #b0005f;
+  --both-soft: #ffd6ea;
+  --accent: #ff9a3d;
+  --on-accent: #1d1a2b;
+  --accent-soft: #ffe3c7;
+  --accent-muted: #4d2600;
+  --accent-line: rgb(29 26 43 / 0.3);
+  --accent-both: #7d0047;
+  --accent-head: #fffaf0;
+  --pop: #ffd23f;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
   color-scheme: light;
 }
 
@@ -57,14 +285,19 @@
 .field,
 .chip,
 .btn,
-.btn-quiet {
+.btn-quiet,
+.tab,
+.strand {
   --ink: var(--p-ink);
   --muted: var(--p-muted);
   --line: var(--p-line);
   --focus: var(--accent);
 }
 
+/* Text straight on the page ground: the paper's tokens, unless the palette's ground is dark (--g-ink, --g-muted). */
 :root {
+  --ink: var(--g-ink, var(--p-ink));
+  --muted: var(--g-muted, var(--p-muted));
   --bg: var(--p-bg);
   --surface: var(--p-surface);
 }
@@ -73,8 +306,8 @@
 .spotlight {
   --ink: var(--on-accent);
   --muted: var(--accent-muted);
-  --line: rgb(255 255 255 / 0.35);
-  --both: #ffc2e0;
+  --line: var(--accent-line);
+  --both: var(--accent-both);
   --focus: var(--pop);
 }
 
@@ -124,11 +357,27 @@
   text-shadow: 0.07em 0.07em 0 var(--outline);
 }
 
+/* The spotlight's heading: the same lettering, filled in the palette's spotlight-head colour. */
+@utility display-pop {
+  @apply display;
+  color: var(--accent-head);
+}
+
 @utility display-ink {
   font-family: var(--font-skin-display);
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.03em;
+}
+
+/* A text link or button too small to tap: an invisible layer around it makes the target about 40px tall. */
+@utility tap-area {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -8px -6px;
+  }
 }
 
 /* An ink outline and a hard shadow: the skin's panel edge. */
@@ -143,6 +392,28 @@
 }
 
 @layer base {
+  /*
+   * Fills that are always light carry the paper's text tokens, so their text stays ink when a palette's
+   * ground is dark. In the base layer, so a text utility on the same element still wins.
+   */
+  .bg-surface,
+  .bg-surface\/60,
+  .bg-surface\/80,
+  .bg-me,
+  .bg-partner,
+  .bg-pop,
+  .bg-me-soft,
+  .bg-partner-soft,
+  .bg-both-soft,
+  .bg-accent-soft,
+  .bg-danger-soft,
+  .bg-stamp {
+    --ink: var(--p-ink);
+    --muted: var(--p-muted);
+    --line: var(--p-line);
+    color: var(--ink);
+  }
+
   body {
     background-color: var(--bg);
     color: var(--ink);
@@ -187,6 +458,19 @@
   background: repeating-conic-gradient(from 0deg at 50% -10%, var(--ray) 0 6deg, transparent 6deg 12deg);
 }
 
+/* Night Owl's night sky: stars instead of rays (its --ray is transparent, so sheets and previews stay plain). */
+[data-skin="saturday"][data-palette="nightowl"] body::before {
+  background:
+    radial-gradient(circle at 12% 18%, var(--star) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 9%, var(--star) 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 46% 30%, var(--star) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 90% 46%, var(--star) 0 2px, transparent 3px),
+    radial-gradient(circle at 30% 62%, var(--star) 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 64% 78%, var(--star) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 8% 88%, var(--star) 0 2px, transparent 3px);
+  background-size: 340px 340px;
+}
+
 /* Room below the page for the phone tab bar (AppNav), which only signed-in pages have. */
 @media (width < 48rem) {
   body:has([data-tab-bar]) {
@@ -228,7 +512,7 @@
   }
   /* Big outlined tabs for a page's views (Home's Up next / Watched / Dropped, Films / Series). The current one tips and turns grape. */
   .tab {
-    @apply display-ink rounded-[16px] border-[3px] border-outline bg-surface/75 px-4 pb-1.5 pt-2.5 text-[1.6rem] transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:bg-surface aria-[current=page]:-rotate-2 aria-[current=page]:bg-accent aria-[current=page]:text-on-accent aria-[current=page]:shadow-[4px_4px_0_var(--outline)] sm:text-[1.9rem];
+    @apply display-ink rounded-[16px] border-[3px] border-outline bg-surface/75 text-ink px-4 pb-1.5 pt-2.5 text-[1.6rem] transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:bg-surface aria-[current=page]:-rotate-2 aria-[current=page]:bg-accent aria-[current=page]:text-on-accent aria-[current=page]:shadow-[4px_4px_0_var(--outline)] sm:text-[1.9rem];
   }
   /* A list entry's categories: little white tags. */
   .strand {
@@ -414,7 +698,7 @@ html[data-flight="peel"]::view-transition-old(.page-out) {
   background:
     repeating-conic-gradient(from 0deg at var(--sheet-x, 50%) var(--sheet-y, -10vh), var(--ray) 0 6deg, transparent 6deg 12deg),
     var(--bg);
-  box-shadow: -16px 0 28px -12px rgb(29 26 43 / 0.35);
+  box-shadow: -16px 0 28px -12px color-mix(in srgb, var(--outline) 35%, transparent);
 }
 
 /* A poster moving between the list and its title page. */

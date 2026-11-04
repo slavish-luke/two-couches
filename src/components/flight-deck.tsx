@@ -20,13 +20,13 @@ export function FlightDeck({ language }: { language: string }) {
     >
       <div
         data-speed-lines
-        className="absolute inset-0 opacity-0 bg-[repeating-linear-gradient(0deg,transparent_0_22px,rgb(29_26_43/0.13)_22px_25px,transparent_25px_61px,rgb(255_250_240/0.55)_61px_66px,transparent_66px_97px)] data-[strong=true]:bg-[repeating-linear-gradient(0deg,transparent_0_14px,rgb(29_26_43/0.2)_14px_18px,transparent_18px_40px,rgb(255_250_240/0.67)_40px_47px,transparent_47px_70px)]"
+        className="absolute inset-0 opacity-0 bg-[repeating-linear-gradient(0deg,transparent_0_22px,color-mix(in_srgb,var(--outline)_13%,transparent)_22px_25px,transparent_25px_61px,color-mix(in_srgb,var(--p-surface)_55%,transparent)_61px_66px,transparent_66px_97px)] data-[strong=true]:bg-[repeating-linear-gradient(0deg,transparent_0_14px,color-mix(in_srgb,var(--outline)_20%,transparent)_14px_18px,transparent_18px_40px,color-mix(in_srgb,var(--p-surface)_67%,transparent)_40px_47px,transparent_47px_70px)]"
       />
       {SECTIONS.map(({ key }, i) => (
         <div
           key={key}
           data-section={i}
-          className="absolute inset-0 opacity-0 in-data-[flight=peel]:bg-bg in-data-[flight=peel]:bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] in-data-[flight=peel]:shadow-[-16px_0_28px_-12px_rgb(29_26_43/0.35)]"
+          className="absolute inset-0 opacity-0 in-data-[flight=peel]:bg-bg in-data-[flight=peel]:bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] in-data-[flight=peel]:shadow-[-16px_0_28px_-12px_color-mix(in_srgb,var(--outline)_35%,transparent)]"
         >
           <div className="mx-auto grid max-w-[90rem] gap-6 px-4 pt-24 sm:px-6 lg:px-8 lg:pt-28">
             <p className="display text-[clamp(3.5rem,9vw,6rem)]">{t[key]}</p>

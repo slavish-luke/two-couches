@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saturday Palettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  /* ---------- the lab around the mocks ---------- */
+  :root { --lab-bg: #141318; --lab-panel: #1d1c23; --lab-ink: #f1eff6; --lab-muted: #a5a2b4; --lab-line: #2d2b36; --lab-good: #7be0a5; --lab-bad: #ff8f8f; --lab-meh: #ffd27a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--lab-bg); color: var(--lab-ink); font-family: Fredoka, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  button { font: inherit; }
+  .lab-head { position: sticky; top: 0; z-index: 50; background: #141318f0; backdrop-filter: blur(8px); border-bottom: 1px solid var(--lab-line); padding: 12px 20px; display: grid; gap: 10px; }
+  .lab-row { display: flex; gap: 10px 18px; align-items: center; flex-wrap: wrap; }
+  .lab-head h1 { margin: 0; font: 400 24px "Luckiest Guy", sans-serif; letter-spacing: .03em; color: #ffd23f; }
+  .lab-head p { margin: 0; color: var(--lab-muted); font-size: 14px; max-width: 80ch; }
+  .picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+  .pick { flex: none; display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 2px solid var(--lab-line); background: transparent; color: var(--lab-ink); font-weight: 600; font-size: 14px; cursor: pointer; }
+  .pick[aria-pressed="true"] { border-color: #ffd23f; background: #ffd23f1a; }
+  .pick .chips { display: flex; border-radius: 999px; overflow: hidden; outline: 1.5px solid #0006; }
+  .pick .chips i { width: 13px; height: 24px; display: block; }
+  .pick .chips i:first-child { width: 20px; }
+  .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 2px solid var(--lab-line); border-radius: 999px; overflow: hidden; }
+  .seg span { padding: 5px 10px; font-size: 13px; color: var(--lab-muted); }
+  .seg button { border: 0; background: transparent; color: var(--lab-ink); padding: 5px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--lab-ink); color: var(--lab-bg); }
+  .lab-main { padding: 20px; display: grid; gap: 18px; max-width: 1700px; margin: 0 auto; }
+  .about { display: grid; gap: 6px; }
+  .about h2 { margin: 0; font: 400 40px "Luckiest Guy", sans-serif; letter-spacing: .02em; line-height: 1; }
+  .about p { margin: 0; color: var(--lab-muted); max-width: 80ch; line-height: 1.5; }
+  .about .warn { color: var(--lab-meh); }
+  .facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+  @media (width < 1100px) { .facts { grid-template-columns: minmax(0, 1fr); } }
+  .box { background: var(--lab-panel); border: 1px solid var(--lab-line); border-radius: 12px; padding: 14px; }
+  .box h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--lab-muted); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sw { display: grid; gap: 3px; font-size: 11.5px; color: var(--lab-muted); width: 82px; }
+  .sw b { height: 34px; border-radius: 6px; display: block; box-shadow: inset 0 0 0 1px #ffffff26; }
+  .sw em { font-style: normal; color: var(--lab-ink); font-weight: 600; }
+  .contrast { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .contrast td { padding: 4px 6px; border-top: 1px solid var(--lab-line); }
+  .contrast td:nth-child(2) { width: 64px; }
+  .contrast td:nth-child(3) { width: 56px; text-align: right; font-weight: 600; }
+  .contrast td:nth-child(4) { width: 70px; font-size: 12px; }
+  .contrast .sample { display: inline-block; padding: 1px 8px; border-radius: 6px; font-weight: 600; box-shadow: inset 0 0 0 1px #ffffff26; }
+  .ok { color: var(--lab-good); } .bad { color: var(--lab-bad); } .meh { color: var(--lab-meh); }
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; align-items: start; }
+  .stage[data-view="desktop"] { grid-template-columns: minmax(0, 1fr); }
+  .stage[data-view="desktop"] .phone-col { display: none; }
+  .stage[data-view="phone"] { grid-template-columns: 390px; justify-content: center; }
+  .stage[data-view="phone"] .desk-col { display: none; }
+  @media (width < 1000px) { .stage, .stage[data-view] { grid-template-columns: minmax(0, 1fr); justify-items: center; } .desk-col { justify-self: stretch; } }
+  .col-label { font-size: 13px; color: var(--lab-muted); margin-bottom: 8px; }
+  .desk-fit { width: 100%; overflow: hidden; border-radius: 14px; }
+  .desk-fit > .app { width: 1180px; transform-origin: top left; }
+  .phone { width: 390px; height: 800px; border-radius: 44px; border: 10px solid #000; overflow: hidden; position: relative; box-shadow: 0 0 0 2px #333; contain: paint; }
+  .phone > .app { height: 100%; overflow-y: auto; scrollbar-width: none; }
+  .grid-title { margin: 22px 0 0; font: 400 28px "Luckiest Guy", sans-serif; letter-spacing: .02em; }
+  .all { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+  .all figure { margin: 0; display: grid; gap: 8px; cursor: pointer; }
+  .all figcaption { font-weight: 600; display: grid; }
+  .all figcaption span { color: var(--lab-muted); font-weight: 400; font-size: 13px; }
+  .mini { height: 420px; overflow: hidden; border-radius: 22px; border: 5px solid #000; position: relative; contain: paint; }
+  .mini > .app { width: 390px; transform: scale(.56); transform-origin: top left; pointer-events: none; }
+  .all figure[aria-current="true"] .mini { border-color: #ffd23f; }
+
+  /* ---------- the app, painted only from the tokens (names as in globals.css) ---------- */
+  .app { position: relative; isolation: isolate; background: var(--p-bg); color: var(--ink); font-family: Fredoka, sans-serif; font-size: 17px; line-height: 1.5; container-type: inline-size; transition: background-color .35s; }
+  .app * { transition: background-color .35s, color .35s, border-color .35s, fill .35s; }
+  .app::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .app[data-deco="rays"]::before { background: repeating-conic-gradient(from 0deg at 50% -10%, var(--ray) 0 6deg, transparent 6deg 12deg); }
+  .phone .app[data-deco="rays"]::before, .mini .app[data-deco="rays"]::before { position: fixed; }
+  .app[data-deco="stars"]::before {
+    background:
+      radial-gradient(circle at 12% 18%, var(--ray) 0 2px, transparent 3px),
+      radial-gradient(circle at 78% 9%, var(--ray) 0 2.5px, transparent 3.5px),
+      radial-gradient(circle at 46% 30%, var(--ray) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 90% 46%, var(--ray) 0 2px, transparent 3px),
+      radial-gradient(circle at 30% 62%, var(--ray) 0 2.5px, transparent 3.5px),
+      radial-gradient(circle at 64% 78%, var(--ray) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 8% 88%, var(--ray) 0 2px, transparent 3px);
+    background-size: 340px 340px;
+  }
+  .app, .app .card, .app .paper, .app .field, .app .chip, .app .btn, .app .btn-quiet, .app .tabbar, .app .navbar {
+    --ink: var(--p-ink); --muted: var(--p-muted); --line: var(--p-line);
+  }
+  /* The ground's own text tokens (only the evening palette needs them to differ from paper). */
+  .app { --ink: var(--g-ink); --muted: var(--g-muted); }
+  .app .spotlight { --ink: var(--on-accent); --muted: var(--accent-muted); --line: var(--accent-line); --both: var(--accent-both); }
+
+  .app .display { font-family: "Luckiest Guy", sans-serif; font-weight: 400; line-height: .95; letter-spacing: .02em; color: var(--p-surface); -webkit-text-stroke: max(2px, .05em) var(--outline); paint-order: stroke fill; text-shadow: .07em .07em 0 var(--outline); }
+  .app .display-pop { color: var(--accent-head); }
+  .app .display-ink { font-family: "Luckiest Guy", sans-serif; font-weight: 400; line-height: 1; letter-spacing: .03em; }
+  .app .outlined { border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); }
+  .app .card { background: var(--p-surface); color: var(--ink); border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); border-radius: 22px; padding: 20px; }
+  .app .paper { background: var(--p-surface); color: var(--ink); }
+  .app .spotlight { background: var(--accent); color: var(--ink); border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); border-radius: 22px; padding: 20px; rotate: -1deg; }
+  .app .btn { display: inline-flex; align-items: center; gap: 8px; font: 400 1.05rem "Luckiest Guy", sans-serif; letter-spacing: .04em; line-height: 1; background: var(--pop); color: var(--ink); border: 2.5px solid var(--outline); box-shadow: 3px 3px 0 var(--outline); border-radius: 14px; padding: 10px 16px 8px; cursor: pointer; }
+  .app .btn:hover { translate: -2px -2px; rotate: -1deg; box-shadow: 5px 5px 0 var(--outline); }
+  .app .btn:active { translate: 3px 3px; box-shadow: 0 0 0 var(--outline); }
+  .app .btn-quiet { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; background: var(--p-surface); color: var(--ink); border: 2.5px solid var(--outline); box-shadow: 3px 3px 0 var(--outline); border-radius: 14px; padding: 6px 14px; }
+  .app .chip { display: inline-flex; align-items: center; gap: 6px; border: 2.5px solid var(--outline); background: var(--p-surface); color: var(--ink); border-radius: 999px; padding: 4px 12px; font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .app .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); box-shadow: 3px 3px 0 var(--outline); }
+  .app .chip .stampdot { width: 12px; height: 12px; border-radius: 99px; background: var(--stamp); border: 2px solid var(--outline); }
+  .app .field { width: 100%; display: flex; align-items: center; gap: 8px; border: 3px solid var(--outline); border-radius: 14px; background: var(--p-surface); color: var(--muted); padding: 8px 14px; }
+  .app .field:hover { box-shadow: 4px 4px 0 var(--accent); }
+  .app .tab { font-family: "Luckiest Guy", sans-serif; letter-spacing: .03em; line-height: 1; font-size: 1.9rem; display: inline-flex; align-items: center; gap: 8px; border: 3px solid var(--outline); border-radius: 16px; background: color-mix(in srgb, var(--p-surface) 75%, transparent); color: var(--p-ink); padding: 10px 16px 6px; white-space: nowrap; }
+  .app .tab[aria-current="page"] { background: var(--accent); color: var(--on-accent); rotate: -2deg; box-shadow: 4px 4px 0 var(--outline); }
+  .app .count { font: 700 14px Fredoka, sans-serif; letter-spacing: 0; background: var(--p-surface); color: var(--p-ink); border: 2px solid var(--outline); border-radius: 99px; padding: 0 6px; line-height: 1.4; }
+  .app .strand { display: inline-flex; border: 2px solid var(--outline); border-radius: 99px; background: var(--p-surface); color: var(--ink); padding: 0 8px; font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .app .tag { display: inline-flex; border: 2.5px solid var(--outline); border-radius: 99px; color: var(--p-ink); padding: 0 10px; font-size: .875rem; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+  .app .tag.me { background: var(--me); } .app .tag.partner { background: var(--partner); }
+  .app .poster { aspect-ratio: 2 / 3; background: var(--accent-soft) center / cover; border: 3px solid var(--outline); border-radius: 10px; flex: none; }
+  .app .muted { color: var(--muted); }
+  .app a { color: inherit; }
+
+  .app .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 32px; }
+  .app .logo { display: flex; align-items: flex-end; gap: 10px; rotate: -2deg; }
+  .app .logo .display { font-size: 2.3rem; }
+  .app .couches { display: inline-flex; align-items: flex-end; }
+  .app .couches svg + svg { margin-left: -8%; }
+  .app .navbar { position: relative; display: flex; align-items: center; background: var(--p-surface); border: 3px solid var(--outline); border-radius: 999px; padding: 4px; box-shadow: 3px 3px 0 var(--outline); }
+  .app .navbar a { position: relative; z-index: 1; padding: 6px 14px; font-weight: 700; text-decoration: none; color: var(--ink); border-radius: 999px; }
+  .app .navbar a.on { background: var(--accent); color: var(--on-accent); box-shadow: 2px 2px 0 var(--outline); }
+  .app .iconbtn { width: 44px; height: 44px; display: grid; place-items: center; background: var(--p-surface); color: var(--p-ink); border: 3px solid var(--outline); border-radius: 99px; box-shadow: 3px 3px 0 var(--outline); }
+  .app .iconbtn svg, .app .ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+  .app .body { display: grid; grid-template-columns: 5fr 7fr; gap: 32px; padding: 8px 32px 40px; }
+  .app .aside { display: grid; gap: 28px; align-content: start; }
+  .app .clocks { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; padding: 16px 14px 14px; }
+  .app .clock { display: grid; justify-items: center; gap: 4px; text-align: center; }
+  .app .clock b { font: 400 clamp(2.5rem, 4.2cqi, 3.5rem) "Luckiest Guy", sans-serif; line-height: 1; letter-spacing: .03em; }
+  .app .clock b small { font: 700 1rem Fredoka, sans-serif; margin-left: 3px; }
+  .app .clock .day { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .app .apart { font: 400 17px "Luckiest Guy", sans-serif; letter-spacing: .02em; border: 3px solid var(--outline); border-radius: 99px; padding: 6px 12px 3px; rotate: -6deg; align-self: center; box-shadow: 3px 3px 0 var(--outline); white-space: nowrap; }
+  .app[data-small="accent"] .apart { background: var(--accent); color: var(--on-accent); }
+  .app[data-small="paper"] .apart { background: var(--p-surface); color: var(--p-ink); }
+  .app .spot-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+  .app .spot-head .display { font-size: 2rem; }
+  .app .spot-head a { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .app .night { display: grid; grid-template-columns: 76px 1fr; gap: 14px; margin-top: 14px; }
+  .app .night h4 { margin: 0; font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
+  .app .night .when { font-size: 15px; color: var(--muted); }
+  .app .tickets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .app .ticket { border: 3px solid var(--outline); border-radius: 14px; padding: 4px 10px 6px; display: grid; }
+  .app .ticket .who { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+  .app .ticket b { font: 400 1.5rem "Luckiest Guy", sans-serif; line-height: 1.05; letter-spacing: .03em; }
+  .app .ticket span.d { font-size: 13px; color: var(--muted); }
+  .app .dot { width: 13px; height: 13px; border-radius: 99px; border: 2.5px solid var(--outline); display: inline-block; flex: none; }
+  .app .dot.me { background: var(--me); } .app .dot.partner { background: var(--partner); } .app .dot.none { background: var(--p-surface); }
+  .app .ready { margin-top: 12px; border: 3px solid var(--outline); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+  .app .ready.both { background: var(--both-soft); }
+  .app .ready .r { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; }
+  .app .tick { display: inline-flex; align-items: center; gap: 4px; border: 2.5px solid var(--outline); border-radius: 99px; padding: 0 9px 0 6px; font-weight: 700; font-size: 14px; }
+  .app[data-small="accent"] .tick { background: var(--accent); color: var(--on-accent); }
+  .app[data-small="paper"] .tick { background: var(--p-ink); color: var(--p-surface); }
+  .app .tick svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+  .app .bothpill { justify-self: start; background: var(--stamp); color: var(--on-stamp); border: 2.5px solid var(--outline); border-radius: 99px; padding: 2px 12px 0; font: 400 15px "Luckiest Guy", sans-serif; letter-spacing: .04em; rotate: -2deg; box-shadow: 3px 3px 0 var(--outline); }
+  .app .pickcard { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; }
+  .app .pickcard b { display: block; font-size: 1.15rem; }
+  .app .pickcard span { font-size: 15px; color: var(--muted); }
+  .app .tabs { display: flex; gap: 12px; padding: 4px 4px 8px; overflow: hidden; }
+  .app .chiprow { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 8px; }
+  .app .hint { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 14px; }
+  .app .list { display: grid; gap: 16px; }
+  .app .row { --tilt: -.5deg; rotate: var(--tilt); position: relative; display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 12px 16px; }
+  .app .row:nth-child(2n) { --tilt: .6deg; }
+  .app .row h4 { margin: 0; font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+  .app .row p { margin: 2px 0 0; font-size: 15px; color: var(--muted); }
+  .app .row .strands { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .app .row .bothtxt { color: var(--both); font-weight: 700; }
+  .app .burst { --r: -8deg; position: relative; width: 80px; height: 80px; display: grid; place-items: center; rotate: var(--r); }
+  .app .burst svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .app .burst b { position: relative; max-width: 78%; text-align: center; font: 400 18px "Luckiest Guy", sans-serif; line-height: .9; color: var(--p-surface); -webkit-text-stroke: 1.5px var(--outline); paint-order: stroke fill; }
+  .app .dots { display: flex; gap: 5px; align-items: center; font-weight: 700; font-size: 14px; white-space: nowrap; }
+  .app .danger { color: var(--danger); font-weight: 600; font-size: 14px; }
+  .app .note-danger { background: var(--danger-soft); border: 2.5px solid var(--outline); border-radius: 12px; padding: 4px 10px; font-size: 14px; color: var(--p-ink); }
+  .app .note-danger b { color: var(--danger); }
+  .app .attrib { margin: 0 32px 28px; font-size: 14px; color: var(--p-muted); background: var(--p-surface); border: 3px solid var(--outline); border-radius: 22px; padding: 10px 16px; }
+  .app .tabbar { display: none; }
+
+  /* Phone layout: everything stacks, the sections move to a bottom tab bar. */
+  @container (width < 640px) {
+    .app .top { padding: 14px 16px; }
+    .app .logo .display { font-size: 1.65rem; }
+    .app .navbar { display: none; }
+    .app .iconbtn { width: 40px; height: 40px; }
+    .app .body { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 4px 16px 24px; }
+    .app .aside { gap: 24px; }
+    .app .clocks { padding: 14px 8px 12px; gap: 4px; }
+    .app .clock b { font-size: 2.1rem; }
+    .app .apart { font-size: 14px; padding: 5px 8px 2px; }
+    .app .night { grid-template-columns: 64px minmax(0, 1fr); }
+    .app .tickets { grid-column: 1 / -1; }
+    .app .night > div:not(.poster) { display: contents; }
+    .app .night h4, .app .night .when { grid-column: 2; }
+    .app .night .poster { grid-row: span 2; }
+    .app .ready .r { flex-wrap: wrap; }
+    .app .chiprow { flex-wrap: nowrap; overflow: hidden; }
+    .app .tab { font-size: 1.6rem; }
+    .app .row { grid-template-columns: 64px minmax(0, 1fr); padding-right: 14px; }
+    .app .row .badge-slot { position: absolute; top: -18px; right: -10px; }
+    .app .row .badge-slot .burst { width: 64px; height: 64px; }
+    .app .row .badge-slot .burst b { font-size: 14px; }
+    .app .row .badge-slot .dots { position: static; background: var(--p-surface); border: 2px solid var(--outline); border-radius: 99px; padding: 1px 8px; margin-top: 22px; color: var(--p-ink); }
+    .app .row h4 { font-size: 1.2rem; padding-right: 44px; }
+    .app .attrib { margin: 0 16px 20px; }
+    .app .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: sticky; bottom: 0; z-index: 5; background: var(--p-surface); border-top: 3px solid var(--outline); padding: 6px 6px 18px; }
+    .app .tabbar a { display: grid; justify-items: center; gap: 2px; font-size: 12px; font-weight: 700; text-decoration: none; color: var(--ink); padding: 5px 0; border-radius: 16px; }
+    .app .tabbar a.on { background: var(--accent); color: var(--on-accent); box-shadow: 2px 2px 0 var(--outline); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .app .couch { animation: bob 3.2s ease-in-out infinite; transform-origin: bottom center; }
+    .app .couch.partner { animation-delay: .6s; }
+    .app .couch .eye { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+    .app .couch.partner .eye { animation-delay: 1.7s; }
+    .app .burst.popin { animation: pop .6s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+  }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-1.5deg); } }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+  @keyframes pop { 0% { scale: 0; rotate: -30deg; } 70% { scale: 1.15; rotate: 6deg; } 100% { scale: 1; rotate: var(--r, -8deg); } }
+</style>
+</head>
+<body>
+  <header class="lab-head">
+    <div class="lab-row">
+      <h1>Saturday Morning palettes</h1>
+      <p>Same Home screen, same rules, different colours. Pick one (or press ← →). In every palette, the burst colour means only "you can both watch it".</p>
+    </div>
+    <div class="picker" id="picker"></div>
+    <div class="lab-row toggles">
+      <div class="seg" id="view"><span>Show</span><button data-v="both">Desktop + phone</button><button data-v="desktop">Desktop</button><button data-v="phone">Phone</button></div>
+      <div class="seg" id="small"><span>"13 h apart" and ready ticks</span><button data-v="accent">In the accent colour (now)</button><button data-v="paper">Plain ink and paper</button></div>
+      <div class="seg" id="ready"><span>Ready check</span><button data-v="one">You're ready</button><button data-v="both">You're both ready</button></div>
+    </div>
+  </header>
+
+  <main class="lab-main">
+    <div class="about"><h2 id="name"></h2><p id="mood"></p><p id="cost" class="warn"></p></div>
+    <div class="facts">
+      <div class="box"><h3>Colours</h3><div class="swatches" id="swatches"></div></div>
+      <div class="box"><h3>Can you read it? (4.5 for text, 3 for big lettering and outlines)</h3><table class="contrast" id="contrast"></table></div>
+    </div>
+    <section class="stage" id="stage">
+      <div class="desk-col"><div class="col-label">Desktop</div><div class="desk-fit" id="desk"></div></div>
+      <div class="phone-col"><div class="col-label">Phone (scroll inside it)</div><div class="phone" id="phone"></div></div>
+    </section>
+    <h3 class="grid-title">All of them</h3>
+    <div class="all" id="all"></div>
+  </main>
+
+<script>
+const P = (path) => `https://image.tmdb.org/t/p/w342${path}`;
+const IMG = {
+  bb: P("/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"),
+  mx: P("/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg"),
+  inc: P("/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg"),
+  fc: P("/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg"),
+};
+
+// Paper, ink and danger are the same cartoon cel in every bright palette; each palette sets the rest.
+const CEL = { surface: "#fffaf0", ink: "#1d1a2b", muted: "#4a4360", line: "rgb(29 26 43 / 0.2)", outline: "#1d1a2b", danger: "#b0101f", dangerSoft: "#ffe1df", onStamp: "#ffffff", both: "#b0005f", bothSoft: "#ffd6ea", blush: "#ff5c8a" };
+const WHITE_SPOT = { onAccent: "#ffffff", accentLine: "rgb(255 255 255 / 0.35)", accentBoth: "#ffc2e0" };
+const INK_SPOT = { onAccent: "#1d1a2b", accentLine: "rgb(29 26 43 / 0.3)" };
+
+/* palettes:start */
+const PALETTES = [
+  { id: "sunburst", name: "Sunburst", mood: "What you have now. Sunshine yellow with rays, a grape spotlight, coral and sky couches, a bubblegum burst.",
+    ...CEL, ...WHITE_SPOT, bg: "#ffd23f", ray: "#ffc61a", me: "#ff8a65", meSoft: "#ffdccf", partner: "#5cc8ff", partnerSoft: "#d4f0ff",
+    stamp: "#ff2e93", accent: "#6a4cf5", accentSoft: "#e6e0ff", accentMuted: "#f1edff", accentBoth: "#ffebf5", accentHead: "#ffd23f", pop: "#ffd23f" },
+  { id: "pool", name: "Pool Party", mood: "Swimming-pool aqua with ripply rays, a tomato-red spotlight, a tangerine and a lilac couch. Cool and splashy, the burst still pops.",
+    ...CEL, ...WHITE_SPOT, bg: "#4fd6e4", ray: "#3cc9d8", me: "#ffa04d", meSoft: "#ffe3c9", partner: "#c3a1ff", partnerSoft: "#eee3ff",
+    stamp: "#ff2e93", accent: "#b82a18", accentSoft: "#ffe0da", accentMuted: "#ffe6e1", accentBoth: "#ffe0f0", accentHead: "#ffe14d", pop: "#ffe14d" },
+  { id: "lime", name: "Lime Fizz", mood: "Fizzy lime-soda green, a cobalt spotlight, an orange and a sky couch. The brightest and most electric.",
+    ...CEL, ...WHITE_SPOT, bg: "#b8ef45", ray: "#a9e334", me: "#ff8a3d", meSoft: "#ffdcc4", partner: "#5cc8ff", partnerSoft: "#d4f0ff",
+    stamp: "#ff2e93", accent: "#2440c9", accentSoft: "#dde3ff", accentMuted: "#d6deff", accentHead: "#fff15c", pop: "#fff15c" },
+  { id: "grape", name: "Grape Jelly", mood: "The grape becomes the sky: lilac-purple ground, and the spotlight turns into a warm tangerine with ink writing. Lemon and pink couches, mint buttons; pink would vanish on lilac, so 'both' is an electric-lime burst.",
+    ...CEL, ...INK_SPOT, gMuted: "#2a2440", bg: "#a389ff", ray: "#9679fb", me: "#ffe14d", meSoft: "#fff6c7", partner: "#ff9ccd", partnerSoft: "#ffe1f0",
+    stamp: "#a8f02e", onStamp: "#1d1a2b", both: "#3a6b00", bothSoft: "#e4f9c6", accent: "#ff8a1f", accentSoft: "#ffe3c7", accentMuted: "#4d2600", accentBoth: "#1f3d00", accentHead: "#fffaf0", pop: "#6ee7bf" },
+  { id: "tangerine", name: "Tangerine", mood: "Orange-lolly ground, a deep-blue spotlight, a lime and a sky couch. Warm, loud, very cereal box.",
+    ...CEL, ...WHITE_SPOT, gMuted: "#3f3855", bg: "#ff9d42", ray: "#ff8f2b", me: "#9be34a", meSoft: "#e3f8cc", partner: "#5cc8ff", partnerSoft: "#d4f0ff",
+    stamp: "#ff2e93", accent: "#1d5fc2", accentSoft: "#d8e6ff", accentMuted: "#d3e5ff", accentBoth: "#ffe0f0", accentHead: "#ffe14d", pop: "#ffe14d" },
+  { id: "bubblegum", name: "Bubblegum", mood: "Pink is the ground here, so 'both' switches to an electric-lime burst. Grape spotlight, orange and sky couches.",
+    ...CEL, ...WHITE_SPOT, bg: "#ff9ccd", ray: "#ff8cc4", me: "#ffb03a", meSoft: "#ffe8c4", partner: "#5cc8ff", partnerSoft: "#d4f0ff",
+    stamp: "#a8f02e", onStamp: "#1d1a2b", both: "#3a6b00", bothSoft: "#e4f9c6", accent: "#6a4cf5", accentSoft: "#e6e0ff", accentMuted: "#f1edff", accentBoth: "#e4ffb8", accentHead: "#ffe14d", pop: "#ffe14d" },
+  { id: "sky", name: "Big Sky", mood: "Clear-sky blue with rays, a fire-engine-red spotlight, a coral and a lime couch. Fresh, like a cartoon opening titles.",
+    ...CEL, ...WHITE_SPOT, bg: "#7cc9ff", ray: "#69befc", me: "#ff8a65", meSoft: "#ffdccf", partner: "#9be34a", partnerSoft: "#e3f8cc",
+    stamp: "#ff2e93", accent: "#b52219", accentSoft: "#ffdeda", accentMuted: "#ffe4e0", accentBoth: "#ffe0f0", accentHead: "#ffd23f", pop: "#ffd23f" },
+  { id: "nightowl", name: "Night Owl", mood: "For evenings: a deep-indigo night sky with stars instead of rays, slightly softer paper, and a lamp-orange spotlight. Same couches, same burst.",
+    ...CEL, ...INK_SPOT, deco: "stars", surface: "#f6eddc", outline: "#0e0b1f", bg: "#272056", ray: "rgb(255 243 196 / 0.45)", gInk: "#f6eddc", gMuted: "#c6bdf0",
+    me: "#ff8a65", meSoft: "#ffdccf", partner: "#5cc8ff", partnerSoft: "#d4f0ff",
+    stamp: "#ff3d9a", accent: "#ff9a3d", accentSoft: "#ffe3c7", accentMuted: "#4d2600", accentBoth: "#7d0047", accentHead: "#fffaf0", pop: "#ffd23f",
+    cost: "Needs one more step in the app: text sitting straight on the night ground has to turn light, so the page needs its own text colour (about 25 spots to check). The hard ink shadows mostly disappear on the dark ground, so panels read by their paper instead. Every bright palette above works without either." },
+];
+/* palettes:end */
+
+const vars = (p) => {
+  const map = {
+    "--p-bg": p.bg, "--p-surface": p.surface, "--p-ink": p.ink, "--p-muted": p.muted, "--p-line": p.line, "--ray": p.ray, "--outline": p.outline,
+    "--g-ink": p.gInk ?? p.ink, "--g-muted": p.gMuted ?? p.muted,
+    "--me": p.me, "--me-soft": p.meSoft, "--partner": p.partner, "--partner-soft": p.partnerSoft,
+    "--stamp": p.stamp, "--on-stamp": p.onStamp, "--both": p.both, "--both-soft": p.bothSoft,
+    "--accent": p.accent, "--on-accent": p.onAccent, "--accent-soft": p.accentSoft, "--accent-muted": p.accentMuted,
+    "--accent-line": p.accentLine, "--accent-both": p.accentBoth ?? p.both, "--accent-head": p.accentHead, "--pop": p.pop,
+    "--danger": p.danger, "--danger-soft": p.dangerSoft, "--blush": p.blush,
+  };
+  return Object.entries(map).map(([k, v]) => `${k}:${v}`).join(";");
+};
+
+function couch(who, size) {
+  const fill = who === "me" ? "var(--me)" : "var(--partner)", ink = "var(--outline)";
+  return `<svg class="couch ${who}" width="${size}" height="${Math.round(size * .78)}" viewBox="0 0 64 50" aria-hidden="true" style="overflow:visible">
+    <g stroke="${ink}" stroke-width="3">
+    <rect x="9" y="8" width="46" height="24" rx="9" fill="${fill}"/><rect x="3" y="20" width="14" height="22" rx="6" fill="${fill}"/>
+    <rect x="47" y="20" width="14" height="22" rx="6" fill="${fill}"/><rect x="13" y="28" width="38" height="14" rx="5" fill="${fill}"/>
+    <path d="M10 42v5M54 42v5" stroke-linecap="round"/>
+    <ellipse class="eye" cx="26" cy="19" rx="2.6" ry="3.4" fill="${ink}" stroke="none"/><ellipse class="eye" cx="38" cy="19" rx="2.6" ry="3.4" fill="${ink}" stroke="none"/>
+    <path d="M28 25q4 3.5 8 0" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="21" cy="24" r="2.6" fill="var(--blush)" opacity=".45" stroke="none"/><circle cx="43" cy="24" r="2.6" fill="var(--blush)" opacity=".45" stroke="none"/></g></svg>`;
+}
+const couches = (size) => `<span class="couches">${couch("me", size)}${couch("partner", size)}</span>`;
+function burstPath(points, r1, r2, cx, cy) {
+  let d = "";
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 ? r2 : r1, a = (Math.PI * i) / points - Math.PI / 2;
+    d += `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }
+  return d + "Z";
+}
+const BURST = burstPath(12, 48, 34, 50, 50);
+const burst = (i, word = "Both!") => `<div class="burst popin" style="--i:${i}"><svg viewBox="0 0 100 100"><path d="${BURST}" fill="var(--stamp)" stroke="var(--outline)" stroke-width="4" stroke-linejoin="round"/></svg><b>${word}</b></div>`;
+const dots = (a, b, label) => `<div class="dots"><i class="dot ${a ? "me" : "none"}"></i><i class="dot ${b ? "partner" : "none"}"></i>${label}</div>`;
+const ICON = {
+  search: `<svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>`,
+  gear: `<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"/></svg>`,
+  list: `<svg class="ico" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>`,
+  browse: `<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="2"/><rect x="14" y="4" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,
+  soon: `<svg class="ico" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9M10 20a2.2 2.2 0 0 0 4 0"/></svg>`,
+  nights: `<svg class="ico" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5"/></svg>`,
+  stats: `<svg class="ico" viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>`,
+  arrow: `<svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:-2px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+  tick: `<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`,
+};
+
+function mock(p, opts) {
+  const readyBoth = opts.ready === "both";
+  const ready = `<div class="ready paper ${readyBoth ? "both" : ""}">
+      <div class="r"><span class="tag me">You</span><span class="tick">${ICON.tick}Ready</span></div>
+      <div class="r"><span class="tag partner">Sam</span>${readyBoth ? `<span class="tick">${ICON.tick}Ready</span>` : `<span class="muted">Not yet</span>`}</div>
+      ${readyBoth ? `<span class="bothpill">You're both ready!</span>` : `<div class="r"><span class="muted" style="font-size:14px">1080p, extended cut · 2:28:07</span><span class="danger">Lengths differ by 4 min</span></div>`}
+    </div>`;
+  const row = (src, title, facts, badge, strands = "") =>
+    `<div class="card row"><div class="poster" style="background-image:url(${src})"></div>
+      <div><h4>${title}</h4><p>${facts}</p>${strands ? `<div class="strands">${strands}</div>` : ""}</div>
+      <div class="badge-slot">${badge}</div></div>`;
+  return `<div class="app" data-deco="${p.deco ?? "rays"}" data-small="${opts.small}" style="${vars(p)}">
+    <header class="top">
+      <div class="logo">${couches(50)}<span class="display">Two Couches</span></div>
+      <nav class="navbar"><a class="on">List</a><a>Browse</a><a>Coming soon</a><a>Watch nights</a><a>Stats</a></nav>
+      <div style="display:flex;gap:10px"><span class="iconbtn">${ICON.search}</span><span class="iconbtn">${ICON.gear}</span></div>
+    </header>
+    <div class="body">
+      <div class="aside">
+        <div class="card clocks">
+          <div class="clock">${couch("me", 56)}<span class="tag me">You · GB</span><b>10:30<small>am</small></b><span class="day">Wednesday</span></div>
+          <span class="apart">13 h apart</span>
+          <div class="clock">${couch("partner", 56)}<span class="tag partner">Sam · NZ</span><b>11:30<small>pm</small></b><span class="day">Wednesday</span></div>
+        </div>
+        <section class="spotlight">
+          <div class="spot-head"><h2 class="display display-pop" style="margin:0">Next watch night</h2><a>All nights ${ICON.arrow}</a></div>
+          <div class="night"><div class="poster" style="background-image:url(${IMG.inc})"></div>
+            <div><h4>Inception</h4><div class="when">In 27 hours · on Syncplay</div>
+              <div class="tickets"><div class="ticket paper"><span class="who"><i class="dot me"></i>You</span><b>1:00 PM</b><span class="d">Thu 5 Nov</span></div>
+              <div class="ticket paper"><span class="who"><i class="dot partner"></i>Sam</span><b>2:00 AM</b><span class="d">Fri 6 Nov</span></div></div>
+            </div></div>
+          ${ready}
+        </section>
+        <div class="field">${ICON.search}Search films and series</div>
+        <div class="card pickcard"><div><b>Pick something for tonight</b><span>Say how long you have and get one title.</span></div><span class="btn">Pick!</span></div>
+      </div>
+      <div>
+        <div class="tabs"><span class="tab" aria-current="page">Up next <span class="count">4</span></span><span class="tab">Watched <span class="count">12</span></span><span class="tab">Dropped <span class="count">1</span></span></div>
+        <div class="chiprow"><span class="chip" aria-pressed="true"><i class="stampdot"></i>We can both watch</span><span class="chip">Films</span><span class="chip">Series</span><span class="chip">Comfort</span></div>
+        <p class="hint">2 of your 4 titles you can both watch tonight.</p>
+        <div class="list">
+          ${row(IMG.bb, "Breaking Bad", `Series · Watching, up to S1 E3 · <span class="bothtxt">Netflix for both</span>`, burst(0), `<span class="strand">Crime</span><span class="strand">Binge it</span>`)}
+          ${row(IMG.mx, "The Matrix", "Film · 1999 · Added by Sam", dots(false, false, "Nowhere yet"))}
+          ${row(IMG.inc, "Inception", "Film · 2010 · Added by you", dots(false, true, "Only Sam"), `<span class="strand">Mind-benders</span>`)}
+          ${row(IMG.fc, "Fight Club", `Film · 1999 · <span class="bothtxt">Netflix for both</span>`, burst(1))}
+        </div>
+      </div>
+    </div>
+    <p class="attrib">Film data from TMDB. Where to watch from JustWatch.</p>
+    <nav class="tabbar"><a class="on">${ICON.list}List</a><a>${ICON.browse}Browse</a><a>${ICON.soon}Soon</a><a>${ICON.nights}Nights</a><a>${ICON.stats}Stats</a></nav>
+  </div>`;
+}
+
+/* ---------- contrast (WCAG 2) ---------- */
+const canvas = document.createElement("canvas").getContext("2d");
+function rgba(color) {
+  canvas.fillStyle = "#000"; canvas.fillStyle = color;
+  const v = canvas.fillStyle;
+  if (v.startsWith("#")) return [parseInt(v.slice(1, 3), 16), parseInt(v.slice(3, 5), 16), parseInt(v.slice(5, 7), 16), 1];
+  const m = v.match(/[\d.]+/g).map(Number);
+  return [m[0], m[1], m[2], m[3] ?? 1];
+}
+const over = (fg, bg) => { const [r, g, b, a] = rgba(fg), [R, G, B] = rgba(bg); return `rgb(${r * a + R * (1 - a)} ${g * a + G * (1 - a)} ${b * a + B * (1 - a)})`; };
+const lum = (c) => { const [r, g, b] = rgba(c).slice(0, 3).map((x) => { x /= 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + .05) / (y + .05); };
+
+function checks(p) {
+  const gInk = p.gInk ?? p.ink, gMuted = p.gMuted ?? p.muted;
+  return [
+    ["Writing on paper", p.ink, p.surface, 4.5],
+    ["Dates and hints on paper", p.muted, p.surface, 4.5],
+    ["'For both' writing on paper", p.both, p.surface, 4.5],
+    ["Writing straight on the ground", gInk, p.bg, 4.5],
+    ["Hints straight on the ground", gMuted, p.bg, 4.5],
+    ["Writing in the spotlight", p.onAccent, p.accent, 4.5],
+    ["Dates in the spotlight", p.accentMuted, p.accent, 4.5],
+    ["'For both' in the spotlight", p.accentBoth ?? p.both, p.accent, 4.5],
+    ["Button writing", p.ink, p.pop, 4.5],
+    ["Name tag (you)", p.ink, p.me, 4.5],
+    ["Name tag (partner)", p.ink, p.partner, 4.5],
+    ["Selected chip / tab", p.onAccent, p.accent, 4.5],
+    ["Burst word's outline against the burst", p.outline, p.stamp, 3],
+    ["'Both ready' pill (big lettering)", p.onStamp, p.stamp, 3],
+    ["Error writing on paper", p.danger, p.surface, 4.5],
+    ["Panel outlines and shadows on the ground", p.outline, p.bg, 3],
+  ];
+}
+
+/* ---------- the page ---------- */
+const state = { i: 0, view: "both", small: "accent", ready: "one" };
+try { Object.assign(state, JSON.parse(localStorage.getItem("sat-palette-lab") || "{}")); } catch {}
+const save = () => { try { localStorage.setItem("sat-palette-lab", JSON.stringify(state)); } catch {} };
+// #pool, #nightowl… opens that palette.
+const fromHash = () => { const i = PALETTES.findIndex((p) => `#${p.id}` === location.hash); if (i >= 0) state.i = i; };
+fromHash();
+addEventListener("hashchange", () => { fromHash(); render(); });
+
+const picker = document.getElementById("picker");
+PALETTES.forEach((p, i) => {
+  const b = document.createElement("button");
+  b.className = "pick";
+  b.innerHTML = `<span class="chips"><i style="background:${p.bg}"></i><i style="background:${p.accent}"></i><i style="background:${p.me}"></i><i style="background:${p.partner}"></i><i style="background:${p.stamp}"></i></span>${p.name}`;
+  b.onclick = () => { state.i = i; render(); };
+  picker.append(b);
+});
+for (const id of ["view", "small", "ready"]) {
+  document.getElementById(id).addEventListener("click", (e) => {
+    const v = e.target.closest("button")?.dataset.v;
+    if (v) { state[id] = v; render(); }
+  });
+}
+
+function fitDesk() {
+  const box = document.getElementById("desk"), app = box.firstElementChild;
+  if (!app) return;
+  const scale = Math.min(1, box.clientWidth / 1180);
+  app.style.transform = `scale(${scale})`;
+  box.style.height = `${app.offsetHeight * scale}px`;
+}
+new ResizeObserver(fitDesk).observe(document.getElementById("desk"));
+
+function render() {
+  state.i = (state.i + PALETTES.length) % PALETTES.length;
+  const p = PALETTES[state.i];
+  document.getElementById("name").textContent = p.name;
+  document.getElementById("mood").textContent = p.mood;
+  document.getElementById("cost").textContent = p.cost ?? "";
+  const sw = [["Ground", p.bg], ["Rays", p.ray], ["Paper", p.surface], ["Ink", p.ink], ["Spotlight", p.accent], ["Spotlight head", p.accentHead], ["Button", p.pop], ["You", p.me], ["Partner", p.partner], ["Both (burst)", p.stamp], ["Both (writing)", p.both], ["Blush", p.blush]];
+  document.getElementById("swatches").innerHTML = sw.map(([l, c]) => `<div class="sw"><b style="background:${c}"></b><em>${l}</em>${c}</div>`).join("");
+  document.getElementById("contrast").innerHTML = checks(p).map(([label, fg, bg, need]) => {
+    const r = ratio(over(fg, bg), bg), cls = r >= need ? "ok" : r >= need * .85 ? "meh" : "bad";
+    return `<tr><td>${label}</td><td><span class="sample" style="color:${fg};background:${bg}">Aa</span></td><td class="${cls}">${r.toFixed(1)}</td><td class="${cls}">${r >= need ? "fine" : r >= need * .85 ? "close" : "too faint"}</td></tr>`;
+  }).join("");
+  const opts = { small: state.small, ready: state.ready };
+  document.getElementById("desk").innerHTML = mock(p, opts);
+  document.getElementById("phone").innerHTML = mock(p, opts);
+  document.getElementById("stage").dataset.view = state.view;
+  picker.querySelectorAll(".pick").forEach((b, j) => b.setAttribute("aria-pressed", String(j === state.i)));
+  for (const id of ["view", "small", "ready"]) document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === state[id])));
+  document.querySelectorAll("#all figure").forEach((f, j) => f.setAttribute("aria-current", String(j === state.i)));
+  requestAnimationFrame(fitDesk);
+  history.replaceState(null, "", `#${p.id}`);
+  save();
+}
+
+document.getElementById("all").innerHTML = PALETTES.map((p, i) =>
+  `<figure data-i="${i}"><div class="mini">${mock(p, { small: "accent", ready: "one" })}</div><figcaption>${p.name}<span>${p.mood.split(/[.:]/)[0]}</span></figcaption></figure>`).join("");
+document.getElementById("all").addEventListener("click", (e) => {
+  const f = e.target.closest("figure");
+  if (f) { state.i = +f.dataset.i; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+});
+addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { state.i++; render(); } if (e.key === "ArrowLeft") { state.i--; render(); } });
+render();
+</script>
+</body>
+</html>

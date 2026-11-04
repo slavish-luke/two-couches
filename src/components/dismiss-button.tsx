@@ -38,7 +38,7 @@ export function DismissButton({
         className={
           long
             ? "btn-quiet text-sm aria-pressed:bg-accent-soft"
-            : "text-[13px] font-semibold text-muted underline decoration-2 underline-offset-4 transition-colors hover:text-ink disabled:opacity-50"
+            : "tap-area text-[13px] font-semibold text-muted underline decoration-2 underline-offset-4 transition-colors hover:text-ink disabled:opacity-50"
         }
       >
         {saving ? (

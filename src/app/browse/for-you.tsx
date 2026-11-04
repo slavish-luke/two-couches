@@ -94,7 +94,7 @@ function ForYouSection(props: {
   return (
     <section className="spotlight grid rotate-[-0.6deg] gap-5 p-5 pb-6">
       <h2 className="grid gap-1.5">
-        <span className="display text-[2rem] [color:var(--pop)]">{props.heading}</span>
+        <span className="display-pop text-[2rem]">{props.heading}</span>
         <span className="text-sm font-medium text-muted">{props.note}</span>
       </h2>
       {props.empty ? (

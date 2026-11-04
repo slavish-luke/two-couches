@@ -42,16 +42,19 @@ export function NightCard(props: {
     ...(partner ? [{ person: partner, fill: "bg-partner" }] : []),
   ];
 
+  // Phones: the poster sits beside the title and tickets; everything after them takes the card's full width.
   return (
-    <li className={`flex items-start gap-4 ${className}`}>
+    <li
+      className={`flex items-start gap-4 max-sm:grid max-sm:grid-cols-[4rem_minmax(0,1fr)] max-sm:gap-x-3 max-sm:gap-y-2 ${className}`}
+    >
       <Poster
         path={night.title?.poster_path ?? null}
         title={night.title?.title ?? ""}
         size={listing ? "md" : "sm"}
         language={language}
-        className="max-sm:w-16"
+        className="max-sm:row-span-2 max-sm:w-16"
       />
-      <div className="grid min-w-0 flex-1 content-start gap-2">
+      <div className="grid min-w-0 flex-1 content-start gap-2 max-sm:contents max-sm:*:col-span-2 max-sm:[&>:nth-child(-n+2)]:col-span-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
           {night.title ? (
             <Link href={titleHref(night.title)} className="text-xl font-bold leading-snug hover:underline">
@@ -111,11 +114,11 @@ export function NightCard(props: {
           {plannedBy && <span>{plannedBy}</span>}
           {actions && (
             <>
-              <Link href={`/watch-nights/${night.id}`} className="font-bold text-ink underline underline-offset-4">
+              <Link href={`/watch-nights/${night.id}`} className="tap-area font-bold text-ink underline underline-offset-4">
                 {t.nights.edit}
               </Link>
               {/* A plain link: the calendar file is a download, not a page to prefetch. */}
-              <a href={`/watch-nights/${night.id}/ics`} className="font-bold text-ink underline underline-offset-4">
+              <a href={`/watch-nights/${night.id}/ics`} className="tap-area font-bold text-ink underline underline-offset-4">
                 {t.nights.addToCalendar}
               </a>
             </>
@@ -135,7 +138,7 @@ function HowLine({ night, t }: { night: WatchNight; t: Messages }) {
     if (night.syncplay_room) details.push(t.nights.syncplayRoom(night.syncplay_room));
   } else if (night.link) {
     details.push(
-      <a key="link" href={night.link} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap font-semibold text-ink underline">
+      <a key="link" href={night.link} target="_blank" rel="noopener noreferrer" className="tap-area whitespace-nowrap font-semibold text-ink underline">
         {night.method === "teleparty" ? t.nights.openTeleparty : t.nights.openLink} <ExternalIcon className="size-3.5" />
       </a>,
     );

@@ -61,16 +61,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <PwaSetup />
         {/* Stays put while pages whoosh and peel beneath it. */}
         <header style={{ viewTransitionName: "site-header" }} className="relative z-20">
-          <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 pb-2 pt-4 sm:px-6 lg:px-8 lg:pt-5">
+          <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-2 px-4 pb-2 pt-4 sm:gap-4 sm:px-6 lg:px-8 lg:pt-5">
             <Link
               href="/"
-              className="group flex shrink-0 -rotate-2 items-center gap-2 transition duration-200 ease-(--ease-spring) hover:-rotate-4 hover:scale-105"
+              className="group flex min-w-0 -rotate-2 items-center gap-1.5 transition duration-200 ease-(--ease-spring) hover:-rotate-4 hover:scale-105"
             >
               <span data-logo-couches className="inline-flex">
-                <Couches size={44} className="sm:hidden" />
+                <Couches size={38} className="sm:hidden" />
                 <Couches size={54} className="max-sm:hidden" />
               </span>
-              <span className="display text-[1.65rem] sm:text-[2.3rem]">Two Couches</span>
+              <span className="display whitespace-nowrap text-[1.4rem] min-[400px]:text-[1.6rem] sm:text-[2.3rem]">Two Couches</span>
             </Link>
             <Suspense>
               <AccountNav />

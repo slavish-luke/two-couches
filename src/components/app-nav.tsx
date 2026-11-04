@@ -238,7 +238,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
         <IconLinks current={current} t={t} />
       </nav>
 
-      <div className="flex items-center gap-2 md:hidden">
+      <div className="flex shrink-0 items-center gap-2 pr-[3px] md:hidden">
         <IconLinks current={current} t={t} />
       </div>
 
@@ -258,7 +258,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
                 aria-current={current(href)}
                 transitionTypes={flightTypes(index, i)}
                 style={ownPill(tabReady, i)}
-                className="relative z-[1] flex flex-col items-center gap-0.5 rounded-full px-1 pb-1 pt-1.5 text-[11px] font-bold text-ink aria-[current=page]:text-on-accent"
+                className="relative z-[1] flex flex-col items-center gap-0.5 rounded-full px-1 pb-1 pt-1.5 text-xs font-bold text-ink aria-[current=page]:text-on-accent"
               >
                 <span className="relative">
                   <Icon>{icon}</Icon>

@@ -212,7 +212,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
             </Burst>
           </span>
           <div className="grid gap-2 text-center sm:text-left">
-            <p className="display text-[clamp(1.9rem,4vw,2.5rem)] [color:var(--pop)]">{banner.heading}</p>
+            <p className="display-pop text-[clamp(1.9rem,4vw,2.5rem)]">{banner.heading}</p>
             <p className="text-lg font-semibold">{banner.detail}</p>
           </div>
         </div>

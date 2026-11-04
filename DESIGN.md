@@ -16,14 +16,17 @@ colors:
   on-stamp: "#ffffff"
   bubblegum-text: "#b0005f"
   bubblegum-soft: "#ffd6ea"
-  spotlight-both-text: "#ffc2e0"
+  spotlight-both-text: "#ffebf5"
+  spotlight-line: "rgb(255 255 255 / 0.35)"
+  spotlight-head: "#ffd23f"
   grape-accent: "#6a4cf5"
   on-accent: "#ffffff"
   grape-soft: "#e6e0ff"
-  grape-muted: "#e2dbff"
+  grape-muted: "#f1edff"
   pop-yellow: "#ffd23f"
   danger: "#b0101f"
   danger-soft: "#ffe1df"
+  blush: "#ff5c8a"
 typography:
   display:
     fontFamily: "Luckiest Guy, sans-serif"
@@ -157,7 +160,7 @@ components:
     padding: "4px 10px 6px"
   burst:
     backgroundColor: "{colors.bubblegum-stamp}"
-    textColor: "{colors.on-stamp}"
+    textColor: "{colors.cream-paper}"
     size: "64px / 80px / 96px"
   nav-bar:
     backgroundColor: "{colors.cream-paper}"
@@ -194,12 +197,14 @@ Density is relaxed and playful but legible: 17px Fredoka for reading, big cartoo
 
 A sunny, saturated cartoon palette: one warm ground, cream paper, one ink, two person colours, one loud "both" colour and one grape hero colour. These values belong to the Sunburst palette. Every other palette must define the same roles.
 
+Saturday Morning has eight palettes (Settings → Colours, per device), all tuned in `design/labs/sat-palette-lab.html`: **Sunburst** (the standard: yellow, grape spotlight, bubblegum burst), **Pool Party** (aqua, tomato spotlight), **Lime Fizz** (lime, cobalt spotlight), **Grape Jelly** (lilac, tangerine spotlight with ink text, lime burst), **Tangerine** (orange, deep-blue spotlight), **Bubblegum** (pink, grape spotlight, lime burst), **Big Sky** (sky blue, red spotlight) and **Night Owl** (indigo night with stars instead of rays, lamp-orange spotlight with ink text, slightly softer paper). Where pink would vanish into the ground, the burst turns lime: the stamp is a role, not a colour.
+
 ### Primary
 - **Grape Accent** (`grape-accent`): fills the one spotlight panel per screen (Home's next watch night, Browse's For you, the title page's verdict banner, Stats' headline numbers, Pick's card, Coming soon's alerts, the couple page's pairing moment). It also marks a selected control (chip, tab, nav pill, chosen settings option), a done state (the "ready" tick in a ready check), the "13 h apart" badge between the clocks, and single-series data bars on Stats. White text on it (`on-accent`).
-- **Grape Soft / Grape Muted** (`grape-soft`, `grape-muted`): empty poster placeholders and status pills on paper (soft); the muted text colour inside the spotlight (muted).
+- **Grape Soft / Grape Muted** (`grape-soft`, `grape-muted`): empty poster placeholders and status pills on paper (soft); the muted text colour inside the spotlight (muted, 4.6:1 on grape).
 
 ### Secondary
-- **Bubblegum Stamp** (`bubblegum-stamp`): the starburst and the dot in "We can both watch" filters. Use it only where the two of you overlap: a title you can both stream, a ready check where you're both ready. White text on it (`on-stamp`).
+- **Bubblegum Stamp** (`bubblegum-stamp`): the starburst and the dot in "We can both watch" filters. Use it only where the two of you overlap: a title you can both stream, a ready check where you're both ready. Plain text on it (the "both ready" pill, selections) is `on-stamp`; the burst's word is paper-filled display lettering.
 - **Bubblegum Text** (`bubblegum-text`): the same meaning made safe as text on paper (`--both`). Inside the spotlight, `--both` swaps to `spotlight-both-text`.
 - **Bubblegum Soft** (`bubblegum-soft`): the background of a ready check once you're both ready.
 
@@ -222,9 +227,11 @@ A sunny, saturated cartoon palette: one warm ground, cream paper, one ink, two p
 
 **The One Spotlight Rule.** One grape spotlight panel per screen, for that screen's moment. Grape elsewhere marks only selection, done states or data, always at small scale.
 
-**The Token Swap Rule.** Text tokens follow their surface. The page, `.card`, `.paper`, `.field`, `.chip`, `.btn` and `.btn-quiet` reset `--ink`, `--muted`, `--line` and `--focus` to the palette's paper values. `.spotlight` swaps them: ink becomes `on-accent`, muted becomes `grape-muted`, lines become `rgb(255 255 255 / 0.35)`, `--both` becomes `spotlight-both-text` and focus becomes pop. A paper element inside the spotlight is readable without extra classes.
+**The Token Swap Rule.** Text tokens follow their surface. The page, `.card`, `.paper`, `.field`, `.chip`, `.btn` and `.btn-quiet` reset `--ink`, `--muted`, `--line` and `--focus` to the palette's paper values. `.spotlight` swaps them: ink becomes `on-accent`, muted becomes `accent-muted` (`grape-muted`), lines become `accent-line` (`spotlight-line`), `--both` becomes `accent-both` (`spotlight-both-text`) and focus becomes pop. The spotlight's head uses the `display-pop` utility: display lettering filled with `accent-head` (`spotlight-head`). A paper element inside the spotlight is readable without extra classes.
 
-**What a palette defines.** `--p-bg`, `--p-surface`, `--p-ink`, `--p-muted`, `--p-line`, `--ray`, `--outline`, `--me`, `--me-soft`, `--partner`, `--partner-soft`, `--stamp`, `--on-stamp`, `--both` (text-safe), `--both-soft`, `--accent`, `--on-accent`, `--accent-soft`, `--accent-muted`, `--pop`, `--danger`, `--danger-soft`, `color-scheme`, plus a `PALETTE_COLORS` entry (ground, paper, ink, accent, both, me, partner) for the browser toolbar, the manifest and the Settings swatch. If a palette's accent needs different spotlight text, add its `.spotlight` overrides too.
+**What a palette defines.** `--p-bg`, `--p-surface`, `--p-ink`, `--p-muted`, `--p-line`, `--ray`, `--outline`, `--me`, `--me-soft`, `--partner`, `--partner-soft`, `--stamp`, `--on-stamp`, `--both` (text-safe), `--both-soft`, `--accent`, `--on-accent`, `--accent-soft`, `--accent-muted`, `--accent-line`, `--accent-both`, `--accent-head`, `--pop`, `--danger`, `--danger-soft`, `--blush`, `color-scheme`, plus a `PALETTE_COLORS` entry (ground, paper, ink, accent, both, me, partner) for the browser toolbar, the manifest and the Settings swatch. Every text pair must pass 4.5:1 (3:1 for big lettering and outlines); `design/labs/sat-palette-lab.html` checks them. A light accent takes ink spotlight text (`--on-accent` ink, `--accent-line` an ink tint).
+
+**The Dark Ground Rule.** A palette with a dark ground (Night Owl) also sets `--g-ink` and `--g-muted`, the text colours straight on the page; `:root` uses them, falling back to the paper's. Everything light (`.card`, `.paper`, `.field`, `.chip`, `.btn`, `.btn-quiet`, `.tab`, `.strand`, and any element with a bare `bg-surface`, `bg-me`, `bg-partner`, `bg-pop`, `bg-stamp` or a soft fill) resets them to ink, so a component that sits on paper never needs to know the ground is dark. A new light element with text should use one of those classes; a conditional fill (`has-checked:bg-…`) doesn't reset, so give it `text-ink` itself. Night Owl's `--ray` is transparent and its stars use `--star`.
 
 ## Typography
 
@@ -315,10 +322,10 @@ Big outlined tabs for a page's views (Up next / Watched / Dropped, Films / Serie
 - **Phones:** the bottom tab bar described in Layout, with the same travelling pill.
 
 ### Watch Badge (signature)
-Who can stream a title. **Both:** the **Burst** (bubblegum 12-point star, ink stroke, white display word with a 1.5px ink stroke and no shadow) in three sizes (64 / 80 / 96px). It pops in (`pop`: scale 0 and -30 degrees, then 1.15 and 6 degrees, then settles at -8 degrees, 0.6s on the spring clock), staggered 50ms by `index` as availability streams in. Its label names the services. **One of you:** two 14px outlined dots (yours, then your partner's), filled in the person's colour for whoever can, white otherwise, with an ink label. On a poster they sit on a paper pill. **Neither:** nothing.
+Who can stream a title. **Both:** the **Burst** (bubblegum 12-point star, ink stroke, paper-filled display word with a 1.5px ink stroke and no shadow, so it reads on a light or dark stamp) in three sizes (64 / 80 / 96px). It pops in (`pop`: scale 0 and -30 degrees, then 1.15 and 6 degrees, then settles at -8 degrees, 0.6s on the spring clock), staggered 50ms by `index` as availability streams in. Its label names the services. **One of you:** two 14px outlined dots (yours, then your partner's), filled in the person's colour for whoever can, white otherwise, with an ink label. On a poster they sit on a paper pill. **Neither:** nothing.
 
 ### Couch Mascot (signature)
-Two little couches with faces, coral for you and sky for your partner, drawn in ink on a 64 by 50 grid with blush cheeks. They bob (3.2s, up 4px, -1.5 degrees) and blink (4.5s). The partner runs 0.6s and 1.7s behind, so they never move in unison. Together (`<Couches>`) they form the header logo (54px; 44px on phones, tipped -2 degrees), head the empty and loading states, and stand in the Settings Look preview. Decorative (`aria-hidden`).
+Two little couches with faces, coral for you and sky for your partner, drawn in ink on a 64 by 50 grid with cheeks in the palette's `--blush`. They bob (3.2s, up 4px, -1.5 degrees) and blink (4.5s). The partner runs 0.6s and 1.7s behind, so they never move in unison. Together (`<Couches>`) they form the header logo (54px; 44px on phones, tipped -2 degrees), head the empty and loading states, and stand in the Settings Look preview. Decorative (`aria-hidden`).
 
 ### Name Tag and Night Tickets
 - **Name tag:** a pill in the person's colour, 2.5px outline, ink text in Fredoka bold 0.875rem, truncating.

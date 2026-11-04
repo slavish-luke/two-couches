@@ -235,7 +235,7 @@ function FileForm(props: {
         <button className="btn px-3.5 pb-1.5 pt-2 text-base" disabled={props.pending}>
           {props.pending ? t.saving : t.save}
         </button>
-        <button type="button" onClick={props.onCancel} className="text-sm font-bold underline underline-offset-4">
+        <button type="button" onClick={props.onCancel} className="tap-area text-sm font-bold underline underline-offset-4">
           {t.cancel}
         </button>
       </div>

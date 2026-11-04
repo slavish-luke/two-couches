@@ -337,7 +337,7 @@ function PickCard(props: {
         </Link>
         <div className="grid min-w-0 content-start gap-3">
           {props.wrapped && <p className="text-sm font-semibold text-muted">{text.wrapped}</p>}
-          <h2 className="display text-[clamp(1.8rem,4vw,2.75rem)] [color:var(--pop)] [overflow-wrap:anywhere]">
+          <h2 className="display-pop text-[clamp(1.8rem,4vw,2.75rem)] [overflow-wrap:anywhere]">
             <Link href={titleHref(item)} className="decoration-[3px] underline-offset-[6px] hover:underline">
               {item.title}
             </Link>
@@ -372,7 +372,7 @@ function PickCard(props: {
             {item.source === "forYou" && <AddButton titleRef={ref} onList={false} language={language} />}
           </div>
           {props.startOverHref && (
-            <Link href={props.startOverHref} scroll={false} className="justify-self-start text-sm font-bold underline underline-offset-4">
+            <Link href={props.startOverHref} scroll={false} className="tap-area justify-self-start text-sm font-bold underline underline-offset-4">
               {text.startOver}
             </Link>
           )}

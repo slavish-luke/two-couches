@@ -29,8 +29,8 @@ export function CouchShape({ fill }: { fill: string }) {
       <ellipse className="couch-eye" cx="26" cy="19" rx="2.6" ry="3.4" fill={ink} stroke="none" />
       <ellipse className="couch-eye" cx="38" cy="19" rx="2.6" ry="3.4" fill={ink} stroke="none" />
       <path d="M28 25q4 3.5 8 0" fill="none" strokeWidth={2.4} strokeLinecap="round" />
-      <circle cx="21" cy="24" r="2.6" fill="#ff5c8a" opacity={0.45} stroke="none" />
-      <circle cx="43" cy="24" r="2.6" fill="#ff5c8a" opacity={0.45} stroke="none" />
+      <circle cx="21" cy="24" r="2.6" fill="var(--blush)" opacity={0.45} stroke="none" />
+      <circle cx="43" cy="24" r="2.6" fill="var(--blush)" opacity={0.45} stroke="none" />
     </g>
   );
 }

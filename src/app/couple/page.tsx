@@ -34,14 +34,14 @@ async function Couple() {
           <Couches size={72} className="justify-self-center" />
           <div className="grid gap-8 sm:grid-cols-2 sm:gap-0">
             <div className="grid content-start gap-3 sm:pr-8">
-              <h2 className="display text-[2rem] [color:var(--pop)]">{text.start}</h2>
+              <h2 className="display-pop text-[2rem]">{text.start}</h2>
               <p className="text-muted">{text.startIntro}</p>
               <form action={startCouple}>
                 <button className="btn">{text.getCode}</button>
               </form>
             </div>
             <div className="grid content-start gap-3 border-t-[3px] border-dashed border-line pt-8 sm:border-t-0 sm:border-l-[3px] sm:pt-0 sm:pl-8">
-              <h2 className="display text-[2rem] [color:var(--pop)]">{text.haveCode}</h2>
+              <h2 className="display-pop text-[2rem]">{text.haveCode}</h2>
               <JoinForm language={language} />
             </div>
           </div>

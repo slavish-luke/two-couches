@@ -97,7 +97,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       <aside className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
         <section
           aria-label={t.list.people.label}
-          className="card grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 px-3 pb-4 pt-3"
+          className="card grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 px-3 pb-4 pt-3"
         >
           {people.map((person, i) => {
             const slot = i === 0 ? "col-start-1" : "col-start-3";
@@ -117,7 +117,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             }
             const isMe = person.id === profile.id;
             return (
-              <div key={person.id} className={`${slot} row-start-1 grid min-w-0 justify-items-center gap-1.5 text-center`}>
+              <div key={person.id} className={`${slot} row-start-1 grid min-w-0 content-start justify-items-center gap-1.5 text-center`}>
                 <Couch who={isMe ? "me" : "partner"} size={58} />
                 <span
                   className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${isMe ? "bg-me" : "bg-partner"}`}
@@ -205,7 +205,7 @@ async function NextNight(props: {
   return (
     <section className="spotlight grid -rotate-1 gap-4 p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="display text-[2rem] [color:var(--pop)]">{t.nights.next.heading}</h2>
+        <h2 className="display-pop text-[2rem]">{t.nights.next.heading}</h2>
         <Link
           href={night ? "/watch-nights" : "/watch-nights/new"}
           className="group inline-flex items-center gap-1 font-bold underline underline-offset-4"

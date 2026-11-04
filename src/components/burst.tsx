@@ -42,7 +42,7 @@ export function Burst({
       </svg>
       <span
         className={`display relative max-w-[78%] text-center leading-[0.9] ${textClass}`}
-        style={{ color: "var(--on-stamp)", textShadow: "none", WebkitTextStroke: "1.5px var(--outline)" }}
+        style={{ textShadow: "none", WebkitTextStroke: "1.5px var(--outline)" }}
       >
         {children}
       </span>
