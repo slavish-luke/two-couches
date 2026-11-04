@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { DEFAULT_LOOK, PALETTE_COLORS } from "@/lib/theme";
 
-// The icons are drawn from src/app/icon.svg (two circles: you, your partner, and where you overlap).
+// The icons are the two couches on the Sunburst ground (drawn by design/icons/build-icons.mjs). The launch screen is
+// Sunburst yellow for every palette, to match the icon (the manifest can't know which palette a person picked).
 // A manifest has one language, so it holds nothing to translate (no shortcuts); the name is the same in both.
 export default function manifest(): MetadataRoute.Manifest {
   return {

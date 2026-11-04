@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { burstPath } from "@/components/burst";
+import { ChoiceTile } from "@/components/choice-tile";
 import { Couch } from "@/components/couch";
 import { getMessages } from "@/lib/i18n";
 import { applyLook, DEFAULT_LOOK, PALETTE_COLORS, savedLook, SKINS, type Look, type Palette, type Skin } from "@/lib/theme";
@@ -58,8 +59,7 @@ export function AppearanceSettings({ language }: { language: string }) {
     listeners.forEach((listener) => listener());
   }
 
-  const option =
-    "grid cursor-pointer gap-2 rounded-panel border-[3px] border-outline bg-surface p-2 transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 has-checked:bg-accent has-checked:text-on-accent has-checked:shadow-[4px_4px_0_var(--outline)] has-focus-visible:outline-3 has-focus-visible:outline-offset-3 has-focus-visible:outline-accent";
+  const option = "grid gap-2 rounded-panel border-[3px] p-2 has-checked:shadow-[4px_4px_0_var(--outline)]";
 
   return (
     <div className="grid gap-5">
@@ -68,15 +68,15 @@ export function AppearanceSettings({ language }: { language: string }) {
         <legend className="mb-2.5 font-bold">{t.look}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {(Object.keys(SKINS) as Skin[]).map((option_) => (
-            <label key={option_} className={option}>
-              <input
-                type="radio"
-                name="skin"
-                value={option_}
-                checked={skin === option_}
-                onChange={() => choose({ skin: option_, palette: SKINS[option_][0] })}
-                className="sr-only"
-              />
+            <ChoiceTile
+              key={option_}
+              type="radio"
+              name="skin"
+              value={option_}
+              checked={skin === option_}
+              onChange={() => choose({ skin: option_, palette: SKINS[option_][0] })}
+              className={option}
+            >
               <span
                 aria-hidden
                 className="relative flex h-24 items-end justify-center gap-1 overflow-hidden rounded-control border-[3px] border-outline bg-pop bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] pb-2"
@@ -88,7 +88,7 @@ export function AppearanceSettings({ language }: { language: string }) {
                 <span className="font-bold">{t.skins[option_]}</span>
                 <span className="text-sm opacity-85">{t.skinNotes[option_]}</span>
               </span>
-            </label>
+            </ChoiceTile>
           ))}
         </div>
       </fieldset>
@@ -96,18 +96,18 @@ export function AppearanceSettings({ language }: { language: string }) {
         <legend className="mb-2.5 font-bold">{t.colours}</legend>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {SKINS[skin].map((option_) => (
-            <label key={option_} className={option}>
-              <input
-                type="radio"
-                name="palette"
-                value={option_}
-                checked={palette === option_}
-                onChange={() => choose({ skin, palette: option_ })}
-                className="sr-only"
-              />
+            <ChoiceTile
+              key={option_}
+              type="radio"
+              name="palette"
+              value={option_}
+              checked={palette === option_}
+              onChange={() => choose({ skin, palette: option_ })}
+              className={option}
+            >
               <Swatch palette={option_} className="h-16" />
               <span className="px-1 pb-0.5 text-sm font-bold leading-tight">{t.palettes[option_]}</span>
-            </label>
+            </ChoiceTile>
           ))}
         </div>
       </fieldset>

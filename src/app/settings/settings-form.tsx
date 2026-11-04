@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useActionState, useRef, useState, useTransition } from "react";
+import { ChoiceTile } from "@/components/choice-tile";
+import { DoneTag } from "@/components/done-tag";
 import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import { isLanguage, LANGUAGES } from "@/lib/places";
@@ -88,15 +90,7 @@ export function SettingsForm({
           {state.error}
         </p>
       )}
-      {state.saved && (
-        <p
-          role="status"
-          className="inline-flex items-center gap-1.5 rounded-full border-2 border-outline bg-accent-soft px-2.5 py-0.5 text-sm font-bold"
-        >
-          <CheckIcon />
-          {t.saved}
-        </p>
-      )}
+      {state.saved && <DoneTag status>{t.saved}</DoneTag>}
     </div>
   );
 
@@ -168,18 +162,15 @@ export function SettingsForm({
               <>
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                   {visible.map((s) => (
-                    <label
+                    <ChoiceTile
                       key={s.provider_id}
-                      className="group flex min-w-0 cursor-pointer items-center gap-2 rounded-control border-[2.5px] border-outline bg-surface p-1.5 pr-1.5 font-semibold sm:pr-2 leading-tight transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-1 has-checked:bg-accent has-checked:text-on-accent has-checked:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] has-focus-visible:outline-3 has-focus-visible:outline-offset-3 has-focus-visible:outline-accent"
+                      type="checkbox"
+                      name="services"
+                      value={s.provider_id}
+                      checked={selected.has(s.provider_id)}
+                      onChange={() => toggleService(s.provider_id)}
+                      className="group flex min-w-0 items-center gap-2 rounded-control border-[2.5px] p-1.5 pr-1.5 font-semibold leading-tight hover:-rotate-1 has-checked:shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] sm:pr-2"
                     >
-                      <input
-                        type="checkbox"
-                        name="services"
-                        value={s.provider_id}
-                        checked={selected.has(s.provider_id)}
-                        onChange={() => toggleService(s.provider_id)}
-                        className="sr-only"
-                      />
                       {s.logo_path ? (
                         <Image
                           src={tmdbImage(s.logo_path, "w92")}
@@ -201,7 +192,7 @@ export function SettingsForm({
                       >
                         <CheckIcon className="size-3.5" />
                       </span>
-                    </label>
+                    </ChoiceTile>
                   ))}
                 </div>
                 {services.length > COLLAPSED_COUNT && (

@@ -338,7 +338,7 @@ function HourPicker(props: {
                 {mine}
               </span>
               {theirs && (
-                <span className="flex min-w-0 items-center gap-0.5 whitespace-nowrap text-[11px] sm:gap-1 font-semibold sm:text-xs">
+                <span className="flex min-w-0 items-center gap-0.5 whitespace-nowrap text-[11px] font-semibold sm:gap-1 sm:text-xs">
                   <Dot fill="bg-partner" small />
                   {theirs}
                 </span>

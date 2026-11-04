@@ -375,7 +375,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
           ) : (
             <ul className="grid grid-cols-2 gap-x-5 gap-y-8 pt-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
               {shown.map((r, i) => (
-                <TitleCard key={titleKey(r)} result={r} context={card} index={i} />
+                <TitleCard key={titleKey(r)} result={r} context={card} index={i} eager={i < 2} />
               ))}
             </ul>
           )}

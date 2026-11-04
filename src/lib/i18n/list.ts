@@ -24,9 +24,9 @@ const en = {
   },
   /** Follows "Watching · ", e.g. "up to S2 E5". */
   upTo: (progress: string) => `up to ${progress}`,
-  addedByYou: (date: string) => `Added by you on ${date}`,
-  addedBy: (name: string, date: string) => `Added by ${name} on ${date}`,
-  addedOn: (date: string) => `Added on ${date}`,
+  addedByYou: (date: string) => `You · ${date}`,
+  addedBy: (name: string, date: string) => `${name} · ${date}`,
+  addedOn: (date: string) => `Added ${date}`,
   notRated: "Not rated",
   search: {
     heading: "Search",
@@ -49,7 +49,7 @@ const tr: typeof en = {
     shareInvite: "Davet kodunu paylaş",
   },
   viewsLabel: "Liste görünümleri",
-  views: { next: "Sıradakiler", watched: "İzlenenler", dropped: "Bırakılanlar" },
+  views: { next: "Sırada", watched: "İzlendi", dropped: "Bırakıldı" },
   bothFilter: "İkimiz de izleyebiliriz",
   empty: {
     heading: "Henüz bir şey yok",
@@ -61,9 +61,9 @@ const tr: typeof en = {
     dropped: "Bırakılan bir şey yok.",
   },
   upTo: (progress: string) => `en son ${progress}`,
-  addedByYou: (date: string) => `${date} tarihinde sen ekledin`,
-  addedBy: (name: string, date: string) => `Ekleyen: ${name} · ${date}`,
-  addedOn: (date: string) => `${date} tarihinde eklendi`,
+  addedByYou: (date: string) => `Sen · ${date}`,
+  addedBy: (name: string, date: string) => `${name} · ${date}`,
+  addedOn: (date: string) => `Eklendi: ${date}`,
   notRated: "Puanlanmadı",
   search: {
     heading: "Arama",

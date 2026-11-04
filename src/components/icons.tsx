@@ -4,14 +4,22 @@ import type { ReactNode } from "react";
  * Small inline icons drawn with a round 2-unit stroke on a 24 grid, sized to the text around them. Decorative:
  * the words next to them carry the meaning.
  */
-function Glyph({ children, className = "size-[1.05em]" }: { children: ReactNode; className?: string }) {
+function Glyph({
+  children,
+  className = "size-[1.05em]",
+  strokeWidth = 2,
+}: {
+  children: ReactNode;
+  className?: string;
+  strokeWidth?: number;
+}) {
   return (
     <svg
       aria-hidden
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={`inline-block shrink-0 align-[-0.15em] ${className}`}
@@ -57,6 +65,36 @@ export function CheckIcon({ className }: { className?: string }) {
   return (
     <Glyph className={className}>
       <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Glyph>
+  );
+}
+
+/** The magnifying glass in the search field (a heavier stroke, as it sits alone). */
+export function SearchIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.5}>
+      <circle cx="10.5" cy="10.5" r="6" />
+      <path d="m15 15 5 5" />
+    </Glyph>
+  );
+}
+
+/** A chevron pointing down, for a disclosure that opens (turn it with CSS when open). */
+export function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={3}>
+      <path d="m6 9 6 6 6-6" />
+    </Glyph>
+  );
+}
+
+/** A little calendar page with a tick, filled with the button colour, for headings. */
+export function CalendarIcon({ className = "size-7" }: { className?: string }) {
+  return (
+    <Glyph className={className}>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="var(--pop)" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+      <path d="m9 15 2 2 4-4" />
     </Glyph>
   );
 }

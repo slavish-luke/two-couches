@@ -1,7 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs><clipPath id="me"><circle cx="196" cy="256" r="124"/></clipPath></defs>
-  <rect width="512" height="512" rx="112" fill="#17212b"/>
-  <circle cx="196" cy="256" r="124" fill="#e59a5e"/>
-  <circle cx="316" cy="256" r="124" fill="#5cc1c6"/>
-  <circle cx="316" cy="256" r="124" fill="#72c994" clip-path="url(#me)"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><clipPath id="r"><rect width="512" height="512" rx="96"/></clipPath></defs><g clip-path="url(#r)"><rect width="512" height="512" fill="#ffd23f"/><g transform="translate(16 158.4390243902439) scale(3.902439024390244)"><g transform="translate(59 0)"><g stroke="#1d1a2b" stroke-width="5" stroke-linejoin="round">
+    <rect x="9" y="8" width="46" height="24" rx="9" fill="#5cc8ff"/>
+    <rect x="3" y="20" width="14" height="22" rx="6" fill="#5cc8ff"/>
+    <rect x="47" y="20" width="14" height="22" rx="6" fill="#5cc8ff"/>
+    <rect x="13" y="28" width="38" height="14" rx="5" fill="#5cc8ff"/>
+    <path d="M10 42v5M54 42v5" stroke-linecap="round"/>
+    
+  </g></g><g stroke="#1d1a2b" stroke-width="5" stroke-linejoin="round">
+    <rect x="9" y="8" width="46" height="24" rx="9" fill="#ff8a65"/>
+    <rect x="3" y="20" width="14" height="22" rx="6" fill="#ff8a65"/>
+    <rect x="47" y="20" width="14" height="22" rx="6" fill="#ff8a65"/>
+    <rect x="13" y="28" width="38" height="14" rx="5" fill="#ff8a65"/>
+    <path d="M10 42v5M54 42v5" stroke-linecap="round"/>
+    
+  </g></g></g></svg>

@@ -12,7 +12,7 @@ export async function PickLink() {
     >
       <Dice />
       <span className="grid min-w-0 flex-1 gap-1">
-        <span className="display-ink text-[1.45rem] leading-[1.05]">{t.pick.homeLink.heading}</span>
+        <span className="display-ink text-2xl leading-[1.05]">{t.pick.homeLink.heading}</span>
         <span className="text-sm font-medium text-muted">{t.pick.homeLink.body}</span>
       </span>
       <ArrowIcon className="size-6 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />

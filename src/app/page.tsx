@@ -14,7 +14,7 @@ import { getList, type ListEntry } from "@/lib/list";
 import { getWatchNights } from "@/lib/nights";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
-import { formatDate, localDate, type ListStatus } from "@/lib/list-rules";
+import { formatDate, localDate, shortDate, type ListStatus } from "@/lib/list-rules";
 import { countryName, hoursApart } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -65,7 +65,7 @@ function sortEntries(view: View, entries: ListEntry[]) {
   });
 }
 
-/** "Added by you on …", "Added by {partner} on …", or just "Added on …" for anyone else. */
+/** "You · 4 Nov", "{partner} · 4 Nov", or just "Added 4 Nov" for anyone else. */
 function addedLine(t: Messages, entry: ListEntry, myId: string, partner: { id: string; name: string } | null, date: string) {
   if (entry.added_by === myId) return t.list.addedByYou(date);
   if (partner && entry.added_by === partner.id) return t.list.addedBy(partner.name, date);
@@ -97,10 +97,10 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       <aside className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
         <section
           aria-label={t.list.people.label}
-          className="card grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 px-3 pb-4 pt-3"
+          className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3"
         >
           {people.map((person, i) => {
-            const slot = i === 0 ? "col-start-1" : "col-start-3";
+            const slot = i === 0 ? "col-start-1" : "col-start-2";
             if (!person) {
               return (
                 <Link
@@ -117,7 +117,10 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             }
             const isMe = person.id === profile.id;
             return (
-              <div key={person.id} className={`${slot} row-start-1 grid min-w-0 content-start justify-items-center gap-1.5 text-center`}>
+              <div
+                key={person.id}
+                className={`${slot} @container row-start-1 grid min-w-0 content-start justify-items-center gap-1.5 text-center`}
+              >
                 <Couch who={isMe ? "me" : "partner"} size={58} />
                 <span
                   className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${isMe ? "bg-me" : "bg-partner"}`}
@@ -139,7 +142,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             );
           })}
           {mine?.country && theirs?.country && (
-            <span className="col-start-2 row-start-1 mb-12 -rotate-6 self-center whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-3 pb-1 pt-1.5 font-display text-base leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)]">
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 -rotate-6 whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-2.5 pb-0.5 pt-1 font-display text-sm leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)] sm:px-3 sm:pb-1 sm:pt-1.5 sm:text-base">
               {t.list.people.apart(hoursApart(now, mine.time_zone, theirs.time_zone))}
             </span>
           )}
@@ -273,22 +276,23 @@ async function ListSection(props: {
   }
 
   const isFiltered = Boolean(filters.category || filters.type || filters.both);
+  const today = localDate(props.timeZone, new Date());
 
   return (
     <section className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <h1 className="sr-only">{t.common.nav.list}</h1>
 
-      <nav aria-label={t.list.viewsLabel}>
-        <ul className="-mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:none]">
+      <nav aria-label={t.list.viewsLabel} className="@container">
+        <ul className="grid grid-cols-3 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:pt-1">
           {(Object.keys(VIEWS) as View[]).map((view) => (
-            <li key={view} className="shrink-0">
+            <li key={view} className="min-w-0">
               <Link
                 href={filtersHref(filters, { view })}
                 aria-current={filters.view === view ? "page" : undefined}
-                className="tab flex items-center gap-2"
+                className="tab relative flex items-center justify-center gap-2 max-sm:px-1.5 max-sm:pb-1 max-sm:pt-2 max-sm:text-[min(1.35rem,4.6cqi)]"
               >
-                {t.list.views[view]}
-                <span className="rounded-full border-2 border-outline bg-surface px-1.5 font-sans text-sm font-bold leading-snug text-ink">
+                <span className="truncate">{t.list.views[view]}</span>
+                <span className="rounded-full border-2 border-outline bg-surface px-1.5 font-sans text-sm font-bold leading-snug text-ink max-sm:absolute max-sm:-right-1.5 max-sm:-top-2.5 max-sm:rotate-6 max-sm:text-xs">
                   {inView(view).length}
                 </span>
               </Link>
@@ -364,7 +368,7 @@ async function ListSection(props: {
                   morph={posterMorph(entry)}
                   className="self-start sm:w-20"
                 />
-                <div className="grid min-w-0 content-start gap-1 max-sm:pr-12">
+                <div className="grid min-w-0 content-start gap-1 max-sm:pr-16">
                   <span className="text-xl font-bold leading-tight group-hover:underline sm:text-2xl">{entry.title}</span>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
                     <span>
@@ -385,7 +389,7 @@ async function ListSection(props: {
                       </Suspense>
                     )}
                     {entry.status === "watching" && (
-                      <span className="max-w-full rounded-full border-2 border-outline bg-accent-soft px-2 text-sm font-bold leading-snug">
+                      <span className="max-w-full rounded-[12px] border-2 border-outline bg-accent-soft px-2 text-sm font-bold leading-snug">
                         {t.common.statuses.watching}
                         {entry.season && entry.episode
                           ? ` · ${t.list.upTo(t.common.progress(entry.season, entry.episode))}`
@@ -409,12 +413,12 @@ async function ListSection(props: {
                   )}
                   {entry.notes && <p className="line-clamp-2 max-w-prose text-sm">{entry.notes}</p>}
                   <p className="text-sm text-muted">
-                    {addedLine(t, entry, me.id, partner, formatDate(localDate(props.timeZone, new Date(entry.created_at)), language))}
+                    {addedLine(t, entry, me.id, partner, shortDate(localDate(props.timeZone, new Date(entry.created_at)), today, language))}
                   </p>
                 </div>
                 {/* Phones: the burst hangs off the card's corner; the dots tag follows the details. */}
                 {filters.view !== "watched" && (
-                  <div className="max-sm:col-start-2 max-sm:mt-2 max-sm:has-[.burst]:absolute max-sm:has-[.burst]:-right-2 max-sm:has-[.burst]:-top-4 max-sm:has-[.burst]:mt-0 sm:pl-2">
+                  <div className="max-sm:col-start-2 max-sm:mt-2 max-sm:has-[.burst]:absolute max-sm:has-[.burst]:-top-5 max-sm:has-[.burst]:right-1 max-sm:has-[.burst]:mt-0 max-sm:has-[.burst]:origin-top-right max-sm:has-[.burst]:scale-[0.8] sm:pl-2">
                     <Suspense>
                       <AvailabilityBadge
                         availability={availability}

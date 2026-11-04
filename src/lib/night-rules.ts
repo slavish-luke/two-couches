@@ -1,5 +1,7 @@
 /** Watch-night rules and time-zone maths. Pure functions, safe in server and client code. Mirrors the checks on watch_nights. */
 
+import { dateLocale } from "./places";
+
 export const NIGHT_METHODS = ["teleparty", "syncplay", "other"] as const;
 
 export type NightMethod = (typeof NIGHT_METHODS)[number];
@@ -158,12 +160,16 @@ export function formatWeekday(date: Date, timeZone: string, language: string) {
 
 /** "Sat 7 Nov" in the zone. */
 export function formatDay(date: Date, timeZone: string, language: string) {
-  return new Intl.DateTimeFormat(language, { weekday: "short", day: "numeric", month: "short", timeZone }).format(date);
+  return new Intl.DateTimeFormat(dateLocale(language), { weekday: "short", day: "numeric", month: "short", timeZone }).format(
+    date,
+  );
 }
 
 /** "Saturday 7 November" in the zone. */
 export function formatDayLong(date: Date, timeZone: string, language: string) {
-  return new Intl.DateTimeFormat(language, { weekday: "long", day: "numeric", month: "long", timeZone }).format(date);
+  return new Intl.DateTimeFormat(dateLocale(language), { weekday: "long", day: "numeric", month: "long", timeZone }).format(
+    date,
+  );
 }
 
 /** "in 3 days", "in 5 hours", "2 hours ago": the nearest whole unit. */

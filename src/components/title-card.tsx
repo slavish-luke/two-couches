@@ -21,7 +21,8 @@ export type CardContext = {
 /**
  * A poster card for browse-style grids and rows: an outlined poster with who-can-watch popped onto its top
  * corner, title, year (or `details` instead) and "+ Add". `children` go last, for extra actions. `index`
- * staggers the bursts popping in along a row or grid.
+ * staggers the bursts popping in along a row or grid. `eager` loads the poster straight away, for the first
+ * cards a page opens on (its largest paint).
  */
 export function TitleCard({
   result,
@@ -29,6 +30,7 @@ export function TitleCard({
   className = "",
   details,
   index = 0,
+  eager = false,
   children,
 }: {
   result: Pick<SearchResult, "media_type" | "tmdb_id" | "title" | "poster_path" | "release_date">;
@@ -36,6 +38,7 @@ export function TitleCard({
   className?: string;
   details?: ReactNode;
   index?: number;
+  eager?: boolean;
   children?: ReactNode;
 }) {
   const href = titleHref(result);
@@ -49,6 +52,7 @@ export function TitleCard({
             title={result.title}
             size="fluid"
             language={context.language}
+            eager={eager}
             className="shadow-[4px_4px_0_var(--outline)]"
           />
         </Link>

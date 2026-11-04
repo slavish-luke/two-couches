@@ -5,7 +5,8 @@
 // Registered by registerServiceWorker() in src/components/pwa.tsx; "?dev" turns caching off for next dev.
 
 const PAGES = "pages-v1";
-const STATIC = "static-v1";
+// v2: the couch icons replaced the circles (files in /icons keep their names, so the old ones must go).
+const STATIC = "static-v2";
 const IMAGES = "images-v1";
 const SETTINGS = "settings-v1";
 const CACHES = [PAGES, STATIC, IMAGES, SETTINGS];

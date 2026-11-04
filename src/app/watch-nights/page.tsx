@@ -10,7 +10,7 @@ import { PageLoading } from "@/components/page-loading";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { formatDayLong } from "@/lib/night-rules";
 import { getWatchNights, type WatchNight } from "@/lib/nights";
-import { isCountry } from "@/lib/places";
+import { dateLocale, isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
 import { NightCard } from "./night-card";
@@ -39,7 +39,12 @@ async function WatchNights() {
   ]);
   const feedMadeOn =
     feedCreatedAt &&
-    new Intl.DateTimeFormat(language, { day: "numeric", month: "short", year: "numeric", timeZone: profile.time_zone }).format(
+    new Intl.DateTimeFormat(dateLocale(language), {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: profile.time_zone,
+    }).format(
       new Date(feedCreatedAt),
     );
   const now = new Date();
@@ -61,7 +66,7 @@ async function WatchNights() {
           <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.nights.heading}</h1>
           <p className="font-medium text-muted">{t.nights.intro}</p>
         </div>
-        <Link href="/watch-nights/new" className="btn text-[1.15rem]">
+        <Link href="/watch-nights/new" className="btn">
           <PlusIcon className="size-5 [stroke-width:3]" />
           {t.nights.plan}
         </Link>

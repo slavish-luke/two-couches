@@ -1,5 +1,7 @@
 /** Shared-list rules. Pure functions, safe in server and client code. Mirrors the checks on list_items. */
 
+import { dateLocale } from "./places";
+
 export const LIST_STATUSES = ["want", "watching", "watched", "dropped"] as const;
 
 export type ListStatus = (typeof LIST_STATUSES)[number];
@@ -53,7 +55,18 @@ export function isDateString(value: unknown): value is string {
 
 /** "1 Nov 2026" for a calendar date, without shifting it through a time zone. */
 export function formatDate(value: string, language: string) {
-  return new Intl.DateTimeFormat(language, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+  return new Intl.DateTimeFormat(dateLocale(language), {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+/** "14 Nov", with the year when it isn't the same year as `today` (both local dates). */
+export function shortDate(value: string, today: string, language: string) {
+  if (value.slice(0, 4) !== today.slice(0, 4)) return formatDate(value, language);
+  return new Intl.DateTimeFormat(dateLocale(language), { day: "numeric", month: "short", timeZone: "UTC" }).format(
     new Date(`${value}T00:00:00Z`),
   );
 }

@@ -23,9 +23,9 @@
   .pick .chips i { width: 13px; height: 24px; display: block; }
   .pick .chips i:first-child { width: 20px; }
   .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
-  .seg { display: inline-flex; border: 2px solid var(--lab-line); border-radius: 999px; overflow: hidden; }
+  .seg { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; border: 2px solid var(--lab-line); border-radius: 18px; padding: 3px; max-width: 100%; }
   .seg span { padding: 5px 10px; font-size: 13px; color: var(--lab-muted); }
-  .seg button { border: 0; background: transparent; color: var(--lab-ink); padding: 5px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .seg button { border: 1.5px solid var(--lab-line); border-radius: 999px; background: transparent; color: var(--lab-ink); padding: 7px 12px; font-size: 14px; font-weight: 600; cursor: pointer; touch-action: manipulation; }
   .seg button[aria-pressed="true"] { background: var(--lab-ink); color: var(--lab-bg); }
   .lab-main { padding: 20px; display: grid; gap: 18px; max-width: 1700px; margin: 0 auto; }
   .about { display: grid; gap: 6px; }
@@ -156,6 +156,7 @@
   .app .tick { display: inline-flex; align-items: center; gap: 4px; border: 2.5px solid var(--outline); border-radius: 99px; padding: 0 9px 0 6px; font-weight: 700; font-size: 14px; }
   .app[data-small="accent"] .tick { background: var(--accent); color: var(--on-accent); }
   .app[data-small="paper"] .tick { background: var(--p-ink); color: var(--p-surface); }
+  .app .apart, .app .tick { cursor: pointer; }
   .app .tick svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
   .app .bothpill { justify-self: start; background: var(--stamp); color: var(--on-stamp); border: 2.5px solid var(--outline); border-radius: 99px; padding: 2px 12px 0; font: 400 15px "Luckiest Guy", sans-serif; letter-spacing: .04em; rotate: -2deg; box-shadow: 3px 3px 0 var(--outline); }
   .app .pickcard { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; }
@@ -232,7 +233,7 @@
     <div class="picker" id="picker"></div>
     <div class="lab-row toggles">
       <div class="seg" id="view"><span>Show</span><button data-v="both">Desktop + phone</button><button data-v="desktop">Desktop</button><button data-v="phone">Phone</button></div>
-      <div class="seg" id="small"><span>"13 h apart" and ready ticks</span><button data-v="accent">In the accent colour (now)</button><button data-v="paper">Plain ink and paper</button></div>
+      <div class="seg" id="small"><span>"13 h apart" and ready ticks (or tap one in the mock)</span><button data-v="accent">In the accent colour (now)</button><button data-v="paper">Plain ink and paper</button></div>
       <div class="seg" id="ready"><span>Ready check</span><button data-v="one">You're ready</button><button data-v="both">You're both ready</button></div>
     </div>
   </header>
@@ -448,6 +449,10 @@ PALETTES.forEach((p, i) => {
   b.innerHTML = `<span class="chips"><i style="background:${p.bg}"></i><i style="background:${p.accent}"></i><i style="background:${p.me}"></i><i style="background:${p.partner}"></i><i style="background:${p.stamp}"></i></span>${p.name}`;
   b.onclick = () => { state.i = i; render(); };
   picker.append(b);
+});
+// Tapping the badge or a tick in the mock flips the toggle too.
+document.getElementById("stage").addEventListener("click", (e) => {
+  if (e.target.closest(".apart, .tick")) { state.small = state.small === "accent" ? "paper" : "accent"; render(); }
 });
 for (const id of ["view", "small", "ready"]) {
   document.getElementById(id).addEventListener("click", (e) => {

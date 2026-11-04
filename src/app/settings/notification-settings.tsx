@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { isAppleMobile, registerServiceWorker } from "@/components/pwa";
-import { CheckIcon } from "@/components/icons";
+import { DoneTag } from "@/components/done-tag";
 import { getMessages } from "@/lib/i18n";
 import { removePushSubscription, savePushSubscription, sendTestPush } from "./actions";
 
@@ -134,19 +134,12 @@ export function NotificationSettings({ vapidKey, language }: { vapidKey: string 
           )}
         </div>
       )}
-      {note && (
-        <p
-          role={note.isError ? "alert" : "status"}
-          className={
-            note.isError
-              ? "text-sm font-semibold text-danger"
-              : "inline-flex items-center gap-1.5 justify-self-start rounded-control border-2 border-outline bg-accent-soft px-2.5 py-0.5 text-sm font-bold"
-          }
-        >
-          {!note.isError && <CheckIcon />}
+      {note?.isError && (
+        <p role="alert" className="text-sm font-semibold text-danger">
           {note.text}
         </p>
       )}
+      {note && !note.isError && <DoneTag status>{note.text}</DoneTag>}
     </div>
   );
 }

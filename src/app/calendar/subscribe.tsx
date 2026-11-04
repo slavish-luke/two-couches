@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { CalendarIcon, ChevronDownIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import { makeCalendarFeed, stopCalendarFeed, type FeedResult } from "./actions";
 
@@ -54,9 +55,7 @@ export function CalendarSubscribe(props: {
           aria-hidden
           className="grid size-8 shrink-0 place-items-center rounded-full border-[2.5px] border-outline bg-pop transition duration-200 ease-(--ease-spring) group-open:rotate-180"
         >
-          <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <ChevronDownIcon className="size-4" />
         </span>
       </summary>
 
@@ -140,22 +139,3 @@ export function CalendarSubscribe(props: {
   );
 }
 
-/** A little calendar page, drawn like the other icons but at heading size. */
-function CalendarIcon() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="size-7 shrink-0"
-    >
-      <rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="var(--pop)" />
-      <path d="M3.5 10h17M8 3v4M16 3v4" />
-      <path d="m9 15 2 2 4-4" />
-    </svg>
-  );
-}

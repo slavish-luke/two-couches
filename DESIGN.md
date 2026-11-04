@@ -48,7 +48,7 @@ typography:
     letterSpacing: "0.03em"
   numeral:
     fontFamily: "Luckiest Guy, sans-serif"
-    fontSize: "clamp(2.5rem, 4vw, 3.5rem)"
+    fontSize: "clamp(2rem, 26cqi, 3.5rem)"
     fontWeight: 400
     lineHeight: 1
     letterSpacing: "0.03em"
@@ -64,11 +64,21 @@ typography:
     fontWeight: 400
     lineHeight: 1.625
     fontFeature: "tnum"
+  meta:
+    fontFamily: "Fredoka, sans-serif"
+    fontSize: "15px"
+    fontWeight: 600
+    lineHeight: 1.4
   label:
     fontFamily: "Fredoka, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 600
     lineHeight: 1.4
+  tag:
+    fontFamily: "Fredoka, sans-serif"
+    fontSize: "13px"
+    fontWeight: 600
+    lineHeight: 1.375
   button:
     fontFamily: "Luckiest Guy, sans-serif"
     fontSize: "1.05rem"
@@ -200,7 +210,7 @@ A sunny, saturated cartoon palette: one warm ground, cream paper, one ink, two p
 Saturday Morning has eight palettes (Settings → Colours, per device), all tuned in `design/labs/sat-palette-lab.html`: **Sunburst** (the standard: yellow, grape spotlight, bubblegum burst), **Pool Party** (aqua, tomato spotlight), **Lime Fizz** (lime, cobalt spotlight), **Grape Jelly** (lilac, tangerine spotlight with ink text, lime burst), **Tangerine** (orange, deep-blue spotlight), **Bubblegum** (pink, grape spotlight, lime burst), **Big Sky** (sky blue, red spotlight) and **Night Owl** (indigo night with stars instead of rays, lamp-orange spotlight with ink text, slightly softer paper). Where pink would vanish into the ground, the burst turns lime: the stamp is a role, not a colour.
 
 ### Primary
-- **Grape Accent** (`grape-accent`): fills the one spotlight panel per screen (Home's next watch night, Browse's For you, the title page's verdict banner, Stats' headline numbers, Pick's card, Coming soon's alerts, the couple page's pairing moment). It also marks a selected control (chip, tab, nav pill, chosen settings option), a done state (the "ready" tick in a ready check), the "13 h apart" badge between the clocks, and single-series data bars on Stats. White text on it (`on-accent`).
+- **Grape Accent** (`grape-accent`): fills the one spotlight panel per screen (Home's next watch night, Browse's For you, the title page's verdict banner, Stats' headline numbers, Pick's card, Coming soon's alerts, the couple page's pairing moment). It also marks a selected control (chip, tab, nav pill, chosen settings option), a done state (the "ready" tick in a ready check), the "13 h apart" badge on the clocks panel, and single-series data bars on Stats. White text on it (`on-accent`). Using it on those small things is deliberate (decided 2026-11-05 in `sat-palette-lab.html`: plain ink and paper looked flat across the palettes).
 - **Grape Soft / Grape Muted** (`grape-soft`, `grape-muted`): empty poster placeholders and status pills on paper (soft); the muted text colour inside the spotlight (muted, 4.6:1 on grape).
 
 ### Secondary
@@ -236,7 +246,7 @@ Saturday Morning has eight palettes (Settings → Colours, per device), all tune
 ## Typography
 
 **Display Font:** Luckiest Guy (`--font-luckiest`, fallback sans-serif)
-**Body Font:** Fredoka (`--font-fredoka`, fallback sans-serif)
+**Body Font:** Fredoka (`--font-fredoka`, fallback sans-serif). Fredoka has no capital İ, so `--font-fredoka-idot` (one letter built from Fredoka's own I and dot, `src/app/fonts/README.md`) comes first in the stack.
 
 **Character:** Chunky, bouncy cartoon lettering for anything shouted, paired with a round, friendly sans for everything read. Both cover Turkish, and casing comes from CSS with `<html lang>` set, so Turkish İ and ı survive.
 
@@ -245,11 +255,14 @@ Fonts are loaded through `next/font` in `layout.tsx` as CSS variables. The skin 
 ### Hierarchy
 - **Display** (400, `clamp(2.4rem, 5vw, 3.6rem)`, 0.95): page titles on the ground, usually tipped `-rotate-1`. Uses the `display` treatment: cream fill, ink stroke `max(2px, 0.05em)` painted under the fill, hard ink text shadow `0.07em 0.07em 0`. The wordmark (2.3rem; 1.65rem on phones) and the intro words use it too.
 - **Headline** (400, 2rem): the spotlight's head. Same `display` treatment, filled with `--pop` instead of cream.
-- **Title** (400, 1.5rem, 1, 0.03em): section heads on paper, in plain ink with no stroke or shadow (`display-ink`). Tabs use it at 1.6rem (1.9rem from `sm`).
-- **Numeral** (400, `clamp(2.5rem, 4vw, 3.5rem)`): live clocks, night tickets (1.5rem; larger in the listing) and Stats tiles, in `display-ink` with tabular figures. AM/PM drops to Fredoka bold at 1rem.
+- **Title** (400, 1.5rem, 1, 0.03em): section heads on paper, in plain ink with no stroke or shadow (`display-ink`). Tabs use it at 1.6rem (1.9rem from `sm`); Browse's Films / Series tabs, the page's main switch, at 2rem (2.6rem from `sm`).
+- **Numeral** (400, `clamp(2rem, 26cqi, 3.5rem)` on the clocks, sized to the person's column): live clocks, night tickets (1.5rem; larger in the listing) and Stats tiles, in `display-ink` with tabular figures. AM/PM drops to Fredoka bold at 1rem.
 - **Item title** (Fredoka 700, 1.25rem to 1.5rem, 1.25): list entries, title cards, night titles.
 - **Body** (Fredoka 400, 17px, 1.625): everything you read. Notes and reviews cap at `max-w-prose`.
-- **Label** (Fredoka 600 to 700, 0.875rem): meta lines, name tags, chips (15px), badges.
+- **Meta** (Fredoka 500 to 600, 15px): chips, filter selects, form labels, the type-and-year line on list entries, and the time slots in the night form from `sm`.
+- **Label** (Fredoka 600 to 700, 0.875rem): meta lines, name tags, badges.
+- **Tag** (Fredoka 600, 13px): category strands, Coming soon's per-country dates, "Not interested", For you's "Because you liked…". 12px (`text-xs`) is the floor, except the partner's time under each slot in the night form on phones (11px, so "Thu 12 AM" fits a quarter of the row).
+- **Burst word** (Luckiest Guy, 13 / 15 / 19 / 25px): the word inside the starburst scales with the burst (`WatchBadge` sizes sm / md / lg, the title page's verdict).
 - **Button** (Luckiest Guy 400, 1.05rem, 0.04em): the bright `.btn` only. Quiet buttons use Fredoka 600.
 
 ### Named Rules
@@ -304,7 +317,7 @@ Tactile cartoon buttons that squash when pressed.
 - **Strands (`.strand`):** a list entry's categories, as small static white pills with a 2px outline and 13px text.
 
 ### Tabs
-Big outlined tabs for a page's views (Up next / Watched / Dropped, Films / Series): `display-ink` lettering at 1.6rem (1.9rem from `sm`), 16px corners, 3px outline, 75% paper. The current tab (`aria-current="page"`) turns grape, tips -2 degrees and gains a 4px shadow. A count rides in a small paper pill.
+Big outlined tabs for a page's views (Up next / Watched / Dropped, Films / Series): `display-ink` lettering at 1.6rem (1.9rem from `sm`), 16px corners, 3px outline, 75% paper. The current tab (`aria-current="page"`) turns grape, tips -2 degrees and gains a 4px shadow. A count rides in a small paper pill. On phones Home's three views share the row in equal thirds (lettering up to 1.35rem, shrinking with the row's width) and the count becomes a sticker on each tab's top-right corner, so no view hides off screen.
 
 ### Cards / Containers
 - **Card (`.card`):** cream paper, 22px corners, 3px outline, panel shadow, 20px padding.
@@ -333,7 +346,7 @@ Two little couches with faces, coral for you and sky for your partner, drawn in 
 - **Ready check:** a paper panel with each person's tag and state. "Ready" is a grape pill with a drawn tick. When you're both ready, the panel turns bubblegum-soft and a bubblegum pill pops in.
 
 ### Clocks
-Home's clocks panel: two `VenueClock`s (display-ink numerals, weekday under them) under each person's couch and tag, with a grape "N h apart" badge tipped -6 degrees between them.
+Home's clocks panel: two equal columns, each a `VenueClock` (display-ink numerals sized to the column with `cqi`, weekday under them) under that person's couch and tag, with a grape "N h apart" badge tipped -6 degrees and stuck on the panel's top edge between the couches. Long names truncate inside their tag.
 
 ### Loading
 `PageLoading` draws blank paper cut-outs shaped like the page (cards, poster grid or home), in the same outlines and shadows, with the couches bobbing on top. Text bars pulse only with `motion-safe`. It is wordless.

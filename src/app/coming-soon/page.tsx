@@ -13,7 +13,7 @@ import { countNewAlerts, getAlerts, getReminders, type Alert } from "@/lib/alert
 import { type Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getList, getListKeys } from "@/lib/list";
-import { formatDate, localDate } from "@/lib/list-rules";
+import { localDate, shortDate } from "@/lib/list-rules";
 import { countryName, isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability } from "@/lib/titles";
@@ -72,13 +72,6 @@ function interleave<T extends TitleRef>(lists: T[][]) {
   return merged;
 }
 
-/** "14 Nov", with the year when it isn't this year's. */
-function shortDate(value: string, today: string, language: string) {
-  if (value.slice(0, 4) !== today.slice(0, 4)) return formatDate(value, language);
-  return new Intl.DateTimeFormat(language, { day: "numeric", month: "short", timeZone: "UTC" }).format(
-    new Date(`${value}T00:00:00Z`),
-  );
-}
 
 async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "searchParams">) {
   const [profile, partner, params, { language, t }] = await Promise.all([

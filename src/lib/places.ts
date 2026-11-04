@@ -24,6 +24,11 @@ export const LANGUAGES = {
 
 export type Language = keyof typeof LANGUAGES;
 
+/** The locale for writing dates: day before month in English too ("4 Nov"), like the app's British English. */
+export function dateLocale(language: string) {
+  return language === "en" ? "en-GB" : language;
+}
+
 const countrySet = new Set<string>(COUNTRY_CODES);
 
 export function isCountry(value: unknown): value is Country {
@@ -116,7 +121,7 @@ export function activeVisit(person: PlaceFields, now = new Date()): Visit | null
 /** "20 Dec" for a visit's last day, with the year when it isn't this year. */
 export function formatVisitDate(until: string, language: string, now = new Date()) {
   const sameYear = until.slice(0, 4) === String(now.getUTCFullYear());
-  return new Intl.DateTimeFormat(language, {
+  return new Intl.DateTimeFormat(dateLocale(language), {
     day: "numeric",
     month: "short",
     year: sameYear ? undefined : "numeric",

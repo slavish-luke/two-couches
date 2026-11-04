@@ -70,6 +70,7 @@ export async function ForYouRow(props: {
           result={s}
           context={context}
           index={i}
+          eager={i < 3}
           className="text-sm"
           details={<span className="line-clamp-2 text-[13px] font-medium leading-snug text-muted">{text.like(s.because.title)}</span>}
         >

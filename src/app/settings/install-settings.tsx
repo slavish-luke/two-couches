@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { isAppleMobile, isInstalled, useInstallPrompt } from "@/components/pwa";
-import { CheckIcon } from "@/components/icons";
+import { DoneTag } from "@/components/done-tag";
 import { getMessages } from "@/lib/i18n";
 
 const noSubscription = () => () => {};
@@ -21,10 +21,7 @@ export function InstallSettings({ language }: { language: string }) {
   if (!device) return null;
   if (device === "installed") {
     return (
-      <p className="inline-flex items-center gap-1.5 justify-self-start rounded-full border-2 border-outline bg-accent-soft px-2.5 py-0.5 text-sm font-bold">
-        <CheckIcon />
-        {t.installed}
-      </p>
+      <DoneTag>{t.installed}</DoneTag>
     );
   }
   if (install) {

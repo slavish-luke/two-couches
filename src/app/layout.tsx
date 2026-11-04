@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Luckiest_Guy } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
 import { preconnect } from "react-dom";
@@ -22,6 +23,17 @@ import "./globals.css";
 // A later skin's fonts are declared with preload: false, so only the active skin's fonts download.
 const luckiest = Luckiest_Guy({ variable: "--font-luckiest", weight: "400", subsets: ["latin", "latin-ext"] });
 const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin", "latin-ext"] });
+// Fredoka has no Turkish capital İ (the browser drew a blocky fallback one): this one-letter face is built from
+// Fredoka's own I and dot (fonts/README.md). It downloads only on pages with an İ.
+const fredokaIdot = localFont({
+  src: "./fonts/fredoka-idot.woff2",
+  variable: "--font-fredoka-idot",
+  weight: "300 700",
+  preload: false,
+  fallback: [],
+  adjustFontFallback: false,
+  declarations: [{ prop: "unicode-range", value: "U+0130" }],
+});
 
 const TMDB_IMAGES = "https://image.tmdb.org";
 
@@ -52,7 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
       suppressHydrationWarning
-      className={`${luckiest.variable} ${fredoka.variable} h-full antialiased`}
+      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />
