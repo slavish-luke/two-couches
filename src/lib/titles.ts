@@ -233,11 +233,12 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
  */
 export async function getAvailability(
   titles: TitleRef[],
-  countries: string[],
+  regions: string[],
   { client, maxAgeMs = MAX_AGE_MS }: { client?: SupabaseClient<Database>; maxAgeMs?: number } = {},
 ): Promise<Record<string, Availability>> {
-  // A title twice in one upsert would fail it.
+  // A title or country twice in one upsert would fail it (both partners are in one country during a visit).
   const refs = [...new Map(titles.map((ref) => [titleKey(ref), ref])).values()];
+  const countries = [...new Set(regions)];
   const result: Record<string, Availability> = Object.fromEntries(refs.map((ref) => [titleKey(ref), {}]));
   if (refs.length === 0 || countries.length === 0) return result;
 
