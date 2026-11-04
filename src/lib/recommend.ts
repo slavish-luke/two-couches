@@ -9,6 +9,9 @@ import { titleKey, type MediaType, type TitleRef } from "./watch";
 /** TMDB's recommendations change slowly, so they're kept in Next's fetch cache for a day, like search. */
 const REVALIDATE = 24 * 60 * 60;
 
+/** How many top-scored suggestions are checked for who can watch them before the best are picked. */
+export const FOR_YOU_CHECKED = 40;
+
 export type ForYouItem = Suggestion<SearchResult & { genre_ids: number[]; vote_average: number }>;
 
 /** titleKey() of every title the couple said they're not interested in. */

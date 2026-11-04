@@ -8,11 +8,14 @@ import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { TitleCard, type CardContext } from "@/components/title-card";
 import {
+  batchPages,
+  BOTH_BATCH,
   DECADES,
   discoverTitles,
   getGenres,
   MAX_PAGES,
   MIN_RATINGS,
+  popularIn,
   SORTS,
   trendingTitles,
   type Decade,
@@ -92,8 +95,6 @@ function positiveInt(value: unknown) {
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
-/** With "we can both watch" on, each page checks this many TMDB pages, since many titles drop out. */
-const BOTH_BATCH = 3;
 const ROW_LENGTH = 10;
 
 /** A service either of us pays for, and whose it is. */
@@ -162,24 +163,16 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
     minRating: filters.rating,
     sort: filters.sort,
   };
-  const batch = filters.both ? BOTH_BATCH : 1;
-  const tmdbPages = Array.from({ length: batch }, (_, i) => (filters.page - 1) * batch + 1 + i);
-  const popularIn = (region: string): Omit<DiscoverQuery, "page"> => ({
-    type,
-    region,
-    providers: [],
-    genre: null,
-    decade: null,
-    minRating: null,
-    sort: "popular",
-  });
+  // warmCaches() (src/lib/warm.ts) asks for the same as an unfiltered first page; keep the two in step.
+  const tmdbPages = batchPages(filters.page, filters.both);
+  const batch = tmdbPages.length;
 
   const [pages, trending, popularHere, popularThere] = await Promise.all([
     Promise.allSettled(tmdbPages.map((page) => discoverTitles({ ...query, page }, locale))),
     showRows ? trendingTitles(type, locale).catch(() => []) : [],
-    showRows ? discoverTitles({ ...popularIn(me.country), page: 1 }, locale).then((p) => p.results, () => []) : [],
+    showRows ? discoverTitles({ ...popularIn(type, me.country), page: 1 }, locale).then((p) => p.results, () => []) : [],
     showRows && them && them.country !== me.country
-      ? discoverTitles({ ...popularIn(them.country), page: 1 }, locale).then((p) => p.results, () => [])
+      ? discoverTitles({ ...popularIn(type, them.country), page: 1 }, locale).then((p) => p.results, () => [])
       : [],
   ]);
   const rows = [

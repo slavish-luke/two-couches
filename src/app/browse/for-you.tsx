@@ -4,13 +4,11 @@ import { DismissButton } from "@/components/dismiss-button";
 import { TitleCard, type CardContext } from "@/components/title-card";
 import { getI18n } from "@/lib/i18n/server";
 import { rankForCouple } from "@/lib/recommend-rules";
-import { getForYou, type ForYouItem } from "@/lib/recommend";
+import { FOR_YOU_CHECKED, getForYou, type ForYouItem } from "@/lib/recommend";
 import { getAvailability } from "@/lib/titles";
 import { titleKey, whoCanWatch, type MediaType } from "@/lib/watch";
 
 const ROW_LENGTH = 20;
-/** How many top-scored suggestions are checked for who can watch them before the best are picked. */
-const CHECKED = 40;
 
 /** Wordless placeholder while suggestions load: the first visit asks TMDB about each seed title. */
 export function ForYouLoading() {
@@ -52,7 +50,7 @@ export async function ForYouRow(props: {
     );
   }
 
-  const top = found.suggestions.slice(0, CHECKED);
+  const top = found.suggestions.slice(0, FOR_YOU_CHECKED);
   const byTitle = await getAvailability(top, props.countries);
   const ranked: ForYouItem[] = rankForCouple(
     top,

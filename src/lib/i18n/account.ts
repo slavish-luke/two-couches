@@ -1,3 +1,4 @@
+import type { DataSaverMode } from "../data-saver";
 import type { Theme } from "../theme";
 
 /** Sign-in, settings, pairing (couple) and their actions' messages. */
@@ -60,6 +61,13 @@ const en = {
   appearance: {
     heading: "Appearance",
     options: { system: "Match device", light: "Light", dark: "Dark" } satisfies Record<Theme, string>,
+  },
+  dataSaver: {
+    heading: "Data saver",
+    intro: "Smaller posters, for slow or limited connections. Auto turns it on when this device asks to save data or the connection is slow.",
+    options: { auto: "Auto", on: "On", off: "Off" } satisfies Record<DataSaverMode, string>,
+    savingNow: "Saving data now.",
+    cantDetect: "This browser doesn't share how fast the connection is, so Auto stays off here. Choose On to save data.",
   },
   install: {
     heading: "Install the app",
@@ -173,6 +181,13 @@ const tr: typeof en = {
   appearance: {
     heading: "Görünüm",
     options: { system: "Cihaza uy", light: "Açık", dark: "Koyu" },
+  },
+  dataSaver: {
+    heading: "Veri tasarrufu",
+    intro: "Yavaş ya da kotalı bağlantılar için daha küçük afişler. Otomatik seçeneği, cihaz veri tasarrufu istediğinde ya da bağlantı yavaşken devreye girer.",
+    options: { auto: "Otomatik", on: "Açık", off: "Kapalı" },
+    savingNow: "Şu an veri tasarrufu yapılıyor.",
+    cantDetect: "Bu tarayıcı bağlantı hızını paylaşmıyor, bu yüzden Otomatik burada devreye girmez. Veri tasarrufu için “Açık” seçeneğini seç.",
   },
   install: {
     heading: "Uygulamayı yükle",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { sendDataSaver } from "@/lib/data-saver";
 
 /** Chrome's install prompt event (not in TypeScript's DOM types). */
 type InstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
@@ -50,13 +51,15 @@ export function useInstallPrompt() {
 }
 
 /**
- * Rendered once in the root layout: registers the service worker and keeps the browser's install prompt
+ * Rendered once in the root layout: registers the service worker (and passes it this device's data saver
+ * choice, in case it was reinstalled since), keeps the browser's install prompt
  * (which fires once, possibly before Settings is opened) for useInstallPrompt(). Renders nothing.
  */
 export function PwaSetup() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       registerServiceWorker().catch((error) => console.error("Registering the service worker failed", error));
+      sendDataSaver().catch((error) => console.error("Telling the service worker about data saver failed", error));
     }
     const keep = (event: Event) => {
       event.preventDefault();

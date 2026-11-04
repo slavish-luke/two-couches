@@ -6,6 +6,7 @@ import { getServices } from "@/lib/services";
 import { requireProfile } from "@/lib/session";
 import { Advisor } from "./advisor";
 import { AppearanceSettings } from "./appearance-settings";
+import { DataSaverSettings } from "./data-saver-settings";
 import { InstallSettings } from "./install-settings";
 import { NotificationSettings } from "./notification-settings";
 import { SettingsForm } from "./settings-form";
@@ -81,6 +82,11 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
         <div className="grid gap-2">
           <h3 className="font-display text-lg font-semibold">{t.account.appearance.heading}</h3>
           <AppearanceSettings language={language} />
+        </div>
+        <div className="grid gap-2">
+          <h3 className="font-display text-lg font-semibold">{t.account.dataSaver.heading}</h3>
+          <p className="text-muted">{t.account.dataSaver.intro}</p>
+          <DataSaverSettings language={language} />
         </div>
         <div className="grid gap-2">
           <h3 className="font-display text-lg font-semibold">{t.account.install.heading}</h3>

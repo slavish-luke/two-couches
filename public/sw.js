@@ -1,13 +1,16 @@
 // Shows push notifications (see sendPush() in src/lib/push.ts), opens the right page when one is tapped,
 // and keeps the list readable offline: the last copy of each list page ("/" and its filters), the
 // files those pages need, and posters. Other pages show /offline when there's no connection.
+// Data saver (src/lib/data-saver.ts) fetches each poster one size smaller.
 // Registered by registerServiceWorker() in src/components/pwa.tsx; "?dev" turns caching off for next dev.
 
 const PAGES = "pages-v1";
 const STATIC = "static-v1";
 const IMAGES = "images-v1";
-const CACHES = [PAGES, STATIC, IMAGES];
-const LIMITS = { [PAGES]: 8, [STATIC]: 400, [IMAGES]: 300 };
+const SETTINGS = "settings-v1";
+const CACHES = [PAGES, STATIC, IMAGES, SETTINGS];
+// One Browse page shows about 75 posters (mostly w342, ~40 KB each), so 600 is about 20 MB.
+const LIMITS = { [PAGES]: 8, [STATIC]: 400, [IMAGES]: 600 };
 const OFFLINE_URL = "/offline";
 const CACHING = !new URL(self.location.href).searchParams.has("dev");
 
@@ -76,6 +79,51 @@ async function cacheFirst(event, name, fetchRequest) {
   return response;
 }
 
+/** "auto", "on" or "off", as sent by the page (sendDataSaver()); kept in SETTINGS, since workers restart. */
+let dataSaver;
+
+async function dataSaverMode() {
+  if (!dataSaver) {
+    const saved = await caches.match("/data-saver", { cacheName: SETTINGS });
+    dataSaver = saved ? await saved.text() : "auto";
+  }
+  return dataSaver;
+}
+
+/** Connection types slow enough for "auto" to save data. Keep in step with SLOW in src/lib/data-saver.ts. */
+const SLOW = ["slow-2g", "2g", "3g"];
+
+/** Keep in step with isSavingData() in src/lib/data-saver.ts. Safari has no navigator.connection. */
+async function savingData() {
+  const mode = await dataSaverMode();
+  if (mode !== "auto") return mode === "on";
+  const connection = self.navigator.connection;
+  return Boolean(connection && (connection.saveData || SLOW.includes(connection.effectiveType)));
+}
+
+/** The next TMDB poster size down, for each size the app asks for (logos are w92 and stay as they are). */
+const SMALLER = { w500: "w342", w342: "w185", w185: "w154", w154: "w92" };
+
+/**
+ * Cache first, keyed by the URL actually fetched. While saving data, a kept copy at the size asked for
+ * still wins (it costs nothing); otherwise TMDB is asked for the next size down.
+ */
+async function poster(event, url) {
+  const kept = await caches.match(url.href, { cacheName: IMAGES });
+  if (kept) return kept;
+  const size = url.pathname.split("/")[3];
+  const target = new URL(url);
+  if (SMALLER[size] && (await savingData())) {
+    target.pathname = target.pathname.replace(`/${size}/`, `/${SMALLER[size]}/`);
+    const keptSmall = await caches.match(target.href, { cacheName: IMAGES });
+    if (keptSmall) return keptSmall;
+  }
+  // <img> asks without CORS, which would store an opaque copy; TMDB allows CORS, so ask that way instead.
+  const response = await fetch(new Request(target, { mode: "cors", credentials: "omit" }));
+  if (response.ok) event.waitUntil(remember(IMAGES, target.href, response.clone()));
+  return response;
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (!CACHING || request.method !== "GET") return;
@@ -86,14 +134,18 @@ self.addEventListener("fetch", (event) => {
   } else if (url.origin === self.location.origin && (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/"))) {
     event.respondWith(cacheFirst(event, STATIC, request));
   } else if (url.origin === "https://image.tmdb.org") {
-    // <img> asks without CORS, which would store an opaque copy; TMDB allows CORS, so ask that way instead.
-    event.respondWith(cacheFirst(event, IMAGES, new Request(url, { mode: "cors", credentials: "omit" })));
+    event.respondWith(poster(event, url));
   }
 });
 
 self.addEventListener("message", (event) => {
   // Sent on sign-out, so the next person on this device can't read the list offline.
   if (event.data === "forget") event.waitUntil(Promise.all([caches.delete(PAGES), caches.delete(IMAGES)]));
+  // From sendDataSaver(): this device's data saver choice.
+  if (["auto", "on", "off"].includes(event.data?.dataSaver)) {
+    dataSaver = event.data.dataSaver;
+    event.waitUntil(caches.open(SETTINGS).then((cache) => cache.put("/data-saver", new Response(dataSaver))));
+  }
 });
 
 self.addEventListener("push", (event) => {

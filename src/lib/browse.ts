@@ -38,6 +38,20 @@ export type DiscoverPage = { results: SearchResult[]; totalPages: number };
 /** TMDB serves at most this many pages of any discover query. */
 export const MAX_PAGES = 500;
 
+/** With "we can both watch" on, each Browse page checks this many TMDB pages, since many titles drop out. */
+export const BOTH_BATCH = 3;
+
+/** The TMDB pages behind one Browse page: BOTH_BATCH of them with "we can both watch" on. */
+export function batchPages(page: number, both: boolean | null) {
+  const batch = both ? BOTH_BATCH : 1;
+  return Array.from({ length: batch }, (_, i) => (page - 1) * batch + 1 + i);
+}
+
+/** Everything streaming in one country, most popular first: Browse's "popular in" rows. */
+export function popularIn(type: MediaType, region: string): Omit<DiscoverQuery, "page"> {
+  return { type, region, providers: [], genre: null, decade: null, minRating: null, sort: "popular" };
+}
+
 function withType(type: MediaType, results: (MovieResult | TvResult)[]) {
   return results.map((r) =>
     toSearchResult(type === "movie" ? { media_type: "movie", ...(r as MovieResult) } : { media_type: "tv", ...(r as TvResult) }),

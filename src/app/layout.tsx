@@ -2,10 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Source_Sans_3 } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
+import { preconnect } from "react-dom";
 import { AppNav } from "@/components/app-nav";
 import { HtmlLang } from "@/components/html-lang";
 import { OfflineChip } from "@/components/offline-chip";
 import { PwaSetup } from "@/components/pwa";
+import { WarmUp } from "@/components/warm-up";
 import { countNewAlerts } from "@/lib/alerts";
 import { getMessages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
@@ -15,6 +17,8 @@ import "./globals.css";
 
 const display = Bricolage_Grotesque({ variable: "--font-display", subsets: ["latin", "latin-ext"] });
 const body = Source_Sans_3({ variable: "--font-body", subsets: ["latin", "latin-ext"] });
+
+const TMDB_IMAGES = "https://image.tmdb.org";
 
 export const metadata: Metadata = {
   title: "Two Couches",
@@ -33,6 +37,11 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  // Opens the connection to TMDB's image server while the page loads (DNS, TCP and TLS take several round
+  // trips), before the first poster is asked for. The service worker fetches posters with CORS, which
+  // browsers keep on a separate connection, hence both.
+  preconnect(TMDB_IMAGES);
+  preconnect(TMDB_IMAGES, { crossOrigin: "anonymous" });
   return (
     // The theme script sets data-theme before React hydrates, hence suppressHydrationWarning.
     <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} h-full antialiased`}>
@@ -73,6 +82,7 @@ async function AccountNav() {
         <>
           <OfflineChip language={language} />
           <AppNav newAlerts={newAlerts} language={language} />
+          {profile.couple_id && <WarmUp />}
         </>
       )}
     </>
