@@ -1,5 +1,5 @@
 /** After-the-night rules: when a wrap-up is due, and reviews. Pure functions, safe in server and client code. Mirrors the checks on list_reviews. */
-import type { Progress } from "./list-rules";
+import { episodeAfter, type Progress } from "./list-rules";
 import { DEFAULT_LENGTH_MIN } from "./night-rules";
 import type { MediaType } from "./watch";
 
@@ -34,9 +34,13 @@ export function wrapupWindowStart(now: Date) {
   return new Date(now.getTime() - (WRAPUP_DAYS + 1) * DAY_MS);
 }
 
-/** The episode after the last one watched: S1 E1 if you hadn't started. */
-export function nextEpisode(progress: Progress | null): Progress {
-  return progress ? { season: progress.season, episode: progress.episode + 1 } : { season: 1, episode: 1 };
+/**
+ * What "Watched up to" suggests after a night: the episode after the last one watched (S1 E1 if you hadn't
+ * started), rolling over into the next season with TMDB's per-season counts. Past the series' last episode
+ * it stays on that episode.
+ */
+export function nextEpisode(progress: Progress | null, seasonEpisodes: number[] | null = null): Progress {
+  return episodeAfter(progress, seasonEpisodes) ?? progress ?? { season: 1, episode: 1 };
 }
 
 /**

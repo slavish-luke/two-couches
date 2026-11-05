@@ -38,13 +38,23 @@ export function WrapupCard(props: {
   const current = item?.season && item.episode ? { season: item.season, episode: item.episode } : null;
   // If your partner has already saved theirs, they've moved the series on for both of you.
   const partnerMovedOn = wrapup.partnerOutcome === "saved" && current !== null;
-  const suggested = partnerMovedOn ? current : nextEpisode(current);
+  const suggested = partnerMovedOn ? current : nextEpisode(current, title.season_episodes);
   const myRating = item?.ratings[me.id] ?? null;
   const partnerRating = partner ? item?.ratings[partner.id] : undefined;
 
   const [watched, setWatched] = useState(true);
   const [season, setSeason] = useState(String(suggested.season));
   const [episode, setEpisode] = useState(String(suggested.episode));
+  // What the episode fields were filled with. If your partner saves theirs meanwhile, the suggestion moves
+  // on: follow it, unless you've already typed your own. The rest of your draft stays as it is.
+  const [filledWith, setFilledWith] = useState(suggested);
+  if (filledWith.season !== suggested.season || filledWith.episode !== suggested.episode) {
+    setFilledWith(suggested);
+    if (season === String(filledWith.season) && episode === String(filledWith.episode)) {
+      setSeason(String(suggested.season));
+      setEpisode(String(suggested.episode));
+    }
+  }
   const [rating, setRating] = useState<number | null>(myRating);
   const [review, setReview] = useState(reviews.mine ?? "");
   const [pending, startTransition] = useTransition();

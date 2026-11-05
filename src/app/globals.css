@@ -478,8 +478,12 @@
   }
 }
 
-/* The layout's <main> is wide; pages are a reading column unless their root says data-wide. */
-[data-page] > :not([data-wide]) {
+/*
+ * The layout's <main> is wide; pages are a reading column unless their root says data-wide. A section's own
+ * template (data-subpage, see page-transition.tsx) passes the width through to its page.
+ */
+[data-page] > :not([data-wide], [data-subpage]),
+[data-subpage] > :not([data-wide]) {
   width: 100%;
   max-width: 48rem;
   margin-inline: auto;
