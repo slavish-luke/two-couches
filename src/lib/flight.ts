@@ -2,9 +2,11 @@
  * Page transitions, in the browser: forward is a "whoosh" (the old page skids off, the new one skids in),
  * back is a "peel" (the old page peels away to the right like a sheet, the earlier one rises underneath).
  * Sections skipped in the nav on the way riffle past as lightweight previews, and the speed lines get
- * stronger with distance. Driven by the transition types on nav links (flightTypes()); browser back and
- * forward are told apart with the Navigation API (popstate counts as back where it's missing). Only
- * transform and opacity animate. Nothing runs with reduced motion.
+ * stronger with distance. Driven by the transition types on nav links between sections (flightTypes());
+ * browser back and forward are told apart with the Navigation API (popstate counts as back where it's
+ * missing). Anything else goes by the paths: up to a parent page (/watch-nights/new to /watch-nights, or
+ * anywhere to Home) peels, everything else whooshes. Only transform and opacity animate. Nothing runs with
+ * reduced motion.
  */
 
 /** The old and new page's view-transition pseudo-elements, as React hands them to a <ViewTransition>. */
@@ -13,9 +15,13 @@ export type TransitionInstance = { old: Pseudo; new: Pseudo };
 
 type Plan = { kind: "whoosh" | "peel"; passed: number[] };
 
-/** The transition types for going from one nav section to another (indices into the nav's sections). */
+/**
+ * The transition types for going from one nav section to another (indices into the nav's sections). Within
+ * a section (from /watch-nights/new back to /watch-nights) there are none, so the paths decide.
+ */
 export function flightTypes(from: number, to: number): string[] {
-  if (from < 0 || from === to) return ["whoosh"];
+  if (from === to) return [];
+  if (from < 0) return ["whoosh"];
   const step = to > from ? 1 : -1;
   const passed: string[] = [];
   for (let k = from + step; k !== to; k += step) passed.push(`pass-${k}`);
@@ -23,6 +29,8 @@ export function flightTypes(from: number, to: number): string[] {
 }
 
 let traverse = { at: -Infinity, back: true };
+/** The path on screen and the one before it (notePath()). */
+let route = { from: "", to: typeof window === "undefined" ? "" : location.pathname };
 let scrollBefore = 0;
 let deck: HTMLElement | null = null;
 
@@ -43,19 +51,35 @@ if (typeof window !== "undefined") {
   }
 }
 
+/**
+ * Records the page's path once a navigation has committed, so a flight without types can tell going up
+ * from going deeper. Called when a <PageTransition> mounts and when a flight starts (the same path twice is
+ * recorded once).
+ */
+export function notePath(pathname: string) {
+  if (pathname !== route.to) route = { from: route.to, to: pathname };
+}
+
+/** Whether `path` is above `from`: its parent, grandparent… or Home. */
+function isAbove(path: string, from: string) {
+  return path !== from && (path === "/" || from.startsWith(`${path}/`));
+}
+
 /** The flight layer (<FlightDeck>), which holds the speed lines and the previews of passed sections. */
 export function registerDeck(element: HTMLElement | null) {
   deck = element;
 }
 
 function planFor(types: string[]): Plan | null {
+  // Next.js has pushed the new URL by the time a flight starts.
+  notePath(location.pathname);
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
   const passed = types.filter((type) => type.startsWith("pass-")).map((type) => Number(type.slice(5)));
   if (types.includes("peel")) return { kind: "peel", passed };
   if (types.includes("whoosh")) return { kind: "whoosh", passed };
   // Browser back and forward carry no types.
   if (performance.now() - traverse.at < 1500) return { kind: traverse.back ? "peel" : "whoosh", passed: [] };
-  return { kind: "whoosh", passed: [] };
+  return { kind: route.from && isAbove(route.to, route.from) ? "peel" : "whoosh", passed: [] };
 }
 
 const STEP = { whoosh: 75, peel: 80 };

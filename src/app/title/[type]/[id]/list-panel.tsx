@@ -7,7 +7,7 @@ import { PlusIcon, StarIcon } from "@/components/icons";
 import { Stars } from "@/components/stars";
 import { NameTag } from "@/components/name-tag";
 import { getMessages, type Messages } from "@/lib/i18n";
-import { cleanCategories, formatDate, LIST_STATUSES, localDate, MAX_CATEGORY_LENGTH, MAX_NOTES_LENGTH } from "@/lib/list-rules";
+import { cleanCategories, episodeAfter, formatDate, LIST_STATUSES, localDate, MAX_CATEGORY_LENGTH, MAX_NOTES_LENGTH } from "@/lib/list-rules";
 import type { ListItem } from "@/lib/list";
 import type { Reviews } from "@/lib/review-rules";
 import type { TitleRef } from "@/lib/watch";
@@ -18,6 +18,8 @@ type Props = {
   titleRef: TitleRef;
   /** Number of seasons, for series when TMDB knows it. */
   seasons: number | null;
+  /** Episodes in each season (season 1 first), for series when TMDB knows them. */
+  seasonEpisodes: number[] | null;
   item: ListItem | null;
   /** Every category the couple uses. */
   categories: string[];
@@ -95,7 +97,7 @@ function AddToList({ titleRef, t }: { titleRef: TitleRef; t: Messages }) {
 }
 
 function ListEditor(props: Props & { item: ListItem; t: Messages }) {
-  const { item, seasons, categories, me, partner, language, titleRef, t } = props;
+  const { item, seasons, seasonEpisodes, categories, me, partner, language, titleRef, t } = props;
   const { pending, error, run } = useAction();
   const update = (changes: ListChanges, onDone?: () => void) => run(() => updateListItem(item.id, changes), onDone);
   const added = formatDate(localDate(props.timeZone, new Date(item.created_at)), language);
@@ -130,7 +132,7 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
       </div>
 
       {titleRef.media_type === "tv" && (
-        <Progress item={item} seasons={seasons} pending={pending} update={update} t={t} />
+        <Progress item={item} seasons={seasons} seasonEpisodes={seasonEpisodes} pending={pending} update={update} t={t} />
       )}
 
       {item.status === "watched" && (
@@ -193,12 +195,22 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
 
 type Update = (changes: ListChanges, onDone?: () => void) => void;
 
-function Progress({ item, seasons, pending, update, t }: { item: ListItem; seasons: number | null; pending: boolean; update: Update; t: Messages }) {
+function Progress(props: {
+  item: ListItem;
+  seasons: number | null;
+  seasonEpisodes: number[] | null;
+  pending: boolean;
+  update: Update;
+  t: Messages;
+}) {
+  const { item, seasons, pending, update, t } = props;
   const [editing, setEditing] = useState(false);
   const progress = item.season && item.episode ? { season: item.season, episode: item.episode } : null;
   // Watching an episode means you've started the series.
   const started = item.status === "want" ? { status: "watching" as const } : {};
   const nextSeason = (progress?.season ?? 0) + 1;
+  // The next episode, into the next season once TMDB says this one is done; null after the last one.
+  const next = episodeAfter(progress, props.seasonEpisodes);
 
   if (editing) {
     return (
@@ -248,17 +260,13 @@ function Progress({ item, seasons, pending, update, t }: { item: ListItem; seaso
         </span>
       </p>
       <div className="flex flex-wrap items-center gap-2.5">
-        <button
-          className="btn-quiet text-sm"
-          disabled={pending}
-          onClick={() =>
-            update({ ...started, progress: progress ? { ...progress, episode: progress.episode + 1 } : { season: 1, episode: 1 } })
-          }
-        >
-          <PlusIcon className="size-3.5" />
-          {progress ? t.title.panel.watchedEpisode(progress.episode + 1) : t.title.panel.watchedSeasonStart(1)}
-        </button>
-        {progress && (!seasons || nextSeason <= seasons) && (
+        {next && (
+          <button className="btn-quiet text-sm" disabled={pending} onClick={() => update({ ...started, progress: next })}>
+            <PlusIcon className="size-3.5" />
+            {next.episode === 1 ? t.title.panel.watchedSeasonStart(next.season) : t.title.panel.watchedEpisode(next.episode)}
+          </button>
+        )}
+        {progress && next?.season !== nextSeason && (!seasons || nextSeason <= seasons) && (
           <button
             className="btn-quiet text-sm"
             disabled={pending}

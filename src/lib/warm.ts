@@ -2,20 +2,35 @@ import "server-only";
 import { batchPages, discoverTitles, getGenres, popularIn, trendingTitles } from "./browse";
 import { localDate } from "./list-rules";
 import { isCountry } from "./places";
+import { getPosterDeck } from "./poster-deck";
 import { FOR_YOU_CHECKED, getForYou } from "./recommend";
 import type { getPartner, Profile } from "./session";
-import { getAvailability } from "./titles";
+import { createClient } from "./supabase/server";
+import { getAvailability, getTitle, settleLimited } from "./titles";
 import { tmdbLocale } from "./tmdb";
 import { cinemaReleases, digitalReleases, releaseDates } from "./upcoming";
-import type { MediaType, Watcher } from "./watch";
+import type { MediaType, TitleRef, Watcher } from "./watch";
 
 type Partner = Awaited<ReturnType<typeof getPartner>>;
 
+/** How many Up next titles have their title page warmed: the ones being watched first, then the newest. */
+const UP_NEXT_WARMED = 30;
+
+/**
+ * What a title page fetches for one title (src/app/title/[type]/[id]/page.tsx), so opening it from the
+ * list is quick: the title in the viewer's locale and its poster deck. Where to watch it is warmed for all
+ * of them at once in warmCaches(). Anything else the title page starts fetching per title belongs here too.
+ */
+async function warmTitlePage(ref: TitleRef, view: { profile: Profile; locale: string }) {
+  await Promise.all([getTitle(ref, view.locale), getPosterDeck(ref, view.profile.language)]);
+}
+
 /**
  * Fills the caches behind the pages that wait longest on TMDB when cold, so opening them later is quick:
- * Browse as it opens (films, then series: the grid, the rows and For you) and Coming soon's films. Asks
- * for exactly what those pages ask for, since a cache entry only helps the same request. Runs as the
- * signed-in user, after <WarmUp> calls /api/warm. Each step runs on when another fails.
+ * the title pages of Up next titles, Browse as it opens (films, then series: the grid, the rows and For
+ * you) and Coming soon's films. Asks for exactly what those pages ask for, since a cache entry only helps
+ * the same request. Runs as the signed-in user, after <WarmUp> calls /api/warm. Each step runs on when
+ * another fails.
  */
 export async function warmCaches(profile: Profile, partner: Partner) {
   if (!isCountry(profile.country)) return;
@@ -58,8 +73,28 @@ export async function warmCaches(profile: Profile, partner: Partner) {
     await releaseDates([...new Set(ids)], regions);
   };
 
+  /** The title pages of what's Up next on the list (Home's first tab), in Home's order. */
+  const upNext = async () => {
+    if (!profile.couple_id) return;
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("list_items")
+      .select("media_type, tmdb_id, status, created_at")
+      .eq("couple_id", profile.couple_id)
+      .in("status", ["watching", "want"]);
+    if (error) throw error;
+    const refs: TitleRef[] = data
+      .sort((a, b) => Number(b.status === "watching") - Number(a.status === "watching") || b.created_at.localeCompare(a.created_at))
+      .slice(0, UP_NEXT_WARMED)
+      .map((row) => ({ media_type: row.media_type as MediaType, tmdb_id: row.tmdb_id }));
+    await Promise.all([
+      settleLimited(refs, 4, (ref) => warmTitlePage(ref, { profile, locale })),
+      getAvailability(refs, countries),
+    ]);
+  };
+
   // One at a time, in the order they're likely to be opened: TMDB rate-limits bursts.
-  for (const step of [() => browse("movie"), comingSoon, () => browse("tv")]) {
+  for (const step of [upNext, () => browse("movie"), comingSoon, () => browse("tv")]) {
     await step().catch((error) => console.error("Warming caches failed", error));
   }
 }

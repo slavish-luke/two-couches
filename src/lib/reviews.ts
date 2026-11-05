@@ -44,7 +44,13 @@ function isOutcome(value: unknown): value is Outcome {
 
 export type Wrapup = {
   night: { id: string; starts_at: string };
-  title: TitleRef & { title: string; poster_path: string | null; runtime: number | null };
+  title: TitleRef & {
+    title: string;
+    poster_path: string | null;
+    runtime: number | null;
+    /** Episodes in each season of a series, when TMDB says (titles.season_episodes). */
+    season_episodes: number[] | null;
+  };
   /** The title's list entry, or null if it isn't on the list (saving adds it). */
   item: ListItem | null;
   reviews: Reviews;
@@ -66,7 +72,7 @@ export async function getWrapups(
   const { data, error } = await supabase
     .from("watch_nights")
     .select(
-      "id, starts_at, media_type, tmdb_id, titles(original_title, poster_path, runtime, title_texts(locale, title, poster_path)), night_wrapups(profile_id, outcome)",
+      "id, starts_at, media_type, tmdb_id, titles(original_title, poster_path, runtime, season_episodes, title_texts(locale, title, poster_path)), night_wrapups(profile_id, outcome)",
     )
     .eq("couple_id", coupleId)
     .not("media_type", "is", null)
@@ -90,6 +96,7 @@ export async function getWrapups(
           tmdb_id: row.tmdb_id,
           ...pickText(row.titles.title_texts, locales, row.titles),
           runtime: row.titles.runtime,
+          season_episodes: row.titles.season_episodes,
         },
         partnerOutcome: isOutcome(partner?.outcome) ? partner.outcome : null,
       },

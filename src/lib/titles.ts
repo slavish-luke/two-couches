@@ -18,6 +18,8 @@ import {
 import { titleKey, type Availability, type MediaType, type Provider, type TitleRef } from "./watch";
 
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/** More seasons than this means they're numbered by year (talk shows): no per-season counts then. */
+const MAX_SEASONS = 100;
 
 function isFresh(refreshedAt: string, maxAgeMs = MAX_AGE_MS) {
   return Date.now() - Date.parse(refreshedAt) < maxAgeMs;
@@ -123,6 +125,19 @@ export function pickText(texts: LocaleText[], locales: string[], fallback: { ori
   return { title: text?.title ?? fallback.original_title, poster_path: text?.poster_path ?? fallback.poster_path };
 }
 
+/**
+ * Episodes in each season, season 1 first, from TMDB's season list (specials left out; a season missing
+ * from the list counts 0). Null when TMDB lists no numbered seasons, or numbers them by year.
+ */
+export function seasonEpisodes(seasons: TvDetails["seasons"]): number[] | null {
+  const numbered = (seasons ?? []).filter((s) => s.season_number > 0);
+  const last = Math.max(0, ...numbered.map((s) => s.season_number));
+  if (last === 0 || last > MAX_SEASONS) return null;
+  const counts = Array.from({ length: last }, () => 0);
+  for (const s of numbered) counts[s.season_number - 1] = Math.max(0, s.episode_count || 0);
+  return counts;
+}
+
 /** The best YouTube trailer: trailers over teasers, the viewer's language, then official ones. */
 function pickTrailer(videos: MovieDetails["videos"], language: string) {
   const score = (v: { type: string; iso_639_1: string; official: boolean }) =>
@@ -177,6 +192,7 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
           runtime: details.runtime,
           seasons: null,
           episodes: null,
+          season_episodes: null,
         }
       : {
           title: details.name,
@@ -185,6 +201,7 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
           runtime: details.episode_run_time[0] || details.last_episode_to_air?.runtime,
           seasons: details.number_of_seasons,
           episodes: details.number_of_episodes || null,
+          season_episodes: seasonEpisodes(details.seasons),
         };
   const row: TitleRow = {
     media_type: ref.media_type,
@@ -198,6 +215,7 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     runtime: kind.runtime || null,
     seasons: kind.seasons,
     episodes: kind.episodes,
+    season_episodes: kind.season_episodes,
     vote_average: details.vote_average || null,
     refreshed_at: refreshedAt,
   };

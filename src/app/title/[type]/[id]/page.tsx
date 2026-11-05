@@ -132,7 +132,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
 
       {profile.couple_id && (
         <Suspense>
-          <OnOurList titleRef={ref} seasons={title.seasons} />
+          <OnOurList titleRef={ref} seasons={title.seasons} seasonEpisodes={title.season_episodes} />
           <ListSync coupleId={profile.couple_id} />
         </Suspense>
       )}
@@ -153,7 +153,15 @@ async function TitleDeck(props: {
   return <PosterDeck posters={posters} morph={posterMorph(props.titleRef)} language={props.language} />;
 }
 
-async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: number | null }) {
+async function OnOurList({
+  titleRef,
+  seasons,
+  seasonEpisodes,
+}: {
+  titleRef: TitleRef;
+  seasons: number | null;
+  seasonEpisodes: number[] | null;
+}) {
   const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
   const coupleId = profile.couple_id!;
   const [item, categories, dismissed] = await Promise.all([
@@ -168,6 +176,7 @@ async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: n
       <ListPanel
         titleRef={titleRef}
         seasons={seasons}
+        seasonEpisodes={seasonEpisodes}
         item={item}
         categories={categories}
         me={{ id: profile.id, name: profile.display_name || t.common.you }}

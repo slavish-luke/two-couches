@@ -31,8 +31,8 @@ async function Wrapups() {
       <ul className="grid gap-6">
         {wrapups.map((wrapup) => (
           <WrapupCard
-            // Refilled when your partner saves theirs, since they may have moved the series on.
-            key={`${wrapup.night.id}:${wrapup.partnerOutcome}`}
+            // Keyed by the night only, so your draft survives your partner saving theirs meanwhile.
+            key={wrapup.night.id}
             wrapup={wrapup}
             me={{ id: profile.id, name: t.common.you }}
             partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}

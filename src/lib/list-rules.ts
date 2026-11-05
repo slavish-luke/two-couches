@@ -41,6 +41,20 @@ export function isProgress(value: unknown): value is Progress {
   );
 }
 
+/**
+ * The episode after `progress` (S1 E1 if you hadn't started). With TMDB's episodes per season
+ * (`titles.season_episodes`, season 1 first), finishing a season rolls over to the next one's first episode,
+ * and finishing the last season gives null. Without them, or past what they know, it's the next number.
+ */
+export function episodeAfter(progress: Progress | null, seasonEpisodes: number[] | null): Progress | null {
+  if (!progress) return { season: 1, episode: 1 };
+  const inSeason = seasonEpisodes?.[progress.season - 1];
+  if (!seasonEpisodes || !inSeason || progress.episode < inSeason) {
+    return { season: progress.season, episode: progress.episode + 1 };
+  }
+  return progress.season < seasonEpisodes.length ? { season: progress.season + 1, episode: 1 } : null;
+}
+
 /** A calendar date ("2026-11-01") in the given time zone. */
 export function localDate(timeZone: string, date = new Date()) {
   const parts = new Intl.DateTimeFormat("en", { year: "numeric", month: "2-digit", day: "2-digit", timeZone })

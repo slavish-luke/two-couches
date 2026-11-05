@@ -359,6 +359,32 @@ isOneToOne: false
       referencedColumns: ["media_type","tmdb_id"]
     }
                   ]
+                },"review_signals": {
+                  Row: {
+                    "changed_at": string,"couple_id": string,"list_item_id": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changed_at"?: string,"couple_id": string,"list_item_id": string,"profile_id": string
+                  }
+                  Update: {
+                    "changed_at"?: string,"couple_id"?: string,"list_item_id"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "review_signals_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "review_signals_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "country": string,"display_priority": number,"logo_path": string | null,"name": string,"provider_id": number,"refreshed_at": string
@@ -409,14 +435,14 @@ isOneToOne: false
                   ]
                 },"titles": {
                   Row: {
-                    "backdrop_path": string | null,"episodes": number | null,"genre_ids": (number)[],"media_type": string,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
+                    "backdrop_path": string | null,"episodes": number | null,"genre_ids": (number)[],"media_type": string,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"season_episodes": (number)[] | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type": string,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
+                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type": string,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"season_episodes"?: (number)[] | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
                   }
                   Update: {
-                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type"?: string,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
+                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type"?: string,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"season_episodes"?: (number)[] | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
                   }
                   Relationships: [
                     
