@@ -345,9 +345,14 @@
 /*
  * Big cartoon lettering: cream letters with an ink outline and a hard ink shadow, for page titles and
  * section heads on the page ground. `display-ink` is the same face in plain ink, for heads on paper.
+ *
+ * Display lettering is always uppercased in CSS: Luckiest Guy draws lower case as capitals, so a Turkish
+ * "i" would lose its dot. With <html lang="tr">, text-transform maps i to İ (and ı to I). Anything else
+ * set in --font-skin-display (.btn, the burst and tab words, the intro) does the same.
  */
 @utility display {
   font-family: var(--font-skin-display);
+  text-transform: uppercase;
   font-weight: 400;
   line-height: 0.95;
   letter-spacing: 0.02em;
@@ -365,6 +370,7 @@
 
 @utility display-ink {
   font-family: var(--font-skin-display);
+  text-transform: uppercase;
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.03em;
@@ -502,6 +508,7 @@
   .btn {
     @apply outlined-sm inline-flex items-center justify-center gap-2 rounded-control bg-pop px-4 pt-2.5 pb-2 text-[1.05rem] leading-none tracking-[0.04em] text-ink transition duration-150 ease-(--ease-spring) hover:-translate-x-0.5 hover:-translate-y-0.5 hover:-rotate-1 hover:shadow-[5px_5px_0_var(--outline)] active:translate-x-[3px] active:translate-y-[3px] active:scale-x-[1.03] active:scale-y-[0.95] active:shadow-[0_0_0_var(--outline)] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none;
     font-family: var(--font-skin-display);
+    text-transform: uppercase;
   }
   .btn-quiet {
     @apply inline-flex items-center justify-center gap-2 rounded-control border-[2.5px] border-outline bg-surface px-3.5 py-1.5 font-semibold text-ink shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] transition duration-150 ease-(--ease-spring) hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_var(--outline)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none;
@@ -517,6 +524,123 @@
   /* A list entry's categories: little white tags. */
   .strand {
     @apply inline-flex items-center rounded-full border-2 border-outline bg-surface px-2 text-[13px] font-semibold leading-snug text-ink;
+  }
+  /*
+   * A poster that carries a PosterTab: the poster's own width (give it one), and a size container, so the
+   * tab sizes itself from the poster.
+   */
+  .poster-frame {
+    position: relative;
+    container: poster / inline-size;
+  }
+  /* Who can stream it, as a tab stuck over the poster's top edge near the left: half on it, half above. */
+  .poster-tab {
+    position: absolute;
+    top: 0;
+    left: clamp(4px, 7cqi, 14px);
+    z-index: 1;
+    translate: 0 -55%;
+    rotate: -4deg;
+    transform-origin: bottom left;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 2.5px solid var(--outline);
+    border-radius: 10px;
+    box-shadow: 3px 3px 0 var(--outline);
+    padding: 3px 8px 1px;
+    line-height: normal;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .poster-tab-both {
+    background: var(--stamp);
+  }
+  /* The burst word, paper-filled with a thin ink outline so it reads on a light or a dark stamp. */
+  .poster-tab-word {
+    font-family: var(--font-skin-display);
+    text-transform: uppercase;
+    font-size: clamp(12px, calc(11cqi * var(--fit, 1)), 24px);
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    color: var(--p-surface);
+    -webkit-text-stroke: 1.5px var(--outline);
+    paint-order: stroke fill;
+  }
+  .poster-tab-long {
+    display: none;
+  }
+  @container poster (width >= 200px) {
+    .poster-tab-long {
+      display: inline;
+    }
+    .poster-tab-short {
+      display: none;
+    }
+  }
+  .poster-tab-paper {
+    padding: 3px 7px;
+    background: var(--p-surface);
+    color: var(--p-ink);
+    font-size: clamp(13px, 7.5cqi, 15px);
+    font-weight: 700;
+  }
+  /*
+   * The title page's poster deck (PosterDeck): one button holding a messy pile of cards. Each card sits at
+   * its place in the pile (--x, --y on a 200px deck, scaled by --u; --r degrees; --z its height in the
+   * pile); the script animates them on top of that.
+   */
+  .poster-deck {
+    --u: 1;
+    position: relative;
+    isolation: isolate;
+    display: block;
+    width: 200px;
+    aspect-ratio: 2 / 3;
+    cursor: pointer;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (width >= 40rem) {
+    .poster-deck {
+      --u: 1.2;
+      width: 240px;
+    }
+  }
+  /* The focus ring goes round the top card, not the button's box. */
+  .poster-deck:focus-visible {
+    outline: none;
+  }
+  .poster-deck:focus-visible .deck-card[data-top] {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+  }
+  .deck-card {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z);
+    overflow: hidden;
+    border: 3px solid var(--outline);
+    border-radius: var(--radius-poster);
+    background: var(--surface);
+    box-shadow: 4px 4px 0 var(--outline);
+    transform: translate(calc(var(--x) * var(--u) * 1px), calc(var(--y) * var(--u) * 1px)) rotate(calc(var(--r) * 1deg));
+    transform-origin: 50% 60%;
+    will-change: transform;
+  }
+  .deck-card[data-top] {
+    box-shadow: 7px 7px 0 var(--outline);
+  }
+  .deck-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    -webkit-user-drag: none;
   }
   /* Rows that lean a little, alternately, and wiggle when pointed at. */
   .tilt-row {
@@ -605,6 +729,21 @@
   }
 }
 
+/* A poster tab dropping onto its poster: it unrolls downwards from its top edge and bounces. */
+@keyframes tab-drop {
+  0% {
+    scale: 1 0;
+    opacity: 0;
+  }
+  60% {
+    scale: 1 1.25;
+    opacity: 1;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
 /* A nav tab the page whooshed past. */
 @keyframes jiggle {
   40% {
@@ -647,6 +786,14 @@
   .burst {
     animation: pop 0.6s var(--ease-spring) both;
     animation-delay: calc(var(--i, 0) * 50ms);
+  }
+  .poster-tab {
+    animation: tab-drop 0.6s var(--ease-spring) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+  /* The deck's other cards wait out of sight until they drop onto the pile (PosterDeck). */
+  .poster-deck[data-arriving] .deck-card:not([data-top]) {
+    opacity: 0;
   }
 }
 
@@ -740,6 +887,7 @@ html[data-intro="playing"] .intro {
   top: 50%;
   translate: -50% -50%;
   font: 400 clamp(44px, 9vw, 120px) var(--font-skin-display);
+  text-transform: uppercase;
   color: var(--p-surface);
   -webkit-text-stroke: 5px var(--outline);
   paint-order: stroke fill;

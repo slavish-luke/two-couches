@@ -61,12 +61,14 @@ const en = {
     meOnly: "Only you",
     partner: (name: string) => `Only ${name}`,
     free: "Free to watch",
+    /** "Free to watch" on Home's list cards, where the poster is small. */
+    freeShort: "Free",
     /** The words on the starburst for what you can both watch, and on the small one on poster cards. */
     stamp: "Both of us!",
     stampShort: "Both!",
     /** The services that make it "both": one name when it's the same service, else yours then theirs. */
     proof: (services: string[]) => `On ${services.join(" and ")}`,
-  } satisfies Record<Exclude<Verdict, "none"> | "meOnly" | "stamp" | "stampShort" | "proof", unknown>,
+  } satisfies Record<Exclude<Verdict, "none"> | "meOnly" | "freeShort" | "stamp" | "stampShort" | "proof", unknown>,
   stars: (who: string, rating: number) => `${who}: ${rating} out of 5 stars`,
   add: { add: "Add", adding: "Adding…", onList: "On our list" },
   dismiss: {
@@ -140,6 +142,7 @@ const tr: typeof en = {
     meOnly: "Sadece sen",
     partner: (name: string) => `Sadece ${name}`,
     free: "Ücretsiz izlenebilir",
+    freeShort: "Ücretsiz",
     stamp: "İkimiz de!",
     stampShort: "İkimiz!",
     proof: (services: string[]) => `Platform: ${services.join(" ve ")}`,

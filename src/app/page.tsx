@@ -142,7 +142,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             );
           })}
           {mine?.country && theirs?.country && (
-            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 -rotate-6 whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-2.5 pb-0.5 pt-1 font-display text-sm leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)] sm:px-3 sm:pb-1 sm:pt-1.5 sm:text-base">
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 -rotate-6 whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-2.5 pb-0.5 pt-1 font-display text-sm uppercase leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)] sm:px-3 sm:pb-1 sm:pt-1.5 sm:text-base">
               {t.list.people.apart(hoursApart(now, mine.time_zone, theirs.time_zone))}
             </span>
           )}
@@ -358,17 +358,34 @@ async function ListSection(props: {
             <li key={entry.id} className="tilt-row">
               <Link
                 href={titleHref(entry)}
-                className="card group relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 p-3 transition-shadow duration-150 hover:shadow-[8px_8px_0_var(--outline)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:p-4"
+                className="card group relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 p-3 transition-shadow duration-150 hover:shadow-[8px_8px_0_var(--outline)] sm:p-4"
               >
-                <Poster
-                  path={entry.poster_path}
-                  title={entry.title}
-                  size="sm"
-                  language={language}
-                  morph={posterMorph(entry)}
-                  className="self-start sm:w-20"
-                />
-                <div className="grid min-w-0 content-start gap-1 max-sm:pr-16">
+                {/* Who can watch it rides on a tab over the poster's top edge (dots only: the name is read out). */}
+                <div className="poster-frame w-16 self-start sm:w-20">
+                  <Poster
+                    path={entry.poster_path}
+                    title={entry.title}
+                    size="sm"
+                    language={language}
+                    morph={posterMorph(entry)}
+                    className="w-full"
+                  />
+                  {filters.view !== "watched" && (
+                    <Suspense>
+                      <AvailabilityBadge
+                        availability={availability}
+                        titleKey={titleKey(entry)}
+                        me={me}
+                        partner={partner?.watcher ?? null}
+                        partnerName={partner?.name ?? null}
+                        language={language}
+                        compact
+                        index={Math.min(i, 12)}
+                      />
+                    </Suspense>
+                  )}
+                </div>
+                <div className="grid min-w-0 content-start gap-1">
                   <span className="text-xl font-bold leading-tight group-hover:underline sm:text-2xl">{entry.title}</span>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
                     <span>
@@ -416,23 +433,6 @@ async function ListSection(props: {
                     {addedLine(t, entry, me.id, partner, shortDate(localDate(props.timeZone, new Date(entry.created_at)), today, language))}
                   </p>
                 </div>
-                {/* Phones: the burst hangs off the card's corner; the dots tag follows the details. */}
-                {filters.view !== "watched" && (
-                  <div className="max-sm:col-start-2 max-sm:mt-2 max-sm:has-[.burst]:absolute max-sm:has-[.burst]:-top-5 max-sm:has-[.burst]:right-1 max-sm:has-[.burst]:mt-0 max-sm:has-[.burst]:origin-top-right max-sm:has-[.burst]:scale-[0.8] sm:pl-2">
-                    <Suspense>
-                      <AvailabilityBadge
-                        availability={availability}
-                        titleKey={titleKey(entry)}
-                        me={me}
-                        partner={partner?.watcher ?? null}
-                        partnerName={partner?.name ?? null}
-                        language={language}
-                        onPoster
-                        index={Math.min(i, 12)}
-                      />
-                    </Suspense>
-                  </div>
-                )}
               </Link>
             </li>
           ))}

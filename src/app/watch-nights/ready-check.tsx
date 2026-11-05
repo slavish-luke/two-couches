@@ -69,7 +69,7 @@ export function ReadyCheck(props: {
             <Couches size={34} />
             <span
               style={{ "--r": "-3deg", rotate: "var(--r)" } as CSSProperties}
-              className="burst inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-outline bg-stamp px-3 pb-0.5 pt-1 font-display text-base leading-none tracking-[0.03em] text-on-stamp shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
+              className="burst inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-outline bg-stamp px-3 pb-0.5 pt-1 font-display text-base uppercase leading-none tracking-[0.03em] text-on-stamp shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
             >
               <CheckIcon className="size-4 [stroke-width:3]" />
               {t.bothReady}

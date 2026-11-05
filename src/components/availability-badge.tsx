@@ -1,10 +1,11 @@
 import { whoCanWatch, type Availability, type Watcher } from "@/lib/watch";
-import { WatchBadge } from "./watch-badge";
+import { PosterTab } from "./poster-tab";
 
 /**
- * WatchBadge for one title out of a batch availability lookup. Takes the pending lookup, so the list
- * renders first and badges stream in (the starburst pops in as it arrives); wrap it in <Suspense>.
- * `part="proof"` renders only the services that make it "both" (nothing otherwise), for a line of its own.
+ * The PosterTab for one title out of a batch availability lookup. Takes the pending lookup, so the list
+ * renders first and the tabs stream in (dropping in as they arrive); wrap it in <Suspense>, inside the
+ * poster's `.poster-frame`. `part="proof"` renders only the services that make it "both" (nothing
+ * otherwise), for a line of its own.
  */
 export async function AvailabilityBadge(props: {
   availability: Promise<Record<string, Availability>>;
@@ -13,11 +14,9 @@ export async function AvailabilityBadge(props: {
   partner: Watcher | null;
   partnerName: string | null;
   language: string;
-  showProof?: boolean;
-  onPoster?: boolean;
+  compact?: boolean;
   index?: number;
-  part?: "mark" | "proof";
-  size?: "sm" | "md" | "lg";
+  part?: "tab" | "proof";
 }) {
   const availability = (await props.availability)[props.titleKey] ?? {};
   const { verdict, mine, theirs } = whoCanWatch(props.me, props.partner, availability);
@@ -27,15 +26,13 @@ export async function AvailabilityBadge(props: {
     return <span className="font-semibold text-ink">{names.join(" + ")}</span>;
   }
   return (
-    <WatchBadge
+    <PosterTab
       verdict={verdict}
       partnerName={props.partnerName}
       language={props.language}
       proof={verdict === "both" ? [mine[0].name, theirs[0].name] : undefined}
-      showProof={props.showProof}
-      onPoster={props.onPoster}
+      compact={props.compact}
       index={props.index}
-      size={props.size}
     />
   );
 }

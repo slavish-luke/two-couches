@@ -171,7 +171,17 @@ components:
   burst:
     backgroundColor: "{colors.bubblegum-stamp}"
     textColor: "{colors.cream-paper}"
-    size: "64px / 80px / 96px"
+    size: "128px / 144px"
+  poster-tab-both:
+    backgroundColor: "{colors.bubblegum-stamp}"
+    textColor: "{colors.cream-paper}"
+    rounded: "10px"
+    padding: "3px 8px 1px"
+  poster-tab-one:
+    backgroundColor: "{colors.cream-paper}"
+    textColor: "{colors.cartoon-ink}"
+    rounded: "10px"
+    padding: "3px 7px"
   nav-bar:
     backgroundColor: "{colors.cream-paper}"
     textColor: "{colors.cartoon-ink}"
@@ -248,7 +258,7 @@ Saturday Morning has eight palettes (Settings → Colours, per device), all tune
 **Display Font:** Luckiest Guy (`--font-luckiest`, fallback sans-serif)
 **Body Font:** Fredoka (`--font-fredoka`, fallback sans-serif). Fredoka has no capital İ, so `--font-fredoka-idot` (one letter built from Fredoka's own I and dot, `src/app/fonts/README.md`) comes first in the stack.
 
-**Character:** Chunky, bouncy cartoon lettering for anything shouted, paired with a round, friendly sans for everything read. Both cover Turkish, and casing comes from CSS with `<html lang>` set, so Turkish İ and ı survive.
+**Character:** Chunky, bouncy cartoon lettering for anything shouted, paired with a round, friendly sans for everything read. Both cover Turkish, and casing comes from CSS with `<html lang>` set, so Turkish İ and ı survive. Luckiest Guy draws lower case as capitals, so everything set in it (`display`, `display-ink`, `display-pop`, `.btn`, `.tab`, the burst and tab words, the intro, any `font-display`) is `text-transform: uppercase`: with `lang="tr"` the browser turns i into İ (its latin-ext file has U+0130), where the lower-case glyph had no dot.
 
 Fonts are loaded through `next/font` in `layout.tsx` as CSS variables. The skin block maps them to `--font-skin-display` and `--font-skin-body`, and Tailwind exposes them as `font-display` / `font-sans`. A later skin's fonts must be declared with `preload: false` so only the active skin's fonts download.
 
@@ -262,7 +272,7 @@ Fonts are loaded through `next/font` in `layout.tsx` as CSS variables. The skin 
 - **Meta** (Fredoka 500 to 600, 15px): chips, filter selects, form labels, the type-and-year line on list entries, and the time slots in the night form from `sm`.
 - **Label** (Fredoka 600 to 700, 0.875rem): meta lines, name tags, badges.
 - **Tag** (Fredoka 600, 13px): category strands, Coming soon's per-country dates, "Not interested", For you's "Because you liked…". 12px (`text-xs`) is the floor, except the partner's time under each slot in the night form on phones (11px, so "Thu 12 AM" fits a quarter of the row).
-- **Burst word** (Luckiest Guy, 13 / 15 / 19 / 25px): the word inside the starburst scales with the burst (`WatchBadge` sizes sm / md / lg, the title page's verdict).
+- **Burst word** (Luckiest Guy, 13 / 25px): the word inside the starburst scales with the burst (the title page's verdict). On a poster tab it is `clamp(12px, 11cqi, 24px)`, sized from the poster's width.
 - **Button** (Luckiest Guy 400, 1.05rem, 0.04em): the bright `.btn` only. Quiet buttons use Fredoka 600.
 
 ### Named Rules
@@ -323,7 +333,7 @@ Big outlined tabs for a page's views (Up next / Watched / Dropped, Films / Serie
 - **Card (`.card`):** cream paper, 22px corners, 3px outline, panel shadow, 20px padding.
 - **Spotlight (`.spotlight`):** the same cut-out in grape with the token swap (see Colors). One per screen, tilted about -1 degree, its head in pop-filled display lettering.
 - **Paper (`.paper`):** a bare paper background with paper text tokens, used for tickets, the ready check and name tags inside the spotlight.
-- **List row:** a card in a `.tilt-row` with the poster on the left, the title, meta and strands in the middle and the badge on the right. On phones a burst jumps to the top-right corner and overhangs the card.
+- **List row:** a card in a `.tilt-row` with the poster on the left (who can watch it on a tab over the poster's top edge) and the title, meta and strands beside it.
 
 ### Inputs / Fields
 - **Style (`.field`):** cream paper, 3px ink outline, 14px corners, 14px by 8px padding, muted placeholder.
@@ -334,8 +344,14 @@ Big outlined tabs for a page's views (Up next / Watched / Dropped, Films / Serie
 - **Wide screens:** a paper pill bar (3px outline, 3px shadow, 4px inner padding) of Fredoka-bold links, short labels until `xl`. A grape pill sits behind the current link. When the section changes, it travels on `cubic-bezier(.3, 1.5, .5, 1)` (`360ms + 80ms` for each extra step) and smears (`scaleX 1.25`, `scaleY 0.85`, then settles). Every tab it passes jiggles (up 6px, -6 degrees, scale 1.12, staggered 65ms). Until it has measured, the current link paints its own pill, so nothing jumps. A small outlined dot marks unseen alerts on Coming soon.
 - **Phones:** the bottom tab bar described in Layout, with the same travelling pill.
 
-### Watch Badge (signature)
-Who can stream a title. **Both:** the **Burst** (bubblegum 12-point star, ink stroke, paper-filled display word with a 1.5px ink stroke and no shadow, so it reads on a light or dark stamp) in three sizes (64 / 80 / 96px). It pops in (`pop`: scale 0 and -30 degrees, then 1.15 and 6 degrees, then settles at -8 degrees, 0.6s on the spring clock), staggered 50ms by `index` as availability streams in. Its label names the services. **One of you:** two 14px outlined dots (yours, then your partner's), filled in the person's colour for whoever can, white otherwise, with an ink label. On a poster they sit on a paper pill. **Neither:** nothing.
+### Poster Tab (signature)
+Who can stream a title, on the poster itself (`<PosterTab>`, chosen in `design/labs/badge-lab.html`, option D): a tab stuck over the poster's top edge near the left, half on the poster and half above it, so it takes no height of its own. It sits inside `.poster-frame` (the poster's width, a size container) and sizes itself from it: left `clamp(4px, 7cqi, 14px)`, `translate: 0 -55%`, tilted -4 degrees, 2.5px outline, 10px corners, a 3px hard shadow. **Both:** a stamp-coloured tab with the paper-filled burst word ("Both!", or "Both of us!" once the poster is 200px or wider). **One of you:** a paper tab with two 14px outlined dots (yours, then your partner's; filled in the person's colour for whoever can) and who ("Only Sam", "Free to watch"; 13 to 15px Fredoka bold). On Home's list cards it is the dots alone (the name is read out) and "Free" short. **Neither:** nothing. It drops in (`tab-drop`: unrolls from its top edge, `scaleY` 0 to 1.25 to 1, 0.6s on the spring clock), staggered 50ms by `index`; reduced motion shows it still. Places: Home list cards, `TitleCard` grids (Browse, For you, Search, Coming soon), Pick and Coming soon's "Now streaming" alerts.
+
+### Starburst
+The bubblegum 12-point **Burst** (ink stroke, paper-filled display word with a 1.5px ink stroke and no shadow) is kept for the big moments: the title page's "you can both watch this" banner, "you're both ready" and the intro. It pops in (`pop`: scale 0 and -30 degrees, then 1.15 and 6 degrees, then settles at -8 degrees, 0.6s on the spring clock).
+
+### Poster Deck (signature)
+The title page's poster is a deck of up to five TMDB posters (`<PosterDeck>`, tuned in `design/labs/deck-lab.html`): the page's own poster on top, then the most-voted posters in the viewer's language, then textless ones (then English ones for Turkish). A messy pile: each card under the top peeks out a few pixels and degrees each way (200px wide, 240px from `sm`). Arrival: the top card morphs in from the list like any poster, then the others drop onto the pile under it, bottom card first (95ms apart, 640ms each, landing with a squash). The deck itself is the button (no Shuffle button, no counter): a tap, Enter or Space swings the top card out to the right and tucks it under while the rest step up with a small lift; on phones the top card follows a swipe and flies off the way it was swiped (a short drag springs back). The focus ring goes round the top card. Reduced motion: no drop, and the next poster fades in. One poster on TMDB: just the poster.
 
 ### Couch Mascot (signature)
 Two little couches with faces, coral for you and sky for your partner, drawn in ink on a 64 by 50 grid with cheeks in the palette's `--blush`. They bob (3.2s, up 4px, -1.5 degrees) and blink (4.5s). The partner runs 0.6s and 1.7s behind, so they never move in unison. Together (`<Couches>`) they form the header logo (54px; 44px on phones, tipped -2 degrees), head the empty and loading states, and stand in the Settings Look preview. Decorative (`aria-hidden`).

@@ -12,6 +12,8 @@ const en = {
   /** A series' typical episode length, from runtime(). */
   episodeRuntime: (runtime: string) => `${runtime} episodes`,
   trailer: "Watch the trailer",
+  /** The title page's poster deck, which is one button: tapping it brings the next poster to the top. */
+  shufflePosters: (shown: number, total: number) => `Shuffle posters (showing ${shown} of ${total})`,
   checking: "Checking where you can watch it…",
   whereToWatch: "Where to watch",
   banner: {
@@ -124,6 +126,7 @@ const tr: typeof en = {
   },
   episodeRuntime: (runtime: string) => `Bölüm başı ${runtime}`,
   trailer: "Fragmanı izle",
+  shufflePosters: (shown: number, total: number) => `Afişleri karıştır (${total} afişten ${shown}.)`,
   checking: "Nerede izlenebileceğine bakılıyor…",
   whereToWatch: "Nerede izlenir",
   banner: {

@@ -8,7 +8,7 @@ import { ArrowIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
-import { WatchBadge } from "@/components/watch-badge";
+import { PosterTab } from "@/components/poster-tab";
 import type { Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { formatDate, localDate } from "@/lib/list-rules";
@@ -326,14 +326,18 @@ function PickCard(props: {
           href={titleHref(item)}
           className="self-start transition duration-150 ease-(--ease-spring) hover:-translate-y-1 sm:row-span-2"
         >
-          <Poster
-            path={item.poster_path}
-            title={item.title}
-            size="fluid"
-            eager
-            language={language}
-            className="-rotate-2 shadow-[6px_6px_0_var(--outline)]"
-          />
+          {/* Who can watch it rides on a tab over the poster's top edge, tipped with it. */}
+          <div className="poster-frame -rotate-2">
+            <Poster
+              path={item.poster_path}
+              title={item.title}
+              size="fluid"
+              eager
+              language={language}
+              className="shadow-[6px_6px_0_var(--outline)]"
+            />
+            <PosterTab verdict={item.verdict} partnerName={props.partnerName} language={language} />
+          </div>
         </Link>
         <div className="grid min-w-0 content-start gap-3">
           {props.wrapped && <p className="text-sm font-semibold text-muted">{text.wrapped}</p>}
@@ -350,11 +354,12 @@ function PickCard(props: {
             ))}
           </ul>
           {reason && <p className="font-semibold">{reason}</p>}
-          <div className="grid justify-items-start gap-2 text-sm">
-            <WatchBadge verdict={item.verdict} partnerName={props.partnerName} language={language} size="lg" />
-            {mine && <ServiceLine who="me" text={text.services.you(mine)} />}
-            {theirs && props.partnerName && <ServiceLine who="partner" text={text.services.partner(props.partnerName, theirs)} />}
-          </div>
+          {(mine || (theirs && props.partnerName)) && (
+            <div className="grid justify-items-start gap-2 text-sm">
+              {mine && <ServiceLine who="me" text={text.services.you(mine)} />}
+              {theirs && props.partnerName && <ServiceLine who="partner" text={text.services.partner(props.partnerName, theirs)} />}
+            </div>
+          )}
         </div>
         <div className="col-span-2 grid content-start gap-3 sm:col-span-1 sm:col-start-2">
           <div className="flex flex-wrap items-center gap-2.5">

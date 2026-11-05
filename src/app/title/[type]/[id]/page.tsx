@@ -1,19 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Burst } from "@/components/burst";
 import { DismissButton } from "@/components/dismiss-button";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster, posterMorph } from "@/components/poster";
+import { PosterDeck } from "@/components/poster-deck";
 import { RemindButton } from "@/components/remind-button";
 import { getReminderKeys } from "@/lib/alerts";
 import { type Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
+import { deckWith, getPosterDeck } from "@/lib/poster-deck";
 import { getDismissedKeys } from "@/lib/recommend";
 import { getReviews } from "@/lib/reviews";
 import { getPartner, requireProfile } from "@/lib/session";
@@ -49,8 +51,21 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
   if (!profile.country) redirect("/settings?welcome=1");
 
   const ref: TitleRef = { media_type: type, tmdb_id: tmdbId };
+  // The poster deck streams in after the page (never rejects); until then the page shows its one poster.
+  const deck = getPosterDeck(ref, language);
   const title = await getTitle(ref, tmdbLocale(profile.language, profile.home_country));
   if (!title) notFound();
+  const poster = (
+    <Poster
+      path={title.poster_path}
+      title={title.title}
+      size="lg"
+      eager
+      language={language}
+      morph={posterMorph(ref)}
+      className="-rotate-2 shadow-[7px_7px_0_var(--outline)] sm:h-auto sm:w-[240px]"
+    />
+  );
 
   const facts = [
     title.release_date?.slice(0, 4),
@@ -67,15 +82,9 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
     <div className="grid gap-12">
       <div className="grid gap-x-9 gap-y-6 sm:grid-cols-[auto_minmax(0,1fr)]">
         <div className="justify-self-center sm:justify-self-start">
-          <Poster
-            path={title.poster_path}
-            title={title.title}
-            size="lg"
-            eager
-            language={language}
-            morph={posterMorph(ref)}
-            className="-rotate-2 shadow-[7px_7px_0_var(--outline)] sm:h-auto sm:w-[240px]"
-          />
+          <Suspense fallback={poster}>
+            <TitleDeck deck={deck} first={title.poster_path} titleRef={ref} language={language} fallback={poster} />
+          </Suspense>
         </div>
         <div className="grid min-w-0 content-start gap-4">
           <div className="grid gap-2">
@@ -135,6 +144,19 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
       )}
     </div>
   );
+}
+
+/** The poster as a deck of TMDB's posters to shuffle through, or just the poster when there's only one. */
+async function TitleDeck(props: {
+  deck: Promise<string[]>;
+  first: string | null;
+  titleRef: TitleRef;
+  language: string;
+  fallback: ReactNode;
+}) {
+  const posters = deckWith(props.first, await props.deck);
+  if (posters.length < 2) return props.fallback;
+  return <PosterDeck posters={posters} morph={posterMorph(props.titleRef)} language={props.language} />;
 }
 
 async function OnOurList({ titleRef, seasons }: { titleRef: TitleRef; seasons: number | null }) {

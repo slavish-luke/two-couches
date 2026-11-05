@@ -109,6 +109,9 @@ async function AccountNav() {
 
   return (
     <>
+      {/* <html lang> as soon as this streams in, before React hydrates: display lettering is uppercased in CSS,
+          and only lang="tr" turns a Turkish i into İ. HtmlLang keeps it right after client navigations. */}
+      <script dangerouslySetInnerHTML={{ __html: `document.documentElement.lang=${JSON.stringify(language)}` }} />
       <HtmlLang language={language} />
       {profile && (
         <>

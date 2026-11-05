@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
-import { Burst } from "@/components/burst";
 import { Couches } from "@/components/couch";
 import { ListSync } from "@/components/list-sync";
 import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
+import { PosterTab } from "@/components/poster-tab";
 import { RemindButton } from "@/components/remind-button";
 import { TitleCard, type CardContext } from "@/components/title-card";
 import { ALERT_STATUSES, describeAlert } from "@/lib/alert-rules";
@@ -192,7 +192,12 @@ function AlertRow(props: {
   const day = alert.created_at.slice(0, 10);
   return (
     <li className="paper tilt-row relative flex items-center gap-4 rounded-control border-[3px] border-outline p-3 pr-4">
-      <Poster path={alert.poster_path} title={alert.title} size="sm" language={context.language} />
+      <div className="poster-frame w-16 shrink-0">
+        <Poster path={alert.poster_path} title={alert.title} size="sm" language={context.language} className="w-full" />
+        {alert.kind === "both" && (
+          <PosterTab verdict="both" partnerName={props.partner?.name ?? null} language={context.language} />
+        )}
+      </div>
       <div className="grid min-w-0 flex-1 gap-0.5">
         <Link href={titleHref(alert)} className="text-lg font-bold leading-tight hover:underline">
           {alert.title}
@@ -201,11 +206,6 @@ function AlertRow(props: {
         {detail && <p className="text-sm font-medium text-muted">{detail}</p>}
         <p className="text-[13px] font-medium text-muted">{shortDate(day, context.today, context.language)}</p>
       </div>
-      {alert.kind === "both" && (
-        <Burst className="size-16 shrink-0 max-sm:absolute max-sm:-right-3 max-sm:-top-4" textClass="text-[13px]">
-          <span aria-hidden>{context.t.common.watchBadge.stampShort}</span>
-        </Burst>
-      )}
     </li>
   );
 }
@@ -216,7 +216,7 @@ function Row({ heading, note, children }: { heading: string; note?: string; chil
     <section className="grid gap-1">
       <h2 className="display text-[2rem]">{heading}</h2>
       {note && <p className="max-w-[65ch] text-sm font-medium text-muted">{note}</p>}
-      {/* Room above for the bursts and below for the hover lift and shadows, which the scroller would clip. */}
+      {/* Room above for the poster tabs and below for the hover lift and shadows, which the scroller would clip. */}
       <ul className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 pt-6">{children}</ul>
     </section>
   );

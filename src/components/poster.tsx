@@ -11,7 +11,8 @@ const SIZES = {
   xs: { width: 40, tmdb: "w92", sizes: "40px" },
   sm: { width: 64, tmdb: "w185", sizes: "64px" },
   md: { width: 92, tmdb: "w185", sizes: "92px" },
-  lg: { width: 200, tmdb: "w500", sizes: "200px" },
+  /** The title page's poster: 240px from 640px wide (the same image as the top card of its deck). */
+  lg: { width: 200, tmdb: "w500", sizes: "(min-width: 640px) 240px, 200px" },
   /** Fills its container's width: half a phone screen in grids, and about 130–220px in rows and on wider screens. */
   fluid: { width: 185, tmdb: "w342", sizes: "(min-width: 640px) 220px, 50vw" },
 } as const;

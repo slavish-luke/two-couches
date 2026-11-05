@@ -19,10 +19,10 @@ export type CardContext = {
 };
 
 /**
- * A poster card for browse-style grids and rows: an outlined poster with who-can-watch popped onto its top
- * corner, title, year (or `details` instead) and "+ Add". `children` go last, for extra actions. `index`
- * staggers the bursts popping in along a row or grid. `eager` loads the poster straight away, for the first
- * cards a page opens on (its largest paint).
+ * A poster card for browse-style grids and rows: an outlined poster with who-can-watch on a tab over its
+ * top edge (PosterTab), title, year (or `details` instead) and "+ Add". `children` go last, for extra
+ * actions. `index` staggers the tabs dropping in along a row or grid. `eager` loads the poster straight
+ * away, for the first cards a page opens on (its largest paint).
  */
 export function TitleCard({
   result,
@@ -44,7 +44,7 @@ export function TitleCard({
   const href = titleHref(result);
   return (
     <li className={`group/card grid content-start justify-items-start gap-1.5 ${className}`}>
-      <div className="relative mb-1.5 w-full transition duration-200 ease-(--ease-spring) group-hover/card:-translate-y-1.5 group-hover/card:-rotate-2">
+      <div className="poster-frame mb-1.5 w-full transition duration-200 ease-(--ease-spring) group-hover/card:-translate-y-1.5 group-hover/card:-rotate-2">
         {/* The title link below is the one for keyboards and screen readers. */}
         <Link href={href} tabIndex={-1} aria-hidden className="block">
           <Poster
@@ -57,21 +57,17 @@ export function TitleCard({
           />
         </Link>
         {context.availability && (
-          <div className="pointer-events-none absolute -top-4 -right-3 flex justify-end">
-            <Suspense>
-              <AvailabilityBadge
-                availability={context.availability}
-                titleKey={titleKey(result)}
-                me={context.me}
-                partner={context.them}
-                partnerName={context.them ? context.partnerName : null}
-                language={context.language}
-                onPoster
-                size="sm"
-                index={index % 12}
-              />
-            </Suspense>
-          </div>
+          <Suspense>
+            <AvailabilityBadge
+              availability={context.availability}
+              titleKey={titleKey(result)}
+              me={context.me}
+              partner={context.them}
+              partnerName={context.them ? context.partnerName : null}
+              language={context.language}
+              index={index % 12}
+            />
+          </Suspense>
         )}
       </div>
       <Link href={href} className="line-clamp-2 font-bold leading-snug hover:underline">
