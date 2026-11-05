@@ -61,7 +61,7 @@ export function HomeSkeleton() {
 /** Home's "Pick for tonight" card: the dice's room, a heading and a line. */
 export function PickLinkSkeleton() {
   return (
-    <div className="card flex items-center gap-4 py-4">
+    <div data-pick-card className="card flex items-center gap-4 py-4">
       <span className="h-14 w-16 shrink-0" />
       <span className="grid min-w-0 flex-1 gap-1">
         <span className="grid display-ink text-2xl leading-[1.05]">

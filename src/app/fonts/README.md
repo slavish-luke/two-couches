@@ -11,3 +11,7 @@ To rebuild it: `pip install fonttools brotli`, take two of Fredoka's Google Font
 It is one local file (`next/font/local` in `src/app/layout.tsx`, `preload: false`) rather than `next/font/google`, because Google serves Bagel as about a hundred Korean `unicode-range` slices, which put some 90 `@font-face` rules into every page's CSS for every look.
 
 To rebuild it: `pip install fonttools brotli`, open `https://fonts.googleapis.com/css2?family=Bagel+Fat+One` in a current browser, download the woff2 under `/* latin */`, and run `python -I design/fonts/bagel-fat-one.py <latin.woff2> src/app/fonts/bagel-fat-one.woff2`.
+
+## Candy Shop: Dela Gothic One and Rubik
+
+Both come from Google Fonts through `next/font` with `preload: false`, and both cover Turkish without help. Checked on 2026-11-05 with fontTools in the files `next/font` serves (the face the browser picks for each letter by `unicode-range`): İ ı Ş ş Ğ ğ Ç ç Ö ö Ü ü are all in the cmap and drawn (İ is taller than I, so it has its dot). Dela Gothic One is a Japanese face: its CSS has 123 `@font-face` slices, but Latin text only downloads the `latin` (14 KB) and `latin-ext` (9 KB) files, which hold every Turkish letter.

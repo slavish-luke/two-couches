@@ -77,7 +77,8 @@ export function AppearanceSettings({ language }: { language: string }) {
               onChange={() => choose({ skin: option_, palette: SKINS[option_][0] })}
               className={option}
             >
-              {/* Drawn in its own skin and palette (this device's palette for the current skin, else its standard one). */}
+              {/* Drawn in its own skin and palette (this device's palette for the current skin, else its standard one):
+                  a skin restyles [data-look-preview][data-skin=…] in globals.css. */}
               <span
                 aria-hidden
                 data-look-preview

@@ -8,6 +8,7 @@ export async function PickLink() {
   return (
     <Link
       href="/pick"
+      data-pick-card
       className="group card flex items-center gap-4 py-4 transition duration-150 ease-(--ease-spring) hover:-translate-y-1 hover:-rotate-1 hover:shadow-[8px_8px_0_var(--outline)] active:translate-x-1 active:translate-y-1 active:shadow-[2px_2px_0_var(--outline)]"
     >
       <Dice />
