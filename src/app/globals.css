@@ -584,6 +584,11 @@
     }
   }
   .poster-tab-paper {
+    /*
+     * Never past the poster's right edge (or the screen's, on the last card in a row): the label truncates.
+     * 8px leaves room for a skin's tilt, which lifts the tab's far corner outwards.
+     */
+    max-width: calc(100cqi - clamp(4px, 7cqi, 14px) - 8px);
     padding: 3px 7px;
     background: var(--p-surface);
     color: var(--p-ink);

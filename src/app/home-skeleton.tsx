@@ -20,7 +20,7 @@ export function HomeSkeleton() {
               <span className={`w-20 rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${i === 0 ? "bg-me" : "bg-partner"}`}>
                 {" "}
               </span>
-              <div className="grid w-full justify-items-center gap-1">
+              <div data-clock className="grid w-full justify-items-center gap-1">
                 <SkelText bar="ink" className="display-ink text-[clamp(2rem,26cqi,3.5rem)] leading-none" width="70%" />
                 <SkelText className="text-sm font-semibold" width="45%" />
               </div>

@@ -53,12 +53,16 @@ export function PosterTab({
   return (
     <span className="poster-tab poster-tab-paper" style={{ "--i": index } as CSSProperties}>
       {verdict !== "free" && (
-        <span aria-hidden className="flex gap-1">
+        <span aria-hidden className="flex shrink-0 gap-1">
           <Dot filled={verdict === "me"} color="var(--me)" />
           {partnerName && <Dot filled={verdict === "partner"} color="var(--partner)" />}
         </span>
       )}
-      {shown && <span aria-hidden>{shown}</span>}
+      {shown && (
+        <span aria-hidden className="min-w-0 truncate">
+          {shown}
+        </span>
+      )}
       <span className="sr-only">{label}</span>
     </span>
   );

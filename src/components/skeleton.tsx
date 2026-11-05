@@ -184,7 +184,7 @@ export function SkelTitleCard({
   extra?: ReactNode;
 }) {
   return (
-    <li aria-hidden className={`grid content-start justify-items-start gap-1.5 ${className}`}>
+    <li aria-hidden data-title-card className={`grid content-start justify-items-start gap-1.5 ${className}`}>
       <span className="mb-1.5 block w-full">
         <SkelPoster size="fluid" className="shadow-[4px_4px_0_var(--outline)]" />
       </span>
