@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  /* Fredoka's Google files have no capital İ: the app's one-letter face fills it in (src/app/fonts). */
+  @font-face { font-family: "Fredoka Idot"; src: url("../../src/app/fonts/fredoka-idot.woff2") format("woff2"); font-weight: 300 700; unicode-range: U+0130; }
+
+  /* ---------- the lab around the mocks ---------- */
+  :root { --lab-bg: #141318; --lab-panel: #1d1c23; --lab-ink: #f1eff6; --lab-muted: #a5a2b4; --lab-line: #2d2b36; --lab-hi: #ffd23f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--lab-bg); color: var(--lab-ink); font-family: "Fredoka Idot", Fredoka, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  button { font: inherit; }
+  .lab-head { position: sticky; top: 0; z-index: 50; background: #141318f0; backdrop-filter: blur(8px); border-bottom: 1px solid var(--lab-line); padding: 12px 16px; display: grid; gap: 9px; }
+  .lab-row { display: flex; gap: 10px 18px; align-items: center; flex-wrap: wrap; }
+  .lab-head h1 { margin: 0; font: 400 24px "Luckiest Guy", sans-serif; letter-spacing: .03em; color: var(--lab-hi); }
+  .lab-head p { margin: 0; color: var(--lab-muted); font-size: 14px; max-width: 95ch; }
+  .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; border: 2px solid var(--lab-line); border-radius: 18px; padding: 3px; max-width: 100%; }
+  .seg > span { padding: 5px 8px; font-size: 13px; color: var(--lab-muted); }
+  .seg button { border: 1.5px solid var(--lab-line); border-radius: 999px; background: transparent; color: var(--lab-ink); padding: 6px 11px; font-size: 14px; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+  .seg button[aria-pressed="true"] { background: var(--lab-ink); color: var(--lab-bg); }
+  .seg input[type="range"] { width: 100px; accent-color: var(--lab-hi); }
+  .seg output { font-size: 13px; min-width: 2.6em; color: var(--lab-ink); }
+  .replay { border: 2px solid var(--lab-hi); background: var(--lab-hi); color: #141318; border-radius: 999px; padding: 7px 14px; font-weight: 700; cursor: pointer; }
+  .lab-main { padding: 20px 16px 60px; display: grid; gap: 22px; max-width: 1760px; margin: 0 auto; }
+  .about { display: grid; gap: 8px; }
+  .about p, .about li { margin: 0; color: var(--lab-muted); max-width: 95ch; line-height: 1.5; }
+  .about ul { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+  .about b { color: var(--lab-ink); }
+  .stage { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .stage[data-view="wide"] { grid-template-columns: minmax(0, 1fr); }
+  .stage[data-view="wide"] .phone-col { display: none; }
+  .stage[data-view="phone"] { grid-template-columns: 390px; justify-content: center; }
+  .stage[data-view="phone"] .desk-col { display: none; }
+  @media (width < 1000px) { .stage, .stage[data-view] { grid-template-columns: minmax(0, 1fr); justify-items: center; } .desk-col { justify-self: stretch; } }
+  .col-label { font-size: 13px; color: var(--lab-muted); margin-bottom: 8px; }
+  .desk-fit { width: 100%; overflow: hidden; border-radius: 14px; position: relative; }
+  .desk-fit > .app { width: 1180px; height: 760px; transform-origin: top left; }
+  .phone { width: 390px; max-width: 100%; height: 820px; border-radius: 44px; border: 10px solid #000; overflow: hidden; position: relative; box-shadow: 0 0 0 2px #333; contain: paint; }
+  .phone > .app { height: 100%; }
+
+  /* ---------- the app, painted from the same tokens as globals.css (Sunburst) ---------- */
+  .app {
+    --p-bg: #ffd23f; --p-surface: #fffaf0; --p-ink: #1d1a2b; --p-muted: #4a4360; --ray: #ffc61a; --outline: #1d1a2b; --me: #ff8a65; --partner: #5cc8ff; --stamp: #ff2e93; --accent: #6a4cf5; --accent-soft: #e6e0ff; --pop: #ffd23f;
+    --ink: var(--p-ink); --muted: var(--p-muted); --surface: var(--p-surface);
+    --spring: cubic-bezier(0.2, 1.4, 0.4, 1);
+    position: relative; isolation: isolate; overflow: hidden; color: var(--ink); font-family: "Fredoka Idot", Fredoka, sans-serif; font-size: 17px;
+    background: repeating-conic-gradient(from 0deg at 50% -160px, var(--ray) 0 6deg, transparent 6deg 12deg) var(--p-bg);
+  }
+  .app .page { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+  .tp { padding: 26px 18px 60px; display: grid; gap: 26px; }
+  .is-wide .tp { padding: 48px 56px; grid-template-columns: auto minmax(0, 1fr); column-gap: 52px; align-items: start; max-width: 1020px; }
+  .tp-deck { display: grid; justify-items: center; gap: 22px; }
+  .is-wide .tp-deck { justify-items: start; }
+  .tp-body { display: grid; gap: 14px; align-content: start; min-width: 0; }
+  /* Luckiest Guy draws lower case as capitals, so a Turkish i loses its dot unless the text is uppercased with lang="tr". */
+  .display, .btn { text-transform: uppercase; }
+  .display { font-family: "Luckiest Guy", sans-serif; font-weight: 400; line-height: .95; letter-spacing: .02em; color: var(--p-surface); -webkit-text-stroke: max(2px, .05em) var(--outline); paint-order: stroke fill; text-shadow: .07em .07em 0 var(--outline); margin: 0; overflow-wrap: anywhere; }
+  .tp h1 { font-size: clamp(38px, 5vw, 56px); rotate: -1deg; }
+  .facts { font-weight: 700; margin: 0; }
+  .orig { font-size: 18px; font-weight: 600; color: var(--muted); margin: 0; }
+  .strands { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+  .strand { border: 2px solid var(--outline); border-radius: 999px; padding: 0 8px; font-size: 13px; font-weight: 600; background: var(--surface); }
+  .tagline { font-size: 18px; font-weight: 600; color: var(--muted); margin: 0; }
+  .overview { font-size: 17px; font-weight: 500; line-height: 1.6; margin: 0; max-width: 62ch; }
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn { font-family: "Luckiest Guy", sans-serif; letter-spacing: .04em; font-size: 17px; border: 2.5px solid var(--outline); border-radius: 14px; background: var(--pop); color: var(--p-ink); padding: 10px 16px 7px; box-shadow: 3px 3px 0 var(--outline); }
+  .btn-quiet { display: inline-flex; align-items: center; gap: 8px; border: 2.5px solid var(--outline); border-radius: 14px; background: var(--surface); color: var(--p-ink); font-weight: 600; font-size: 16px; padding: 6px 14px; box-shadow: 3px 3px 0 var(--outline); cursor: pointer; transition: translate .15s var(--spring), box-shadow .15s var(--spring); }
+  .btn-quiet:hover { translate: -1px -1px; box-shadow: 4px 4px 0 var(--outline); }
+  .btn-quiet:active { translate: 2px 2px; box-shadow: none; }
+  .btn-quiet svg { width: 20px; height: 20px; flex: none; }
+  .btn-quiet .count { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .btn-quiet[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .btn-quiet[aria-pressed="true"] .count { color: #f1edff; }
+  .deck-ctl { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .is-wide .deck-ctl { justify-content: start; max-width: 260px; }
+  .both-banner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border: 3px solid var(--outline); border-radius: 22px; box-shadow: 6px 6px 0 var(--outline); font-weight: 600; rotate: -.5deg; }
+  .both-banner b { color: #b0005f; }
+
+  /* The deck */
+  .deck { --w: 200px; position: relative; width: var(--w); aspect-ratio: 2 / 3; touch-action: pan-y; cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .is-wide .deck { --w: 240px; }
+  .deck:focus-visible { outline: none; }
+  .deck:focus-visible .dc.is-top { outline: 3px solid var(--accent); outline-offset: 4px; }
+  .deck-count { position: absolute; right: -14px; bottom: -12px; z-index: 20; rotate: 5deg; display: inline-flex; align-items: center; gap: 4px; border: 2.5px solid var(--outline); border-radius: 999px; background: var(--surface); color: var(--p-ink); padding: 2px 9px 2px 7px; font-size: 14px; font-weight: 700; box-shadow: 3px 3px 0 var(--outline); pointer-events: none; }
+  .deck-count svg { width: 16px; height: 16px; }
+  .dc { position: absolute; inset: 0; border: 3px solid var(--outline); border-radius: 10px; background: var(--surface); box-shadow: 4px 4px 0 var(--outline); overflow: hidden; will-change: transform; transform-origin: 50% 60%; }
+  .dc.is-top { box-shadow: 7px 7px 0 var(--outline); }
+  .dc img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+  .dc .lbl { position: absolute; left: 6px; bottom: 6px; border: 2px solid var(--outline); border-radius: 999px; background: var(--surface); padding: 0 7px; font-size: 12px; font-weight: 700; display: none; }
+  .show-labels .dc .lbl { display: block; }
+  .dc .ours { position: absolute; right: -4px; top: 10px; rotate: 6deg; border: 2.5px solid var(--outline); border-radius: 10px; background: var(--accent); color: #fff; padding: 2px 8px 0; font: 400 15px "Luckiest Guy", sans-serif; letter-spacing: .04em; text-transform: uppercase; box-shadow: 3px 3px 0 var(--outline); display: none; }
+  .dc.is-ours .ours { display: block; }
+  .single-note { font-size: 14px; color: var(--muted); font-weight: 600; text-align: center; margin: 0; max-width: 220px; }
+
+  /* The grid screen the morph starts from */
+  .grid-screen { position: absolute; inset: 0; z-index: 5; padding: 26px 18px; display: grid; align-content: start; gap: 20px; background: repeating-conic-gradient(from 0deg at 50% -160px, var(--ray) 0 6deg, transparent 6deg 12deg) var(--p-bg); }
+  .grid-screen[hidden] { display: none; }
+  .is-wide .grid-screen { padding: 40px 56px; }
+  .grid-screen h2 { font-size: 34px; rotate: -1deg; justify-self: start; }
+  .gs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  .is-wide .gs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .gs div { display: grid; gap: 6px; font-weight: 700; line-height: 1.25; }
+  .gs img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border: 3px solid var(--outline); border-radius: 10px; box-shadow: 4px 4px 0 var(--outline); display: block; background: var(--surface); }
+  .gs .target img { transition: scale .15s var(--spring); }
+  .gs .target.pressed img { scale: .94; }
+  .tap-ring { position: absolute; width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--outline); background: #fff8; pointer-events: none; translate: -50% -50%; }
+</style>
+</head>
+<body>
+<header class="lab-head">
+  <div class="lab-row">
+    <h1>Deck lab</h1>
+    <p>The title page poster as a deck of alternate posters from TMDB. Tap the deck, press Shuffle, or swipe it (drag with the mouse). Replay the arrival to see the cards drop in.</p>
+  </div>
+  <div class="toggles">
+    <div class="seg" data-key="title" id="titles"><span>Title</span></div>
+  </div>
+  <div class="toggles">
+    <div class="seg" data-key="arrive"><span>Arrival</span><button data-v="drop">Drop in</button><button data-v="morph-fan">Morph, then fan out</button><button data-v="morph-drop">Morph, then drop</button><button data-v="none">Nothing</button></div>
+    <div class="seg" data-key="stack"><span>Pile</span><button data-v="messy">Messy</button><button data-v="fan">Fanned</button><button data-v="neat">Neat</button></div>
+    <div class="seg" data-key="shuffle"><span>Shuffle</span><button data-v="tuck">Tuck under</button><button data-v="pull">Pull from the bottom</button><button data-v="riffle">Riffle</button></div>
+  </div>
+  <div class="toggles">
+    <div class="seg"><span>Cards</span><input id="cards" type="range" min="2" max="6" step="1"><output id="cardsOut"></output></div>
+    <div class="seg"><span>Peek</span><input id="peek" type="range" min="0" max="2" step="0.1"><output id="peekOut"></output></div>
+    <div class="seg"><span>Drop</span><input id="drop" type="range" min="0.5" max="1.6" step="0.1"><output id="dropOut"></output></div>
+    <div class="seg" data-key="order"><span>Order</span><button data-v="lang">Language first</button><button data-v="textless">Textless first</button></div>
+    <div class="seg" data-key="control"><span>Shuffle control</span><button data-v="button">Shuffle button</button><button data-v="deck">Just the deck</button><button data-v="count">Deck + counter</button><button data-v="nudge">Deck + nudge</button></div>
+    <div class="seg" data-key="ours"><span>Chosen poster</span><button data-v="fun">Just for fun</button><button data-v="ours">"Use this one for us"</button></div>
+  </div>
+  <div class="toggles">
+    <div class="seg" data-key="lang"><span>Language</span><button data-v="en">English</button><button data-v="tr">Türkçe</button></div>
+    <div class="seg" data-key="view"><span>Show</span><button data-v="both">Phone + wide</button><button data-v="phone">Phone</button><button data-v="wide">Wide</button></div>
+    <div class="seg" data-key="speed"><span>Speed</span><button data-v="1">Normal</button><button data-v="4">Slow-mo</button><button data-v="reduce">Reduced motion</button></div>
+    <div class="seg" data-key="labels"><span>Card labels</span><button data-v="off">Off</button><button data-v="on">Language + size</button></div>
+    <button class="replay" id="replay">Replay arrival</button>
+  </div>
+</header>
+
+<main class="lab-main">
+  <div class="about">
+    <ul>
+      <li><b>Which posters:</b> the poster the app shows today on top (TMDB's pick for the language), then the most-voted posters in the viewer's language, then textless ones (for Turkish, English ones after that, since Turkish posters are rare). <b>Textless first</b> swaps the last two. Turn on <b>Card labels</b> to see each card's language and the TMDB size it loads: the cards underneath load a small size (w185), and the full one (w500) only when a card comes to the top.</li>
+      <li><b>Open questions:</b> should a chosen poster be saved for the two of you (try <b>"Use this one for us"</b>: it would then show on your list, the grids and Pick), or is shuffling just for fun? And how many cards (<b>Cards</b>, 2 to 6)?</li>
+      <li><b>Tut Sözünü</b> has one poster on TMDB, so it shows the plain poster with no deck and no Shuffle button. The Inside Out 2 and House of the Dragon decks change most between English and Turkish.</li>
+    </ul>
+  </div>
+  <div class="stage" id="stage">
+    <div class="phone-col"><div class="col-label">Phone, 390px</div><div class="phone" id="phone"></div></div>
+    <div class="desk-col"><div class="col-label">Wide screen, 1180px (scaled to fit)</div><div class="desk-fit" id="desk"></div></div>
+  </div>
+</main>
+
+<script>
+const TITLES = [{"id":693134,"type":"movie","year":"2024","runtime":167,"seasons":null,"en":{"title":"Dune: Part Two","poster":"/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg","original":"Dune: Part Two","tagline":"Long live the fighters.","overview":"Follow the mythic journey of Paul Atreides as he unites with Chani and the Fremen while on a path of revenge against the conspirators who destroyed his family. Facing a choice between the love of his life and the fate of the known universe, Paul endeavors to prevent a terrible future only he can foresee.","genres":["Science Fiction","Adventure"]},"tr":{"title":"Dune: Çöl Gezegeni - Bölüm İki","poster":"/tihf8Trht9zP3scmUQfvGlAY9FU.jpg","original":"Dune: Part Two","tagline":"Savaşçılar çok yaşasın.","overview":"Paul, Harkonnen ailesinin saldırısından kurtulduktan sonra Fremenler ile birlikte yaşamaya başlar. Fremenler'in yardımı ile, Arrakis'in kontrolüne yeniden sahip olmak ve evrenin kaderini değiştirmek için mücadele eder. Fremenler, Paul'un liderliğinde Arrakis gezegenini özgürleştireceklerine ve galakside eşitlik ile adaleti sağlayacaklarına inanırlar.","genres":["Bilim-Kurgu","Macera"]},"posters":[["/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg","en",98],["/czembW0Rk1Ke7lCJGahbOhdCuhV.jpg","en",89],["/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg","en",86],["/5aUVLiqcW0kFTBfGsCWjvLas91w.jpg","en",74],["/mFnF8tpPMqEwti2J2aMhYGZYdv0.jpg","en",63],["/7wjKein20OCNQaApLqA4UuvNcP4.jpg","en",56],["/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg","en",55],["/tTvpEKFumAWDUqsAW6dbOiromCR.jpg","en",50],["/m0KlkqSLoYeGACAgLzOkv2tmpry.jpg","tr",4],["/tihf8Trht9zP3scmUQfvGlAY9FU.jpg","tr",1],["/9IYS8SY31iJ8jO4Gn9Vp7beVyU3.jpg","tr",1],["/aDJpODZp3ANZ2NniXBTfOTvQ7R8.jpg","tr",1],["/lS0w69Y2F4IueoDZHLC6RcRUQLn.jpg","tr",0],["/q6OlEefHppCj4qSfPEzGdsdRCG2.jpg","",6],["/76upJ0fnQ3osESX8mkTyfuXK5Ju.jpg","",5],["/qslZFQuiGLFsKOmC6jQ6Mls0uUK.jpg","",4],["/uAje2exB3JcLwXzR4qYikkztotM.jpg","",3],["/v7x45ohqhV7FBK8YiV2DPYCyhlT.jpg","",2],["/itWgEXtk6NG37ZkCP326ZQ3OMSK.jpg","",2],["/dxYtzoQ3u2SfK8Mv9UkCwNJdoGB.jpg","",2],["/2fhUz0uNC9a7hh5RiMtGKABM6P4.jpg","",2]]},{"id":129,"type":"movie","year":"2001","runtime":125,"seasons":null,"en":{"title":"Spirited Away","poster":"/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg","original":"千と千尋の神隠し","tagline":"Prepare to be spirited away.","overview":"A young girl, Chihiro, becomes trapped in a strange new world of spirits. When her parents undergo a mysterious transformation, she must call upon the courage she never knew she had to free her family.","genres":["Animation","Family","Fantasy"]},"tr":{"title":"Ruhların Kaçışı","poster":"/xvOEOMCzfV8qXkd1n1btZ8q4Psd.jpg","original":"千と千尋の神隠し","tagline":"","overview":"Film, küçük Chihiro ve ailesinin yeni bir kasabaya taşınmalarıyla açılır. Yolculuk esnasında yolda gördükleri bir tünele dikkat eden aile, tünelin içerisinden geçtiklerinde karşılaştıkları fantastik dünyanın içerisinde büyülenirler. Ancak bu kasabada yolunda gitmeyen bir şeyler vardır, bu büyü kısa bir zaman sonra bozulacaktır. Ailesini kaybeden küçük Chihiro, babasını kurtarmak için korku dolu bir maceraya atılacaktır.","genres":["Animasyon","Aile","Fantastik"]},"posters":[["/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg","en",50],["/2TeJfUZMGolfDdW6DKhfIWqvq8y.jpg","en",24],["/qH2f0e19oklRgiq8vpnRuaXkuT.jpg","en",23],["/yr7wocm26hT7IQBB78sprQVLlVd.jpg","en",17],["/2LVb9rK1LzdqZ7ROKdKnbQpDmbH.jpg","en",16],["/61I4u8VY9OrxKr8wKrte7ZZAB1D.jpg","en",11],["/jUo8cNmU400WtZiJss45HNXlQ2e.jpg","en",9],["/gJCRERaZs0NvHktBsfDllc09pE1.jpg","en",9],["/xvOEOMCzfV8qXkd1n1btZ8q4Psd.jpg","tr",1],["/vUn89LJRkJQJ5QiAETXVrNzVFl0.jpg","",6],["/b1h8uxUY46g8G1k6FmliMZW1ZK0.jpg","",5],["/RTVpv1HmdbMi7iPpVURuCupTW4.jpg","",5],["/col8DhFNdMmMPvKrm8jlKrjSLio.jpg","",3],["/byYh97Oh1VtxRtzrRkx9kOx2Fdw.jpg","",2],["/u9Fffcy8IeesCdedLcTRyFjgCbO.jpg","",1],["/nugwBsNv3mrgJhVNl9Fnydsa0zL.jpg","",1],["/rsKRlmThfFfIlzTt4xmKdZA4fLj.jpg","",1]]},{"id":95396,"type":"tv","year":"2022","runtime":null,"seasons":3,"en":{"title":"Severance","poster":"/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"},"tr":{"title":"Severance","poster":"/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"},"posters":[]},{"id":136315,"type":"tv","year":"2022","runtime":null,"seasons":5,"en":{"title":"The Bear","poster":"/eKfVzzEazSIjJMrw9ADa2x8ksLz.jpg","original":"The Bear","tagline":"Back for seconds.","overview":"Carmy, a young fine-dining chef, comes home to Chicago to run his family sandwich shop. As he fights to transform the shop and himself, he works alongside a rough-around-the-edges crew that ultimately reveal themselves as his chosen family.","genres":["Drama","Comedy"]},"tr":{"title":"The Bear","poster":"/eKfVzzEazSIjJMrw9ADa2x8ksLz.jpg","original":"The Bear","tagline":"Bir tabak daha.","overview":"Gastronomi dünyasından genç bir şef olan Carmen \"Carmy\" Berzatto, yürek burkan bir ölümün ardından ailesinin sandviç dükkanını işletmek için Chicago'ya dönmek zorunda kalır. Kendi dünyasından uzakta olan Carmy, bir trajedinin sonuçlarına katlanırken küçük bir işletmenin, inatçı bir personelin ve gergin aile ilişkilerinin ezici sorumluluklarıyla uğraşmak zorundadır.","genres":["Dram","Komedi"]},"posters":[["/3MVHF64rlvH1eofKefIoazXwOK0.jpg","en",52],["/i6sJI3O1874FBdDtM0jn6fpPE0x.jpg","en",46],["/eal6vNtJS08WfHdv72OOpcjYsni.jpg","en",33],["/5WLYqaYqAJSF1rg6Ec1SBXyESWI.jpg","en",24],["/vc7EFaoEer6Pj7PCMf2YlkqswQo.jpg","en",23],["/kmKOXOC6txne2tXjcnZPHNtsY9E.jpg","en",23],["/sHFlbKS3WLqMnp9t2ghADIJFnuQ.jpg","en",23],["/1Wj4xEeJTrsWYmF4EvB1NfTiffo.jpg","en",18],["/bOZFXt0cHCktsmcyecKtFMlmesz.jpg","",6],["/bYgBJDf7K7ZEbWNHtvhGF4b5IOE.jpg","",5],["/jqH6QXaIj7ov6NUDenTx1lsbYww.jpg","",4],["/bu99Db7vDhqUjJHdcmXj74j9Gu1.jpg","",3],["/uuQycdQyixtS4EHKtUQpXtZvPki.jpg","",2],["/6lzTpAH1sj4RWqIaI8dzXn2WS97.jpg","",2],["/2U9RUBRZOSqU4MzPUUAKLEkfkjJ.jpg","",2],["/q0euixixFmJbHJ7BI9IxUm0cyd4.jpg","",2]]},{"id":346648,"type":"movie","year":"2017","runtime":104,"seasons":null,"en":{"title":"Paddington 2","poster":"/1OJ9vkD5xPt3skC6KguyXAgagRZ.jpg"},"tr":{"title":"Ayı Paddington 2","poster":"/1OJ9vkD5xPt3skC6KguyXAgagRZ.jpg"},"posters":[]},{"id":545611,"type":"movie","year":"2022","runtime":140,"seasons":null,"en":{"title":"Everything Everywhere All at Once","poster":"/u68AjlvlutfEIcpmbYpKcdi09ut.jpg"},"tr":{"title":"Her Şey Her Yerde Aynı Anda","poster":"/vt5Fd1wouNEL7HN3TQ0PMls4auE.jpg"},"posters":[]},{"id":666277,"type":"movie","year":"2023","runtime":106,"seasons":null,"en":{"title":"Past Lives","poster":"/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg","original":"Past Lives","tagline":"A heartrending modern romance that confronts notions of destiny, love, and the choices that make a life.","overview":"After decades apart, childhood friends Nora and Hae Sung are reunited in New York for one fateful weekend as they confront notions of destiny, love, and the choices that make a life.","genres":["Drama","Romance"]},"tr":{"title":"Başka Bir Hayatta","poster":"/ndE4NbhoNGFcnICbkhvpExdFp8W.jpg","original":"Past Lives","tagline":"","overview":"Birbirine derinden bağlı iki çocukluk arkadaşı olan Nora ve Hae-sung, Nora'nın ailesi Güney Kore'den göç edince ayrılmak zorunda kalır. Yirmi yıl sonra, kader ve aşk kavramlarıyla ve hayatı oluşturan seçimlerle yüzleşirken, önemli bir hafta boyunca New York'ta yeniden bir araya gelirler.","genres":["Dram","Romantik"]},"posters":[["/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg","en",20],["/nflfJ9IYNNMqPRHKGf9nbU6BsED.jpg","en",20],["/gXt3eVpaBq6q9SaLDrgSnzsUyIl.jpg","en",16],["/rzO71VFu7CpJMfF5TQNMj0d1lSV.jpg","en",15],["/w5iXJr4kEkymkaNk2zy77d5lrhk.jpg","en",11],["/wLATJOQ9yQfaVxpCHGeLYWVKS6K.jpg","en",11],["/qAT9gVdTy83dBY8L8zfW7wqIoSX.jpg","en",8],["/3oV5Ey7IzztHZp2SeaZnPWk8CGQ.jpg","en",8],["/ndE4NbhoNGFcnICbkhvpExdFp8W.jpg","tr",0],["/wR81veZrj79VOr2mHGwUOoHmL0g.jpg","",3],["/13Thg2LzJ6NmQKnFb6en2Js7Nmr.jpg","",3],["/armTLHYbGk3AzrbNROmS32BwRsL.jpg","",2],["/74PTpTx84W3QKfFN5WeQDCC1okL.jpg","",1],["/r6iddAvJ260ibJVIWZ9pICqtHSG.jpg","",0],["/1sjQQU5spexOKZvI3Eg6UFBRvJc.jpg","",0],["/3tBqCuxFu3MZ8BvDVX2pIu1f5Y0.jpg","",0],["/9GerFT0p2PriZukHoIxV2DqoJtx.jpg","",0]]},{"id":76341,"type":"movie","year":"2015","runtime":121,"seasons":null,"en":{"title":"Mad Max: Fury Road","poster":"/ulcAi4dKpAjHwYGS08vNyx9H6I9.jpg"},"tr":{"title":"Mad Max: Fury Road","poster":"/mnKUoJFdNbQVs4f7nEGW6p7CgsA.jpg"},"posters":[]},{"id":100088,"type":"tv","year":"2023","runtime":null,"seasons":2,"en":{"title":"The Last of Us","poster":"/dmo6TYuuJgaYinXBPjrgG9mB5od.jpg"},"tr":{"title":"The Last of Us","poster":"/cdbDsn2hqLL7x804GixzPP8AiBE.jpg"},"posters":[]},{"id":872585,"type":"movie","year":"2023","runtime":181,"seasons":null,"en":{"title":"Oppenheimer","poster":"/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg"},"tr":{"title":"Oppenheimer","poster":"/mmZi0tyPFfbcCqEsJIPxVldCPOL.jpg"},"posters":[]},{"id":1022789,"type":"movie","year":"2024","runtime":97,"seasons":null,"en":{"title":"Inside Out 2","poster":"/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg","original":"Inside Out 2","tagline":"Make room for new emotions.","overview":"Teenager Riley's mind headquarters is undergoing a sudden demolition to make room for something entirely unexpected: new Emotions! Joy, Sadness, Anger, Fear and Disgust, who’ve long been running a successful operation by all accounts, aren’t sure how to feel when Anxiety shows up. And it looks like she’s not alone.","genres":["Animation","Adventure","Comedy","Family"]},"tr":{"title":"Ters Yüz 2","poster":"/xYqeUheNCep7ll9AotOcclGhP0X.jpg","original":"Inside Out 2","tagline":"Yeni duygulara yer açın!","overview":"Disney ve Pixar'ın \"Ters Yüz 2\" filminde, ergenliğe adım atan Riley'nin zihnine döneriz. Merkez'de aniden bir tadilat başlar ve hiç hesapta olmayan yeni Duygular'a yer açılır! Uzun zamandır işleri başarıyla yürüten Neşe, Üzüntü, Öfke, Korku ve Tiksinti, Kaygı geldiğinde neler hissedeceklerini bilemez. Üstelik Kaygı yalnız değildir, beraberinde Utanç, Gıpta ve Bıkkınlık da gelmiştir.","genres":["Animasyon","Macera","Komedi","Aile"]},"posters":[["/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg","en",57],["/q1P71jvmGuHjee9I4PgQKMCB1c9.jpg","en",43],["/xeqXXTE1Cd3qNaAEOT6qbhhCsgJ.jpg","en",42],["/6VXBrVKYiclHf3JLKrPbmzR1ce2.jpg","en",35],["/8TMcRyAQBUEcfXjz7y8BONht42C.jpg","en",34],["/oxxqiyWrnM0XPnBtVe9TgYWnPxT.jpg","en",33],["/kAPN02qvX7QTQYtBu9wHN6xQySB.jpg","en",33],["/t7bhjraXuN4hd3yZVBVVhP3BdX0.jpg","en",32],["/xYqeUheNCep7ll9AotOcclGhP0X.jpg","tr",4],["/dptKUdlnL54xtxE3KuXiDMSoTBf.jpg","tr",2],["/h3QT2iWquKGNesfuYVf0cthC7ne.jpg","tr",1],["/16LySewbu0koBp0R9DadXdvfwMu.jpg","tr",1],["/ad61g6JZ3mNVRyHwAcdlDXNLrNl.jpg","tr",1],["/lMtCwExn19E0ryQctPQlbFCU80X.jpg","tr",0],["/6302FkhuaepeOf3FjSNN7NAM3eJ.jpg","tr",0],["/vJ2L40mpp6fR2VhpV5VEzQWcnVj.jpg","tr",0],["/9SceHz31oRidyqOVvRE4JeRNPDg.jpg","",7],["/orsGQt5rn7Uznc5Sn5uH5IzXqZN.jpg","",5],["/rfmEw2M9VVlMy6Qy1UzumdxKah3.jpg","",4],["/A5aF2agJA9VzEAevVlCkgs75vfo.jpg","",4],["/cNxSLXUaT2h4lmA5CXnw6JVVHoY.jpg","",4],["/drz3bnS50D1uxRYVzrrMpvYVbK9.jpg","",4],["/dZzz0duMog4kQWH3hyQYkhDWkkf.jpg","",4],["/fFCErXdmxMwV7MjkQnmMQyV4wxR.jpg","",3]]},{"id":94997,"type":"tv","year":"2022","runtime":null,"seasons":3,"en":{"title":"House of the Dragon","poster":"/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg","original":"House of the Dragon","tagline":"Win or die.","overview":"The Targaryen dynasty is at the absolute apex of its power, with more than 15 dragons under their yoke. Most empires crumble from such heights. In the case of the Targaryens, their slow fall begins when King Viserys breaks with a century of tradition by naming his daughter Rhaenyra heir to the Iron Throne. But when Viserys later fathers a son, the court is shocked when Rhaenyra retains her status as his heir, and seeds of division sow friction across the realm.","genres":["Sci-Fi & Fantasy","Drama","Action & Adventure"]},"tr":{"title":"House of the Dragon","poster":"/6YM292PX2gSIBk16hufmlGT3iQW.jpg","original":"House of the Dragon","tagline":"Targaryen Hanesi'nin saltanatı başlıyor!","overview":"George R.R. Martin'in \"Fire & Blood\" adlı eserinden uyarlanan ve Game of Thrones'taki olaylardan 200 yıl öncesini konu alan dizi, Targaryen Hanesi'nin gücünün zirvesinde olduğu dönemde bir iç veraset savaşını anlatıyor.","genres":["Bilim Kurgu & Fantazi","Dram","Aksiyon & Macera"]},"posters":[["/z2yahl2uefxDCl0nogcRBstwruJ.jpg","en",77],["/1X4h40fcB4WWUmIBK0auT4zRBAV.jpg","en",44],["/m7ta0kNg2ONvnBFF76miVvbWK1V.jpg","en",40],["/wW5WW34KhCDNGRs3gnzqrzQeiEB.jpg","en",27],["/AmyQOlqoUWP8xwS7k99ZnpROm7g.jpg","en",24],["/17TTFFAXcg1hKAi1smsXsbpipru.jpg","en",23],["/q0weStGeVRGuYzBCqMsuHzaWPjg.jpg","en",20],["/t9XkeE7HzOsdQcDDDapDYh8Rrmt.jpg","en",16],["/6YM292PX2gSIBk16hufmlGT3iQW.jpg","tr",1],["/m41uoKtsq0Nb1O4kKcTwb7s1dFU.jpg","tr",0],["/iUuxYgkH0HOvxFTPJDBq7UeUEly.jpg","tr",0],["/1rkjiTA3Pa7l2hJ2BWl41LO2szC.jpg","tr",0],["/gOGcJ3wjTm70EAENfjus9XjNdL9.jpg","tr",0],["/A9F8bwklFljssMJOBVU6G3K25Rj.jpg","tr",0],["/el0aswXSSlPT3f27oT5PguYZ2bh.jpg","tr",0],["/9fIb914adxAxJt8tZjdx8LO3CZX.jpg","tr",0],["/elwO2VlWzvUWsGGeeypZzpa61Jm.jpg","",8],["/qrNp6li99vvAJPwbVEYhyIguHpl.jpg","",3],["/np7VD8fQtkTDS2FDJwpDRx4YqWO.jpg","",3],["/zx7VWiSAntmz9an35oDhifjc5x0.jpg","",3],["/gxC4fSLCeVILzF6d280rGmsYcrP.jpg","",3],["/66uJlepg2qQXGWM6uvAwycHjkLu.jpg","",3],["/2Upvi6wOfR87C7Wj0baeCZDd5p5.jpg","",3],["/lC7kkFcf5LeIzHeqzlON6S92SQq.jpg","",3]]},{"id":508442,"type":"movie","year":"2020","runtime":101,"seasons":null,"en":{"title":"Soul","poster":"/hm58Jw4Lw8OIeECIq5qyPYhAeRJ.jpg"},"tr":{"title":"Soul","poster":"/nEnPHSZlr0zOqW1LVyFrkvbyhpr.jpg"},"posters":[]},{"id":1396,"type":"tv","year":"2008","runtime":null,"seasons":5,"en":{"title":"Breaking Bad","poster":"/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"},"tr":{"title":"Breaking Bad","poster":"/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"},"posters":[]},{"id":345881,"type":"movie","year":"2015","runtime":0,"seasons":null,"en":{"title":"Tut Sözünü","poster":"/ohpLLZbTgRoIuFTR39r1LnwPGfJ.jpg","original":"Tut Sözünü","tagline":"","overview":"Yalçın and Bahadır are two close friends with contrasting personalities. However, Yalçın's unexpected death painfully separates the two friends. One day, Bahadır, who misses Yalçın's crazy antics, hears a knock on his door. He finds himself face to face with the ghost of his crazy friend Yalçın, whose death he mourns deeply! Moreover, he is not alone; he is accompanied by an Italian trapeze artist named Bernardo. Yalçın is stuck in limbo because he failed to keep a promise, and the only person who can help him fulfill that promise is his close friend Bahadır. Yalçın must fulfill his promise within three days, as this is the only way he can find peace. Meanwhile, Bahadır tries to help him but ends up getting into trouble. Additionally, his platonic love for Demet, whom he works with but can’t bring himself to confess his feelings to, adds another layer of complexity to his adventure.","genres":["Comedy","Fantasy"]},"tr":{"title":"Tut Sözünü","poster":"/ohpLLZbTgRoIuFTR39r1LnwPGfJ.jpg","original":"Tut Sözünü","tagline":"","overview":"Yalçın ve Bahadır, birbirine zıt karakterlere sahip olan iki yakın arkadaştır. Ancak Yalçın'ın beklenmedik ölümüyle iki dostun yolları acı bir şekilde ayrılır. Yalçın'ın deli dolu hallerini özleyen Bahadır'ın bir gün kapısı çalınıverir. Ölümüne çok üzüldüğü çılgın arkadaşı Yalçın'ın hayaletini karşısında bulur! Üstelik yalnız da değildir, yanında Bernardo adında bir İtalyan trapezci vardır. Yalçın tutmadığı bir söz yüzünden öbür tarafa geçiş yapamamış ve arafta kalmıştır. Bu sözü yerine getirebilmesi için de ona yardım edebilecek tek kişi yakın dostu Bahadır'dır. Üç günlük zaman içerisinde Yalçın'ın sözünü yerine getirmesi şarttır, ancak bu şekilde huzur bulabilecektir. Bahadır ise bir yandan ona yardım etmeye çalışırken başına olmadık işler açılır. Öte yandan da aynı işyerinde çalıştığı ve bir türlü açılamadığı Demet'le arasındaki platonik aşk, macerasına tuz biber ekecektir.","genres":["Komedi","Fantastik"]},"posters":[["/ohpLLZbTgRoIuFTR39r1LnwPGfJ.jpg","tr",0]]}];
+const DECK_IDS = [693134, 1022789, 94997, 136315, 129, 666277, 345881];
+
+const T = {
+  en: { film: "Film", series: "Series", shuffle: "Shuffle", shuffleLabel: (i, n) => `Shuffle posters (showing ${i} of ${n})`, ours: "Use this one for us", oursOn: "Our poster", oursTag: "Ours", plan: "Plan a watch night", trailer: "Watch the trailer", browse: "Browse", both: "You can both watch", bothOn: "On Netflix", single: "Only one poster on TMDB, so no deck.", seasons: (n) => `${n} season${n === 1 ? "" : "s"}`, runtime: (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} h${r ? ` ${r} min` : ""}` : `${m} min`; }, episodes: (r) => `${r} episodes`, textless: "no text" },
+  tr: { film: "Film", series: "Dizi", shuffle: "Karıştır", shuffleLabel: (i, n) => `Afişleri karıştır (${n} afişten ${i}.)`, ours: "Bizim afişimiz olsun", oursOn: "Bizim afişimiz", oursTag: "Bizim", plan: "İzleme gecesi planla", trailer: "Fragmanı izle", browse: "Keşfet", both: "İkiniz de izleyebilirsiniz", bothOn: "Platform: Netflix", single: "TMDB'de tek afiş var, deste yok.", seasons: (n) => `${n} sezon`, runtime: (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} sa${r ? ` ${r} dk` : ""}` : `${m} dk`; }, episodes: (r) => `Bölüm başı ${r}`, textless: "yazısız" },
+};
+
+const DEFAULTS = { title: 693134, arrive: "morph-drop", stack: "messy", shuffle: "tuck", cards: 5, peek: 1, drop: 0.8, order: "lang", ours: "fun", control: "deck", lang: "en", view: "both", speed: "1", labels: "off" };
+const state = { ...DEFAULTS };
+try { Object.assign(state, JSON.parse(localStorage.getItem("deck-lab") || "{}")); } catch {}
+const chosen = {}; // `${id}` -> poster path chosen "for us"
+
+const byId = Object.fromEntries(TITLES.map((t) => [t.id, t]));
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const img = (path, size) => `https://image.tmdb.org/t/p/${size}${path}`;
+const reduced = () => state.speed === "reduce";
+const slow = () => (state.speed === "4" ? 4 : 1);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const SHUFFLE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h3.5c2.2 0 3.6 1.1 4.9 3l2.2 4c1.3 1.9 2.7 3 4.9 3H21"/><path d="M18 14l3 3-3 3"/><path d="M3 17h3.5c1.4 0 2.5-.5 3.4-1.3"/><path d="M14.1 8.3c.9-.8 2-1.3 3.4-1.3H21"/><path d="M18 4l3 3-3 3"/></svg>`;
+const STAR_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>`;
+
+/** The deck's posters, top first: today's poster, then the language's most-voted, then textless (or the other way). */
+function deckPosters(title, lang) {
+  const top = title[lang].poster;
+  const of = (l) => title.posters.filter((p) => p[1] === l).sort((a, b) => b[2] - a[2]);
+  const groups = state.order === "lang" ? [of(lang), of("")] : [of(""), of(lang)];
+  if (lang === "tr") groups.push(of("en"));
+  const seen = new Set([top]);
+  const rest = groups.flat().filter((p) => !seen.has(p[0]) && seen.add(p[0]));
+  const topMeta = title.posters.find((p) => p[0] === top) ?? [top, lang, 0];
+  return [topMeta, ...rest].slice(0, state.cards).map(([path, l]) => ({ path, lang: l }));
+}
+
+/** Where the card k places down sits (0 = top), in px of a 200px-wide deck. */
+function pos(k, n, w) {
+  const p = state.peek * (w / 200);
+  if (k === 0) return { x: 0, y: 0, r: -2 };
+  if (state.stack === "messy") {
+    const R = [0, 4.5, -5, 7, -3.5, 6.5][k], X = [0, 7, -8, 10, -5, 9][k], Y = [0, 3, 6, 8, 11, 13][k];
+    return { x: X * p * 0.7, y: Y * p * 0.5, r: -2 + R * state.peek };
+  }
+  if (state.stack === "fan") return { x: k * 9 * p, y: k * 2 * p, r: -2 + k * 3.2 * state.peek };
+  return { x: k * 5.5 * p, y: k * 5.5 * p, r: -2 };
+}
+const tf = (p) => `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) rotate(${p.r.toFixed(2)}deg) scale(${p.s ?? 1})`;
+
+class Deck {
+  constructor(app) {
+    this.app = app;
+    this.wide = app.classList.contains("is-wide");
+    this.el = app.querySelector(".deck");
+    this.posters = deckPosters(byId[state.title], state.lang);
+    this.busy = false;
+    if (!this.el) return;
+    this.w = this.wide ? 240 : 200;
+    this.cards = this.posters.map((p, i) => {
+      const el = document.createElement("div");
+      el.className = "dc";
+      el.innerHTML = `<img alt="" draggable="false"><span class="lbl"></span><span class="ours">${esc(T[state.lang].oursTag)}</span>`;
+      this.el.appendChild(el);
+      const card = { el, img: el.querySelector("img"), lbl: el.querySelector(".lbl"), poster: p, n: i + 1, size: "" };
+      return card;
+    });
+    this.settle();
+    this.bind();
+  }
+  get n() { return this.cards.length; }
+  /** Put every card in its place, the top card at full size and the rest small. */
+  settle() {
+    this.cards.forEach((c, k) => {
+      c.el.style.transform = tf(pos(k, this.n, this.w));
+      c.el.style.zIndex = String(this.n - k);
+      c.el.classList.toggle("is-top", k === 0);
+      c.el.classList.toggle("is-ours", chosen[state.title] === c.poster.path);
+      this.load(c, k === 0 ? "w500" : "w185");
+    });
+    const top = this.cards[0];
+    for (const count of this.app.querySelectorAll(".count")) count.textContent = `${top.n} / ${this.n}`;
+    this.app.querySelector(".shuffle")?.setAttribute("aria-label", T[state.lang].shuffleLabel(top.n, this.n));
+    if (this.n > 1) this.el.setAttribute("aria-label", T[state.lang].shuffleLabel(top.n, this.n));
+    const ours = this.app.querySelector(".ours-btn");
+    if (ours) {
+      const on = chosen[state.title] === top.poster.path;
+      ours.setAttribute("aria-pressed", String(on));
+      ours.querySelector("span").textContent = on ? T[state.lang].oursOn : T[state.lang].ours;
+    }
+    // Ready the next poster's full size before it comes up.
+    const next = state.shuffle === "pull" ? this.cards[this.n - 1] : this.cards[1];
+    if (next) new Image().src = img(next.poster.path, "w500");
+  }
+  load(c, size) {
+    if (c.size === size || (c.size === "w500" && size === "w185")) return;
+    const t = T[state.lang];
+    const show = () => { c.img.src = img(c.poster.path, size); c.size = size; c.lbl.textContent = `${c.poster.lang ? c.poster.lang.toUpperCase() : t.textless} · ${size}`; };
+    if (!c.size) return show();
+    const pre = new Image();
+    pre.onload = show;
+    pre.src = img(c.poster.path, size);
+  }
+  anim(el, frames, ms, opts = {}) {
+    const a = el.animate(frames, { duration: ms * slow(), easing: opts.easing ?? "linear", delay: (opts.delay ?? 0) * slow(), fill: "both" });
+    return a.finished.then(() => { el.style.transform = frames.at(-1).transform; a.cancel(); });
+  }
+
+  async shuffle(dir = 1, from) {
+    if (this.busy || this.n < 2) return;
+    this.busy = true;
+    const n = this.n, w = this.w, h = w * 1.5, P = (k) => pos(k, n, w);
+    const spring = "cubic-bezier(0.2, 1.4, 0.4, 1)";
+    if (reduced()) {
+      this.cards.push(this.cards.shift());
+      this.settle();
+      await this.cards[0].el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: "ease-out" }).finished;
+      this.busy = false;
+      return;
+    }
+    const mode = state.shuffle;
+    if (mode === "tuck") {
+      const [top, ...rest] = this.cards;
+      this.load(rest[0], "w500");
+      const start = from ?? P(0);
+      const out = { x: dir * w * 1.08, y: -h * 0.07, r: dir * 16, s: 1.03 };
+      const steps = rest.map((c, i) => this.anim(c.el, [{ transform: tf(P(i + 1)) }, { transform: tf({ ...P(i), s: 1.025 }), offset: 0.6 }, { transform: tf(P(i)) }], 460, { easing: spring, delay: 120 + i * 55 }));
+      rest[0].el.classList.add("is-top");
+      top.el.classList.remove("is-top");
+      await this.anim(top.el, [{ transform: tf(start) }, { transform: tf(out) }], 300, { easing: "cubic-bezier(.3,.7,.4,1)" });
+      top.el.style.zIndex = "0";
+      await this.anim(top.el, [{ transform: tf(out) }, { transform: tf(P(n - 1)) }], 420, { easing: spring });
+      await Promise.all(steps);
+      this.cards.push(this.cards.shift());
+    } else if (mode === "pull") {
+      const bottom = this.cards[n - 1];
+      const rest = this.cards.slice(0, n - 1);
+      const side = { x: dir * w * 1.08, y: h * 0.05, r: dir * 14 };
+      const lifted = { x: dir * w * 0.25, y: -h * 0.09, r: dir * 4, s: 1.07 };
+      if (from) await this.anim(rest[0].el, [{ transform: tf(from) }, { transform: tf(P(0)) }], 200, { easing: "ease-out" });
+      const steps = rest.map((c, i) => this.anim(c.el, [{ transform: tf(P(i)) }, { transform: tf(P(i + 1)) }], 440, { easing: spring, delay: 160 + i * 50 }));
+      await this.anim(bottom.el, [{ transform: tf(P(n - 1)) }, { transform: tf(side) }], 320, { easing: "cubic-bezier(.3,.7,.4,1)" });
+      bottom.el.style.zIndex = String(n + 1);
+      bottom.el.classList.add("is-top");
+      rest[0].el.classList.remove("is-top");
+      this.load(bottom, "w500");
+      await this.anim(bottom.el, [{ transform: tf(side) }, { transform: tf(lifted), offset: 0.55 }, { transform: tf({ ...P(0), s: 0.97 }), offset: 0.82 }, { transform: tf(P(0)) }], 460, { easing: "cubic-bezier(.3,.6,.4,1)" });
+      await Promise.all(steps);
+      this.cards.unshift(this.cards.pop());
+    } else {
+      const old = [...this.cards];
+      const spread = (k) => ({ x: (k % 2 ? 1 : -1) * w * (0.36 + 0.06 * k), y: -h * 0.03 * (k % 3), r: (k % 2 ? 1 : -1) * (9 + 3 * k) });
+      if (from) await this.anim(old[0].el, [{ transform: tf(from) }, { transform: tf(P(0)) }], 160, { easing: "ease-out" });
+      await Promise.all(old.map((c, k) => this.anim(c.el, [{ transform: tf(P(k)) }, { transform: tf(spread(k)) }], 300, { easing: "cubic-bezier(.2,.8,.3,1)", delay: k * 30 })));
+      const next = [...old.slice(1), old[0]];
+      next.forEach((c, k) => { c.el.style.zIndex = String(n - k); c.el.classList.toggle("is-top", k === 0); });
+      this.load(next[0], "w500");
+      await Promise.all(next.map((c, k) => this.anim(c.el, [{ transform: tf(spread(old.indexOf(c))) }, { transform: tf(P(k)) }], 480, { easing: spring, delay: (n - 1 - k) * 45 })));
+      this.cards = next;
+    }
+    this.settle();
+    this.busy = false;
+  }
+
+  bind() {
+    let start = null, moved = false, pid = null;
+    const top = () => this.cards[0].el;
+    this.el.addEventListener("pointerdown", (e) => {
+      if (this.busy || this.n < 2) return;
+      start = { x: e.clientX, y: e.clientY }; moved = false; pid = e.pointerId;
+      this.el.setPointerCapture(pid);
+    });
+    this.el.addEventListener("pointermove", (e) => {
+      if (!start || e.pointerId !== pid) return;
+      const s = this.scale(), dx = (e.clientX - start.x) / s, dy = (e.clientY - start.y) / s;
+      if (!moved && Math.hypot(dx, dy) < 6) return;
+      moved = true;
+      if (!reduced()) top().style.transform = tf({ x: dx, y: dy * 0.25, r: -2 + dx * 0.07 });
+    });
+    const end = (e) => {
+      if (!start || e.pointerId !== pid) return;
+      const s = this.scale(), dx = (e.clientX - start.x) / s, dy = (e.clientY - start.y) / s;
+      start = null;
+      if (!moved) return this.shuffle(1);
+      if (Math.abs(dx) > 60) return this.shuffle(Math.sign(dx), reduced() ? undefined : { x: dx, y: dy * 0.25, r: -2 + dx * 0.07 });
+      if (!reduced()) this.anim(top(), [{ transform: top().style.transform }, { transform: tf(pos(0, this.n, this.w)) }], 380, { easing: "cubic-bezier(0.2, 1.4, 0.4, 1)" });
+    };
+    this.el.addEventListener("pointerup", end);
+    this.el.addEventListener("pointercancel", end);
+    this.el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.shuffle(1); } });
+    this.app.querySelector(".shuffle")?.addEventListener("click", () => this.shuffle(1));
+    this.app.querySelector(".ours-btn")?.addEventListener("click", () => {
+      const p = this.cards[0].poster.path;
+      chosen[state.title] = chosen[state.title] === p ? undefined : p;
+      this.settle();
+      const tag = this.cards[0].el.querySelector(".ours");
+      if (chosen[state.title] && !reduced()) tag.animate([{ scale: 0, rotate: "-30deg" }, { scale: 1.2, rotate: "12deg", offset: 0.7 }, { scale: 1, rotate: "6deg" }], { duration: 500 * slow(), easing: "cubic-bezier(0.2, 1.4, 0.4, 1)" });
+    });
+  }
+  /** The wide mock is scaled to fit, so pointer moves are divided back out. */
+  scale() { return this.wide ? this.app.getBoundingClientRect().width / 1180 : 1; }
+
+  /** The cards drop onto the table, bottom card first, landing with a squash. */
+  drop(cards, delay = 0) {
+    const n = this.n, w = this.w, fall = (this.wide ? 760 : 820) * state.drop;
+    return Promise.all(cards.map((c, j) => {
+      const k = this.cards.indexOf(c), p = pos(k, n, w);
+      const spin = (k % 2 ? 1 : -1) * (14 + 6 * k) * state.drop;
+      const startP = { x: p.x + (k % 2 ? 22 : -18), y: p.y - fall, r: p.r + spin };
+      const land = { ...p, y: p.y + 5 };
+      c.el.style.transform = tf(startP);
+      const a = c.el.animate([
+        { transform: tf(startP), easing: "cubic-bezier(.55,0,.85,.45)" },
+        { transform: `${tf(land)} scale(1.05, 0.93)`, offset: 0.62, easing: "cubic-bezier(.2,1.6,.4,1)" },
+        { transform: tf(p) },
+      ], { duration: 640 * slow(), delay: (delay + j * 95) * slow(), fill: "both" });
+      return a.finished.then(() => { c.el.style.transform = tf(p); a.cancel(); });
+    }));
+  }
+
+  async arrive() {
+    if (!this.el || reduced() || state.arrive === "none") return;
+    this.busy = true;
+    const mode = state.arrive;
+    if (mode === "drop") {
+      await this.drop([...this.cards].reverse());
+    } else {
+      // Under cards wait hidden under the top card while it morphs in from the grid.
+      const [top, ...under] = this.cards;
+      under.forEach((c) => { c.el.style.transform = tf(pos(0, this.n, this.w)); if (mode === "morph-drop") c.el.style.opacity = "0"; });
+      await this.morph(top);
+      if (mode === "morph-fan") {
+        await Promise.all(under.map((c, i) => this.anim(c.el, [{ transform: tf(pos(0, this.n, this.w)) }, { transform: tf(pos(i + 1, this.n, this.w)) }], 520, { easing: "cubic-bezier(0.2, 1.4, 0.4, 1)", delay: i * 70 })));
+      } else {
+        under.forEach((c) => (c.el.style.opacity = ""));
+        await this.drop([...under].reverse());
+      }
+    }
+    this.settle();
+    if (state.control === "nudge" && this.n > 1) await this.nudge();
+    this.busy = false;
+  }
+
+  /** A hint that the deck moves: the top card lifts half off the pile and drops back, once. */
+  async nudge() {
+    await sleep(350 * slow());
+    const p = pos(0, this.n, this.w), el = this.cards[0].el;
+    await this.anim(el, [{ transform: tf(p) }, { transform: tf({ x: this.w * 0.16, y: -8, r: 5, s: 1.02 }), offset: 0.4 }, { transform: tf({ x: -3, y: 0, r: -3 }), offset: 0.75 }, { transform: tf(p) }], 700, { easing: "cubic-bezier(.3,.7,.4,1)" });
+  }
+
+  /** The grid the user came from; the tapped poster becomes the deck's top card (like the app's view transition). */
+  async morph(top) {
+    const screen = this.app.querySelector(".grid-screen");
+    const page = this.app.querySelector(".page");
+    const target = screen.querySelector(".target");
+    screen.hidden = false;
+    page.style.opacity = "0";
+    top.el.style.visibility = "hidden";
+    await sleep(650 * slow());
+    target.classList.add("pressed");
+    await sleep(160 * slow());
+    target.classList.remove("pressed");
+    const s = this.scale();
+    const from = target.querySelector("img").getBoundingClientRect();
+    top.el.style.transform = "none";
+    const to = top.el.getBoundingClientRect();
+    const dx = (from.left + from.width / 2 - (to.left + to.width / 2)) / s;
+    const dy = (from.top + from.height / 2 - (to.top + to.height / 2)) / s;
+    const k = from.width / to.width;
+    // The poster flies above both screens while the grid slides away over the title page.
+    top.el.style.visibility = "";
+    top.el.style.zIndex = "10";
+    page.style.opacity = "";
+    screen.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateX(-40px)" }], { duration: 260 * slow(), easing: "ease-in", fill: "forwards" }).finished.then(() => { screen.hidden = true; });
+    await this.anim(top.el, [{ transform: `translate(${dx}px, ${dy}px) scale(${k})` }, { transform: tf(pos(0, this.n, this.w)) }], 420, { easing: "cubic-bezier(0.2, 1.4, 0.4, 1)" });
+    top.el.style.zIndex = String(this.n);
+  }
+}
+
+function page(wide) {
+  const title = byId[state.title], t = T[state.lang], text = title[state.lang];
+  const many = deckPosters(title, state.lang).length > 1;
+  const facts = [title.year, title.type === "movie" ? t.film : t.series, title.seasons ? t.seasons(title.seasons) : null, title.runtime ? (title.type === "tv" ? t.episodes(t.runtime(title.runtime)) : t.runtime(title.runtime)) : null].filter(Boolean).join(" · ");
+  const button = state.control === "button" ? `<button class="btn-quiet shuffle">${SHUFFLE_ICON}${esc(t.shuffle)} <span class="count"></span></button>` : "";
+  const oursBtn = state.ours === "ours" ? `<button class="btn-quiet ours-btn" aria-pressed="false">${STAR_ICON}<span></span></button>` : "";
+  const ctl = many
+    ? (button || oursBtn ? `<div class="deck-ctl">${button}${oursBtn}</div>` : "")
+    : `<p class="single-note">${esc(t.single)}</p>`;
+  const counter = many && state.control === "count" ? `<span class="deck-count" aria-hidden="true">${SHUFFLE_ICON}<span class="count"></span></span>` : "";
+  const others = TITLES.filter((x) => x.id !== state.title && x[state.lang].poster).slice(0, wide ? 9 : 5);
+  const gridItems = [...others.slice(0, 2), title, ...others.slice(2)].slice(0, wide ? 10 : 6);
+  const grid = `<div class="grid-screen" hidden><h2 class="display">${esc(t.browse)}</h2><div class="gs">${gridItems.map((x) => `<div class="${x === title ? "target" : ""}"><img src="${img(x[state.lang].poster, "w342")}" alt="">${esc(x[state.lang].title)}</div>`).join("")}</div></div>`;
+  return `<div class="app ${wide ? "is-wide" : "is-phone"} ${state.labels === "on" ? "show-labels" : ""}" lang="${state.lang}">
+    <div class="page"><div class="tp">
+      <div class="tp-deck"><div class="deck" ${many ? `tabindex="0" role="button" aria-label="${esc(t.shuffleLabel(1, 1))}"` : ""}>${counter}</div>${ctl}</div>
+      <div class="tp-body">
+        <h1 class="display">${esc(text.title)}</h1>
+        ${text.original && text.original !== text.title ? `<p class="orig">${esc(text.original)}</p>` : ""}
+        <p class="facts">${esc(facts)}</p>
+        <ul class="strands">${text.genres.map((g) => `<li class="strand">${esc(g)}</li>`).join("")}</ul>
+        ${text.tagline ? `<p class="tagline">${esc(text.tagline)}</p>` : ""}
+        ${text.overview ? `<p class="overview">${esc(text.overview)}</p>` : ""}
+        <div class="btns"><span class="btn">${esc(t.plan)}</span><span class="btn-quiet">${esc(t.trailer)}</span></div>
+        <div class="both-banner">${STAR_ICON.replace("<svg", '<svg width="22" height="22" style="color:#ff2e93;flex:none"')}<span><b>${esc(t.both)}</b> · ${esc(t.bothOn)}</span></div>
+      </div>
+    </div></div>${grid}
+  </div>`;
+}
+
+let decks = [];
+function fitDesk() {
+  const desk = document.getElementById("desk"), inner = desk.firstElementChild;
+  if (!inner) return;
+  const s = Math.min(1, desk.clientWidth / 1180);
+  inner.style.transform = `scale(${s})`;
+  desk.style.height = `${760 * s}px`;
+}
+
+function render(arrive = true) {
+  localStorage.setItem("deck-lab", JSON.stringify(state));
+  document.getElementById("titles").innerHTML = `<span>Title</span>` + DECK_IDS.map((id) => `<button data-v="${id}">${esc(byId[id][state.lang].title)}${id === 345881 ? " (1 poster)" : ""}</button>`).join("");
+  for (const seg of document.querySelectorAll(".seg[data-key]")) for (const b of seg.querySelectorAll("button")) b.setAttribute("aria-pressed", String(String(state[seg.dataset.key]) === b.dataset.v));
+  for (const [id, fmt] of [["cards", (v) => v], ["peek", (v) => `${Math.round(v * 100)}%`], ["drop", (v) => `${Math.round(v * 100)}%`]]) {
+    document.getElementById(id).value = state[id];
+    document.getElementById(`${id}Out`).textContent = fmt(state[id]);
+  }
+  document.getElementById("stage").dataset.view = state.view;
+  document.getElementById("phone").innerHTML = page(false);
+  document.getElementById("desk").innerHTML = page(true);
+  fitDesk();
+  decks = [...document.querySelectorAll(".app")].map((a) => new Deck(a));
+  if (arrive) decks.forEach((d) => d.arrive());
+}
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest(".seg[data-key] button");
+  if (!b) return;
+  const key = b.closest(".seg").dataset.key;
+  state[key] = key === "title" ? +b.dataset.v : b.dataset.v;
+  render(["title", "arrive", "lang", "view"].includes(key));
+});
+for (const id of ["cards", "peek", "drop"]) document.getElementById(id).addEventListener("input", (e) => { state[id] = +e.target.value; render(id === "drop"); });
+document.getElementById("replay").addEventListener("click", () => render(true));
+window.addEventListener("resize", fitDesk);
+render(true);
+</script>
+</body>
+</html>

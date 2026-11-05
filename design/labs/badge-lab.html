@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Badge Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  /* Fredoka's Google files have no capital İ: the app's one-letter face fills it in (src/app/fonts). */
+  @font-face { font-family: "Fredoka Idot"; src: url("../../src/app/fonts/fredoka-idot.woff2") format("woff2"); font-weight: 300 700; unicode-range: U+0130; }
+
+  /* ---------- the lab around the mocks ---------- */
+  :root { --lab-bg: #141318; --lab-panel: #1d1c23; --lab-ink: #f1eff6; --lab-muted: #a5a2b4; --lab-line: #2d2b36; --lab-hi: #ffd23f; --slow: 1; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--lab-bg); color: var(--lab-ink); font-family: "Fredoka Idot", Fredoka, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  button { font: inherit; }
+  .lab-head { position: sticky; top: 0; z-index: 50; background: #141318f0; backdrop-filter: blur(8px); border-bottom: 1px solid var(--lab-line); padding: 12px 16px; display: grid; gap: 10px; }
+  .lab-row { display: flex; gap: 10px 18px; align-items: center; flex-wrap: wrap; }
+  .lab-head h1 { margin: 0; font: 400 24px "Luckiest Guy", sans-serif; letter-spacing: .03em; color: var(--lab-hi); }
+  .lab-head p { margin: 0; color: var(--lab-muted); font-size: 14px; max-width: 90ch; }
+  .opts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .opt { display: grid; text-align: left; gap: 1px; padding: 7px 14px; border-radius: 14px; border: 2px solid var(--lab-line); background: transparent; color: var(--lab-ink); cursor: pointer; touch-action: manipulation; }
+  .opt b { font-weight: 700; font-size: 15px; }
+  .opt span { font-size: 12.5px; color: var(--lab-muted); }
+  .opt[aria-pressed="true"] { border-color: var(--lab-hi); background: #ffd23f1a; }
+  .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; border: 2px solid var(--lab-line); border-radius: 18px; padding: 3px; max-width: 100%; }
+  .seg > span { padding: 5px 8px; font-size: 13px; color: var(--lab-muted); }
+  .seg button { border: 1.5px solid var(--lab-line); border-radius: 999px; background: transparent; color: var(--lab-ink); padding: 6px 11px; font-size: 14px; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+  .seg button[aria-pressed="true"] { background: var(--lab-ink); color: var(--lab-bg); }
+  .seg input[type="range"] { width: 110px; accent-color: var(--lab-hi); }
+  .seg output { font-size: 13px; min-width: 3.5em; color: var(--lab-ink); }
+  .replay { border: 2px solid var(--lab-hi); background: var(--lab-hi); color: #141318; border-radius: 999px; padding: 7px 14px; font-weight: 700; cursor: pointer; }
+  .lab-main { padding: 20px 16px; display: grid; gap: 22px; max-width: 1760px; margin: 0 auto; }
+  .about { display: grid; gap: 6px; }
+  .about h2 { margin: 0; font: 400 36px "Luckiest Guy", sans-serif; letter-spacing: .02em; line-height: 1; }
+  .about p { margin: 0; color: var(--lab-muted); max-width: 90ch; line-height: 1.5; }
+  .about ul { margin: 0; padding-left: 20px; color: var(--lab-muted); line-height: 1.5; max-width: 90ch; }
+  .about b { color: var(--lab-ink); }
+  .stage { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .stage[data-view="wide"] { grid-template-columns: minmax(0, 1fr); }
+  .stage[data-view="wide"] .phone-col { display: none; }
+  .stage[data-view="phone"] { grid-template-columns: 390px; justify-content: center; }
+  .stage[data-view="phone"] .desk-col { display: none; }
+  @media (width < 1000px) { .stage, .stage[data-view] { grid-template-columns: minmax(0, 1fr); justify-items: center; } .desk-col { justify-self: stretch; } }
+  .col-label { font-size: 13px; color: var(--lab-muted); margin-bottom: 8px; }
+  .desk-fit { width: 100%; overflow: hidden; border-radius: 14px; }
+  .desk-fit > .app { width: 1180px; transform-origin: top left; }
+  .phone { width: 390px; max-width: 100%; height: 820px; border-radius: 44px; border: 10px solid #000; overflow: hidden; position: relative; box-shadow: 0 0 0 2px #333; contain: paint; }
+  .phone > .app { height: 100%; overflow-y: auto; scrollbar-width: none; }
+  .compare-title { margin: 6px 0 0; font: 400 28px "Luckiest Guy", sans-serif; letter-spacing: .02em; }
+  .compare { display: grid; gap: 14px; }
+  .cmp { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; align-items: center; border: 2px solid var(--lab-line); border-radius: 18px; padding: 10px; cursor: pointer; background: var(--lab-panel); }
+  .cmp[aria-current="true"] { border-color: var(--lab-hi); }
+  .cmp h3 { margin: 0; font-size: 17px; }
+  .cmp p { margin: 2px 0 0; font-size: 13px; color: var(--lab-muted); line-height: 1.4; }
+  .cmp .app { border-radius: 12px; overflow-x: auto; }
+  @media (width < 700px) { .cmp { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ---------- the app, painted from the same tokens as globals.css ---------- */
+  .app[data-pal="sunburst"] { --p-bg: #ffd23f; --p-surface: #fffaf0; --p-ink: #1d1a2b; --p-muted: #4a4360; --ray: #ffc61a; --outline: #1d1a2b; --me: #ff8a65; --partner: #5cc8ff; --stamp: #ff2e93; --both: #b0005f; --accent: #6a4cf5; --on-accent: #fff; --accent-soft: #e6e0ff; --accent-muted: #f1edff; --accent-both: #ffebf5; --accent-head: #ffd23f; --pop: #ffd23f; }
+  .app[data-pal="bubblegum"] { --p-bg: #ff9ccd; --p-surface: #fffaf0; --p-ink: #1d1a2b; --p-muted: #4a4360; --ray: #ff8cc4; --outline: #1d1a2b; --me: #ffb03a; --partner: #5cc8ff; --stamp: #a8f02e; --both: #3a6b00; --accent: #6a4cf5; --on-accent: #fff; --accent-soft: #e6e0ff; --accent-muted: #f1edff; --accent-both: #e4ffb8; --accent-head: #ffe14d; --pop: #ffe14d; }
+  .app[data-pal="nightowl"] { --p-bg: #272056; --p-surface: #f6eddc; --p-ink: #1d1a2b; --p-muted: #4a4360; --g-ink: #f6eddc; --g-muted: #c6bdf0; --ray: transparent; --outline: #0e0b1f; --me: #ff8a65; --partner: #5cc8ff; --stamp: #ff3d9a; --both: #b0005f; --accent: #ff9a3d; --on-accent: #1d1a2b; --accent-soft: #ffe3c7; --accent-muted: #4d2600; --accent-both: #7d0047; --accent-head: #fffaf0; --pop: #ffd23f; }
+  .app {
+    --ink: var(--g-ink, var(--p-ink)); --muted: var(--g-muted, var(--p-muted)); --surface: var(--p-surface);
+    --spring: cubic-bezier(0.2, 1.4, 0.4, 1);
+    position: relative; isolation: isolate; color: var(--ink); font-family: "Fredoka Idot", Fredoka, sans-serif; font-size: 17px; font-variant-numeric: tabular-nums;
+    background: repeating-conic-gradient(from 0deg at 50% -160px, var(--ray) 0 6deg, transparent 6deg 12deg) var(--p-bg);
+    background-attachment: local;
+  }
+  .app .card, .app .paper { --ink: var(--p-ink); --muted: var(--p-muted); color: var(--ink); }
+  .app .spotlight { --ink: var(--on-accent); --muted: var(--accent-muted); --both: var(--accent-both); color: var(--ink); }
+  .app .pad { padding: 18px 16px 40px; display: grid; gap: 26px; }
+  .app.is-wide .pad { padding: 30px 32px 48px; gap: 34px; }
+  /* Luckiest Guy draws lower case as capitals, so a Turkish i loses its dot unless the text is uppercased with lang="tr". */
+  .display, .bw, .btn { text-transform: uppercase; }
+  .display { font-family: "Luckiest Guy", sans-serif; font-weight: 400; line-height: .95; letter-spacing: .02em; color: var(--p-surface); -webkit-text-stroke: max(2px, .05em) var(--outline); paint-order: stroke fill; text-shadow: .07em .07em 0 var(--outline); margin: 0; }
+  .display-pop { color: var(--accent-head); }
+  .sec-head { font-size: 34px; rotate: -1deg; justify-self: start; }
+  .card { background: var(--surface); border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); border-radius: 22px; }
+  .strand { display: inline-block; border: 2px solid var(--outline); border-radius: 999px; padding: 0 8px; font-size: 13px; font-weight: 600; background: var(--surface); }
+  .muted { color: var(--muted); }
+
+  /* Posters */
+  .pw { position: relative; container: pw / inline-size; flex: none; }
+  /* Big posters get the whole phrase, smaller ones the short word: chosen by the poster's own width. */
+  .w-long { display: none; }
+  @container pw (width >= 200px) { .w-long { display: inline; } .w-short { display: none; } }
+  .pw img, .pw .blank { display: block; width: 100%; aspect-ratio: 2/3; object-fit: cover; border: 3px solid var(--outline); border-radius: 10px; background: var(--surface); }
+  .clip { position: absolute; inset: 0; overflow: hidden; border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; pointer-events: none; }
+  .clip-in { position: absolute; inset: 0; overflow: hidden; border-radius: 7px; }
+
+  /* Home list card */
+  .list { display: grid; gap: 16px; list-style: none; margin: 0; padding: 0; }
+  .list > li { rotate: -0.5deg; }
+  .list > li:nth-child(2n) { rotate: 0.6deg; }
+  .lc { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 16px; padding: 12px; }
+  .is-wide .lc { padding: 16px; }
+  .lc .pw { width: 64px; align-self: start; }
+  .is-wide .lc .pw { width: 80px; }
+  .lc-body { display: grid; gap: 4px; min-width: 0; align-content: start; }
+  .lc-title { font-size: 20px; font-weight: 700; line-height: 1.15; }
+  .is-wide .lc-title { font-size: 24px; }
+  .lc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 15px; font-weight: 500; }
+  .lc-meta b { font-weight: 600; }
+  .lc-who { font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .lc-strands { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .lc-added { font-size: 14px; color: var(--muted); margin: 0; }
+
+  /* Today's list card: the badge column on wide screens; on phones the burst hangs off the card, the dots take a row. */
+  [data-opt="0"] .is-wide .lc, .app.is-wide[data-opt="0"] .lc { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .app[data-opt="0"].is-phone .lc.has-burst .lc-body { padding-right: 64px; }
+  .today-col { padding-left: 8px; }
+  .app.is-phone .today-col { grid-column-start: 2; margin-top: 8px; padding-left: 0; }
+  .app.is-phone .today-col.has-burst { position: absolute; top: -20px; right: 4px; margin: 0; transform-origin: top right; scale: .8; }
+
+  /* Poster grid (TitleCard) */
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; list-style: none; margin: 0; padding: 0; }
+  .is-wide .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .tc { display: grid; align-content: start; justify-items: start; gap: 6px; }
+  .tc .lift { position: relative; width: 100%; margin-bottom: 6px; transition: translate .2s var(--spring), rotate .2s var(--spring); }
+  .tc:hover .lift { translate: 0 -6px; rotate: -2deg; }
+  .tc .pw img, .tc .pw .blank { box-shadow: 4px 4px 0 var(--outline); }
+  .tc-title { font-weight: 700; line-height: 1.3; }
+  .tc-year { font-size: 14px; color: var(--muted); }
+  .tc-add { border: 2.5px solid var(--outline); border-radius: 14px; background: var(--surface); color: var(--p-ink); font-weight: 600; font-size: 15px; padding: 4px 12px; box-shadow: 3px 3px 0 var(--outline); }
+  .today-grid { position: absolute; top: -16px; right: -12px; }
+
+  /* Pick */
+  .pick { rotate: -0.75deg; display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 20px 16px; padding: 16px; background: var(--accent); border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); border-radius: 22px; }
+  .is-wide .pick { grid-template-columns: 220px minmax(0, 1fr); padding: 24px; column-gap: 28px; }
+  .pick .pw { align-self: start; rotate: -2deg; }
+  .pick .pw img, .pick .pw .blank { box-shadow: 6px 6px 0 var(--outline); }
+  .pick-body { display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .pick-title { font-size: clamp(28px, 4vw, 40px); overflow-wrap: anywhere; }
+  .pick-tags { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+  .pick-tags li { border: 2.5px solid var(--outline); border-radius: 999px; padding: 0 10px; font-size: 14px; font-weight: 700; background: var(--surface); color: var(--p-ink); }
+  .pick-svc { display: grid; gap: 6px; font-size: 14px; justify-items: start; }
+  .pick-svc span { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
+  .pick-btns { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
+  .is-wide .pick-btns { grid-column: 2; }
+  .btn { font-family: "Luckiest Guy", sans-serif; letter-spacing: .04em; font-size: 17px; border: 2.5px solid var(--outline); border-radius: 14px; background: var(--pop); color: var(--p-ink); padding: 10px 16px 7px; box-shadow: 3px 3px 0 var(--outline); }
+  .btn-quiet { border: 2.5px solid var(--outline); border-radius: 14px; background: var(--surface); color: var(--p-ink); font-weight: 600; padding: 6px 14px; box-shadow: 3px 3px 0 var(--outline); }
+
+  .wide-col { max-width: 768px; }
+
+  /* ---------- badge pieces ---------- */
+  .burst { position: relative; display: inline-grid; place-items: center; container-type: inline-size; aspect-ratio: 1; flex: none; }
+  .burst svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .bw { position: relative; font-family: "Luckiest Guy", sans-serif; color: var(--p-surface); -webkit-text-stroke: 1.5px var(--outline); paint-order: stroke fill; line-height: .9; text-align: center; max-width: 80%; font-size: calc(21cqi * var(--fit, 1)); letter-spacing: .01em; }
+  .dots { display: inline-flex; gap: 4px; flex: none; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid var(--outline); background: var(--p-surface); display: block; }
+  .dot.me { background: var(--me); } .dot.partner { background: var(--partner); }
+  .ptag { display: inline-flex; align-items: center; gap: 6px; border: 2.5px solid var(--outline); border-radius: 999px; background: var(--p-surface); color: var(--p-ink); padding: 2px 8px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .ptag.dots-only { padding: 3px 5px; }
+  .today-sizes-sm { width: 64px; } .today-sizes-md { width: 80px; } .today-sizes-lg { width: 96px; }
+
+  /* A: sticker on the bottom-left corner, slapped on. */
+  .a-stk { position: absolute; left: calc(-11cqi * var(--bsz)); bottom: calc(-9cqi * var(--bsz)); width: clamp(54px, calc(50cqi * var(--bsz)), 108px); rotate: -8deg; }
+  .a-tag { position: absolute; left: -8px; bottom: -8px; rotate: -4deg; }
+  .a-tag .ptag { font-size: clamp(13px, 7.5cqi, 15px); }
+
+  /* B: the burst peeking out from behind the top-right corner, clipped by the poster. */
+  .b-wrap { position: absolute; inset: 0; --D: clamp(66px, calc(96cqi * var(--bsz)), 220px); --c: clamp(6px, calc(11cqi * var(--bsz)), 26px); }
+  .b-wrap .burst { position: absolute; width: var(--D); right: calc(var(--c) - var(--D) / 2); top: calc(var(--c) - var(--D) / 2); container-type: normal; rotate: 8deg; }
+  .b-word { position: absolute; right: 3px; top: calc(var(--c) * 0.5); width: calc(var(--D) / 2 + var(--c) - 6px); height: calc(var(--D) / 2 + var(--c) - 10px); display: grid; place-items: center; rotate: 0deg; }
+  .b-word .bw { font-size: clamp(11px, calc(var(--D) * 0.15 * var(--fit, 1)), 26px); max-width: none; }
+  .b-paper { position: absolute; width: var(--D); right: calc(var(--c) - var(--D) / 2); top: calc(var(--c) - var(--D) / 2); aspect-ratio: 1; border-radius: 50%; background: var(--p-surface); border: 3px solid var(--outline); }
+  .b-who { position: absolute; right: 4px; top: 5px; display: grid; justify-items: end; gap: 3px; font-size: clamp(12px, 7.5cqi, 15px); font-weight: 700; color: var(--p-ink); max-width: calc(var(--D) / 2 + var(--c)); line-height: 1.1; text-align: right; }
+
+  /* C: a sash across the top-right corner. */
+  .c-sash { position: absolute; --k: clamp(16px, calc(24cqi * var(--bsz)), 58px); left: calc(100% - var(--k)); top: var(--k); width: 320cqi; height: clamp(17px, calc(15cqi * var(--bsz)), 36px); translate: -50% -50%; rotate: 45deg; display: grid; place-items: center; border-block: 2.5px solid var(--outline); box-shadow: 0 3px 0 var(--outline); }
+  .c-sash.stamp { background: var(--stamp); }
+  .c-sash.paper { background: var(--p-surface); color: var(--p-ink); }
+  .c-sash .bw { font-size: clamp(10px, calc(10cqi * var(--fit, 1) * var(--bsz)), 22px); max-width: none; white-space: nowrap; }
+  .c-sash .who { display: inline-flex; align-items: center; gap: 4px; font-size: clamp(10px, 7cqi, 14px); font-weight: 700; white-space: nowrap; }
+  .c-sash .dot { width: clamp(9px, 7cqi, 13px); height: clamp(9px, 7cqi, 13px); border-width: 2px; }
+
+  /* D: a tab stuck over the poster's top edge. */
+  .d-tab { position: absolute; left: clamp(4px, 7cqi, 14px); top: 0; translate: 0 -55%; rotate: -4deg; display: inline-flex; align-items: center; gap: 5px; border: 2.5px solid var(--outline); border-radius: 10px; box-shadow: 3px 3px 0 var(--outline); padding: 3px 8px 1px; white-space: nowrap; transform-origin: bottom left; }
+  .d-tab.stamp { background: var(--stamp); }
+  .d-tab.stamp .bw { font-size: clamp(12px, calc(11cqi * var(--fit, 1) * var(--bsz)), 24px); max-width: none; }
+  .d-tab.paper { background: var(--p-surface); color: var(--p-ink); padding: 3px 7px; font-weight: 700; font-size: clamp(13px, 7.5cqi, 15px); }
+
+  /* ---------- motion ---------- */
+  .anim { animation-duration: calc(0.6s * var(--slow)); animation-delay: calc(var(--i, 0) * 50ms * var(--slow)); animation-timing-function: var(--spring); animation-fill-mode: both; }
+  .anim.pop { --r: -8deg; animation-name: pop; }
+  @keyframes pop { 0% { scale: 0; rotate: -30deg; } 70% { scale: 1.15; rotate: 6deg; } 100% { scale: 1; rotate: var(--r, -8deg); } }
+  .anim.fade { animation-name: fade; animation-timing-function: ease-out; }
+  @keyframes fade { from { opacity: 0; scale: .7; } }
+  .anim.slap { animation-name: slap; }
+  @keyframes slap { 0% { opacity: 0; scale: 1.9; rotate: -32deg; } 45% { opacity: 1; scale: .88; rotate: -4deg; } 70% { scale: 1.06; rotate: -10deg; } 100% { scale: 1; rotate: -8deg; } }
+  .anim.peek { animation-name: peek; }
+  @keyframes peek { 0% { translate: 70% -70%; } 70% { translate: -6% 6%; } 100% { translate: 0 0; } }
+  .anim.spin { animation-name: spin; }
+  @keyframes spin { 0% { rotate: -50deg; } 70% { rotate: 14deg; } 100% { rotate: 8deg; } }
+  .anim.sash { animation-name: sash; }
+  @keyframes sash { 0% { translate: 10% -110%; } 70% { translate: -54% -42%; } 100% { translate: -50% -50%; } }
+  .anim.tab { animation-name: tab; }
+  @keyframes tab { 0% { scale: 1 0; opacity: 0; } 60% { scale: 1 1.25; opacity: 1; } 100% { scale: 1 1; } }
+  .no-motion .anim { animation: none !important; }
+</style>
+</head>
+<body>
+<header class="lab-head">
+  <div class="lab-row">
+    <h1>Badge lab</h1>
+    <p>The "both of us" burst and the dots, moved onto the poster so they take no extra height. Pick an option, flip language, palette and slow-mo, hover a grid poster. Compare all four at the bottom.</p>
+  </div>
+  <div class="opts" id="opts"></div>
+  <div class="toggles">
+    <div class="seg" data-key="lang"><span>Language</span><button data-v="en">English</button><button data-v="tr">Türkçe</button></div>
+    <div class="seg" data-key="view"><span>Show</span><button data-v="both">Phone + wide</button><button data-v="phone">Phone</button><button data-v="wide">Wide</button></div>
+    <div class="seg" data-key="pal"><span>Colours</span><button data-v="sunburst">Sunburst</button><button data-v="bubblegum">Bubblegum</button><button data-v="nightowl">Night Owl</button></div>
+    <div class="seg" data-key="name"><span>"Only {name}" on Home</span><button data-v="meta">Name beside the year</button><button data-v="none">Dots only</button></div>
+    <div class="seg"><span>Badge size</span><input id="bsz" type="range" min="0.8" max="1.3" step="0.05" value="1"><output id="bszOut">100%</output></div>
+    <div class="seg" data-key="slow"><span>Speed</span><button data-v="1">Normal</button><button data-v="4">Slow-mo</button><button data-v="0">Still</button></div>
+    <button class="replay" id="replay">Replay the pop</button>
+  </div>
+</header>
+
+<main class="lab-main">
+  <div class="about" id="about"></div>
+  <div class="stage" id="stage">
+    <div class="phone-col"><div class="col-label">Phone, 390px (scroll inside it)</div><div class="phone" id="phone"></div></div>
+    <div class="desk-col"><div class="col-label">Wide screen, 1180px (scaled to fit)</div><div class="desk-fit" id="desk"></div></div>
+  </div>
+  <h2 class="compare-title">All options side by side</h2>
+  <div class="compare" id="compare"></div>
+</main>
+
+<script>
+const TITLES = [{"id":693134,"type":"movie","year":"2024","runtime":167,"en":{"title":"Dune: Part Two","poster":"/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg"},"tr":{"title":"Dune: Çöl Gezegeni - Bölüm İki","poster":"/tihf8Trht9zP3scmUQfvGlAY9FU.jpg"}},{"id":129,"type":"movie","year":"2001","runtime":125,"en":{"title":"Spirited Away","poster":"/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg"},"tr":{"title":"Ruhların Kaçışı","poster":"/xvOEOMCzfV8qXkd1n1btZ8q4Psd.jpg"}},{"id":95396,"type":"tv","year":"2022","runtime":null,"en":{"title":"Severance","poster":"/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"},"tr":{"title":"Severance","poster":"/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg"}},{"id":136315,"type":"tv","year":"2022","runtime":null,"en":{"title":"The Bear","poster":"/eKfVzzEazSIjJMrw9ADa2x8ksLz.jpg"},"tr":{"title":"The Bear","poster":"/eKfVzzEazSIjJMrw9ADa2x8ksLz.jpg"}},{"id":346648,"type":"movie","year":"2017","runtime":104,"en":{"title":"Paddington 2","poster":"/1OJ9vkD5xPt3skC6KguyXAgagRZ.jpg"},"tr":{"title":"Ayı Paddington 2","poster":"/1OJ9vkD5xPt3skC6KguyXAgagRZ.jpg"}},{"id":545611,"type":"movie","year":"2022","runtime":140,"en":{"title":"Everything Everywhere All at Once","poster":"/u68AjlvlutfEIcpmbYpKcdi09ut.jpg"},"tr":{"title":"Her Şey Her Yerde Aynı Anda","poster":"/vt5Fd1wouNEL7HN3TQ0PMls4auE.jpg"}},{"id":666277,"type":"movie","year":"2023","runtime":106,"en":{"title":"Past Lives","poster":"/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg"},"tr":{"title":"Başka Bir Hayatta","poster":"/ndE4NbhoNGFcnICbkhvpExdFp8W.jpg"}},{"id":76341,"type":"movie","year":"2015","runtime":121,"en":{"title":"Mad Max: Fury Road","poster":"/ulcAi4dKpAjHwYGS08vNyx9H6I9.jpg"},"tr":{"title":"Mad Max: Fury Road","poster":"/mnKUoJFdNbQVs4f7nEGW6p7CgsA.jpg"}},{"id":100088,"type":"tv","year":"2023","runtime":null,"en":{"title":"The Last of Us","poster":"/dmo6TYuuJgaYinXBPjrgG9mB5od.jpg"},"tr":{"title":"The Last of Us","poster":"/cdbDsn2hqLL7x804GixzPP8AiBE.jpg"}},{"id":872585,"type":"movie","year":"2023","runtime":181,"en":{"title":"Oppenheimer","poster":"/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg"},"tr":{"title":"Oppenheimer","poster":"/mmZi0tyPFfbcCqEsJIPxVldCPOL.jpg"}},{"id":1022789,"type":"movie","year":"2024","runtime":97,"en":{"title":"Inside Out 2","poster":"/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg"},"tr":{"title":"Ters Yüz 2","poster":"/xYqeUheNCep7ll9AotOcclGhP0X.jpg"}},{"id":94997,"type":"tv","year":"2022","runtime":null,"en":{"title":"House of the Dragon","poster":"/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg"},"tr":{"title":"House of the Dragon","poster":"/6YM292PX2gSIBk16hufmlGT3iQW.jpg"}},{"id":508442,"type":"movie","year":"2020","runtime":101,"en":{"title":"Soul","poster":"/hm58Jw4Lw8OIeECIq5qyPYhAeRJ.jpg"},"tr":{"title":"Soul","poster":"/nEnPHSZlr0zOqW1LVyFrkvbyhpr.jpg"}},{"id":1396,"type":"tv","year":"2008","runtime":null,"en":{"title":"Breaking Bad","poster":"/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"},"tr":{"title":"Breaking Bad","poster":"/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"}},{"id":345881,"type":"movie","year":"2015","runtime":0,"en":{"title":"Tut Sözünü","poster":"/ohpLLZbTgRoIuFTR39r1LnwPGfJ.jpg"},"tr":{"title":"Tut Sözünü","poster":"/ohpLLZbTgRoIuFTR39r1LnwPGfJ.jpg"}}];
+
+const OPTIONS = {
+  "0": { name: "Today", short: "for comparison", about: "What the app does now. On phones the list card's burst hangs over the card's top edge and the title keeps 64px clear for it; the dots and \"Only Sam\" take a row of their own under the details. Grids already put a small burst on the poster's top corner; Pick shows the big burst beside the poster." },
+  A: { name: "A · Sticker", short: "bottom-left corner", about: "A burst slapped onto the poster's bottom-left corner like a price sticker, overhanging a little. The dots go on a paper sticker in the same corner. The title gets the card's full width back." },
+  B: { name: "B · Peeking burst", short: "tucked behind the top corner", about: "The burst sits behind the poster's top-right corner and is clipped by it, so only the part over the artwork shows. Nothing sticks out of the poster at all. The dots peek out of a paper circle the same way." },
+  C: { name: "C · Corner sash", short: "ribbon across the corner", about: "A bubblegum ribbon across the top-right corner, clipped to the poster. Flat and tidy, very \"sale sticker\". It is the one option that isn't the starburst, so the burst would live on only in the title page banner and the intro." },
+  D: { name: "D · Edge tab", short: "tab over the top edge", about: "A tab stuck over the poster's top edge, half on the poster and half above it, in the space the card or the grid gap already has. Reads like a label, with room for a whole word." },
+};
+
+const T = {
+  en: { stamp: "Both of us!", short: "Both!", me: "Only you", partner: "Only Sam", free: "Free to watch", freeShort: "Free", film: "Film", series: "Series", upNext: "Up next", browse: "Browse", pick: "Pick for tonight", add: "+ Add", added: (who, d) => `${who} · ${d}`, you: "You", sam: "Sam", watchNow: "Watch now", planIt: "Plan it", another: "Another", svcYou: (s) => `You: ${s}`, svcSam: (s) => `Sam: ${s}`, reason: "Suggested because you liked Past Lives", watching: "Watching · up to S2 E4", date: ["4 Nov", "2 Nov", "28 Oct", "21 Oct", "3 Oct", "12 Sept"] , cats: ["Cosy", "Sci-fi night"], runtime: (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} h${r ? ` ${r} min` : ""}` : `${m} min`; } },
+  tr: { stamp: "İkimiz de!", short: "İkimiz!", me: "Sadece sen", partner: "Sadece Sam", free: "Ücretsiz izlenebilir", freeShort: "Ücretsiz", film: "Film", series: "Dizi", upNext: "Sırada", browse: "Keşfet", pick: "Bu akşam ne izlesek?", add: "+ Ekle", added: (who, d) => `${who} · ${d}`, you: "Sen", sam: "Sam", watchNow: "Şimdi izle", planIt: "Planla", another: "Başka", svcYou: (s) => `Sen: ${s}`, svcSam: (s) => `Sam: ${s}`, reason: "Beğendiğiniz için önerildi: Başka Bir Hayatta", watching: "İzleniyor · S2 B4'e kadar", date: ["4 Kas", "2 Kas", "28 Eki", "21 Eki", "3 Eki", "12 Eyl"], cats: ["Rahat", "Bilim kurgu gecesi"], runtime: (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} sa${r ? ` ${r} dk` : ""}` : `${m} dk`; } },
+};
+
+// Who can watch what, as the app would work it out.
+const LIST = [
+  { id: 693134, v: "both", svc: "Netflix", by: "sam", cats: [1] },
+  { id: 136315, v: "partner", by: "you", watching: true },
+  { id: 95396, v: "both", svc: "Apple TV+", by: "you", cats: [0] },
+  { id: 666277, v: "me", by: "sam" },
+  { id: 346648, v: "free", by: "you", cats: [0] },
+  { id: 76341, v: "none", by: "sam" },
+];
+const GRID = [
+  { id: 1022789, v: "both" }, { id: 100088, v: "partner" }, { id: 129, v: "both" }, { id: 872585, v: "me" },
+  { id: 94997, v: "free" }, { id: 545611, v: "both" }, { id: 508442, v: "none" }, { id: 1396, v: "both" },
+  { id: 345881, v: "partner" }, { id: 666277, v: "both" },
+];
+const PICK = { id: 129, v: "both", svc: ["Netflix", "Netflix"] };
+
+const state = { opt: "A", lang: "en", view: "both", pal: "sunburst", name: "meta", slow: "1", bsz: 1 };
+try { Object.assign(state, JSON.parse(localStorage.getItem("badge-lab") || "{}")); } catch {}
+
+const byId = Object.fromEntries(TITLES.map((t) => [t.id, t]));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function burstPath(points, r1, r2, cx, cy) {
+  let d = "";
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 ? r2 : r1, a = (Math.PI * i) / points - Math.PI / 2;
+    d += `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }
+  return d + "Z";
+}
+const BURST = `<svg aria-hidden="true" viewBox="0 0 100 100"><path d="${burstPath(12, 48, 34, 50, 50)}" fill="var(--stamp)" stroke="var(--outline)" stroke-width="4" stroke-linejoin="round"/></svg>`;
+const fit = (word, room) => Math.min(1, room / word.length).toFixed(2);
+
+function dots(v) {
+  if (v === "free") return "";
+  return `<span class="dots" aria-hidden="true"><i class="dot ${v === "me" ? "me" : ""}"></i><i class="dot ${v === "partner" ? "partner" : ""}"></i></span>`;
+}
+function whoText(v, t, small) {
+  return { me: t.me, partner: t.partner, free: small ? t.freeShort : t.free }[v];
+}
+
+/** The badge that sits on (or around) a poster. place: list | grid | pick. */
+function onPoster(opt, v, place, i, t) {
+  if (v === "none") return "";
+  const small = place === "list";
+  if (opt === "0") {
+    if (place !== "grid") return "";
+    if (v === "both") return `<span class="today-grid"><span class="burst today-sizes-sm anim pop" style="--i:${i}">${BURST}<span class="bw" style="--fit:${fit(t.short, 6)}">${esc(t.short)}</span></span></span>`;
+    return `<span class="today-grid"><span class="ptag anim fade" style="--i:${i}">${dots(v)}${esc(whoText(v, t))}</span></span>`;
+  }
+  const word = t.short;
+  const words = `<span class="w-long">${esc(t.stamp)}</span><span class="w-short">${esc(t.short)}</span>`;
+  if (opt === "A") {
+    if (v === "both") return `<span class="a-stk burst anim slap" style="--i:${i}">${BURST}<span class="bw" style="--fit:${fit(word, 6)}">${words}</span></span>`;
+    const label = small && v !== "free" ? "" : esc(whoText(v, t, small));
+    return `<span class="a-tag anim fade" style="--i:${i}"><span class="ptag ${label ? "" : "dots-only"}">${dots(v)}${label}</span></span>`;
+  }
+  if (opt === "B") {
+    if (v === "both") return `<span class="clip"><span class="clip-in"><span class="b-wrap anim peek" style="--i:${i}"><span class="burst anim spin" style="--i:${i}">${BURST}</span><span class="b-word"><span class="bw" style="--fit:${fit(word, 6)}">${words}</span></span></span></span></span>`;
+    const label = small && v !== "free" ? "" : esc(whoText(v, t, true));
+    return `<span class="clip"><span class="clip-in"><span class="b-wrap anim peek" style="--i:${i}"><span class="b-paper"></span><span class="b-who">${dots(v)}${label ? `<span>${label}</span>` : ""}</span></span></span></span>`;
+  }
+  if (opt === "C") {
+    if (v === "both") return `<span class="clip"><span class="clip-in"><span class="c-sash stamp anim sash" style="--i:${i}"><span class="bw" style="--fit:${fit(word, 6)}">${words}</span></span></span></span>`;
+    const label = small && v !== "free" ? "" : esc(whoText(v, t, true));
+    return `<span class="clip"><span class="clip-in"><span class="c-sash paper anim sash" style="--i:${i}"><span class="who">${dots(v)}${label}</span></span></span></span>`;
+  }
+  if (opt === "D") {
+    if (v === "both") return `<span class="d-tab stamp anim tab" style="--i:${i}"><span class="bw" style="--fit:${fit(word, 12)}">${words}</span></span>`;
+    const label = small && v !== "free" ? "" : esc(whoText(v, t, small));
+    return `<span class="d-tab paper anim tab" style="--i:${i}">${dots(v)}${label}</span>`;
+  }
+  return "";
+}
+
+function poster(title, lang) {
+  const p = title[lang].poster;
+  return p ? `<img src="https://image.tmdb.org/t/p/w342${p}" alt="" loading="lazy">` : `<span class="blank"></span>`;
+}
+
+function listCard(item, i, t, lang, phone, opt) {
+  const title = byId[item.id];
+  const kind = title.type === "movie" ? t.film : t.series;
+  const meta = [`<span>${kind} · ${title.year}</span>`];
+  if (item.v === "both") meta.push(`<b>${esc(item.svc)}</b>`);
+  if (opt !== "0" && !["none", "both", "free"].includes(item.v) && state.name === "meta") meta.push(`<span class="lc-who">${esc(whoText(item.v, t))}</span>`);
+  if (item.watching) meta.push(`<span class="strand" style="background:var(--accent-soft)">${esc(t.watching)}</span>`);
+  const cats = item.cats ? `<span class="lc-strands">${item.cats.map((c) => `<span class="strand">${esc(t.cats[c])}</span>`).join("")}</span>` : "";
+  let today = "";
+  if (opt === "0" && item.v !== "none") {
+    today = item.v === "both"
+      ? `<div class="today-col has-burst"><span class="burst today-sizes-md anim pop" style="--i:${i}">${BURST}<span class="bw" style="--fit:${fit(t.stamp, 9)}">${esc(t.stamp)}</span></span></div>`
+      : `<div class="today-col"><span class="ptag anim fade" style="--i:${i}">${dots(item.v)}${esc(whoText(item.v, t))}</span></div>`;
+  }
+  return `<li><div class="card lc ${opt === "0" && item.v === "both" ? "has-burst" : ""}">
+    <div class="pw">${poster(title, lang)}${onPoster(opt, item.v, "list", i, t)}</div>
+    <div class="lc-body">
+      <span class="lc-title">${esc(title[lang].title)}</span>
+      <span class="lc-meta">${meta.join("")}</span>
+      ${cats}
+      <p class="lc-added">${esc(t.added(item.by === "you" ? t.you : t.sam, t.date[i]))}</p>
+    </div>${today}
+  </div></li>`;
+}
+
+function gridCard(item, i, t, lang, opt) {
+  const title = byId[item.id];
+  return `<li class="tc"><div class="lift"><div class="pw">${poster(title, lang)}${onPoster(opt, item.v, "grid", i, t)}</div></div>
+    <span class="tc-title">${esc(title[lang].title)}</span><span class="tc-year">${title.year}</span><span class="tc-add">${esc(t.add)}</span></li>`;
+}
+
+function pickCard(t, lang, opt) {
+  const title = byId[PICK.id];
+  const todayBurst = opt === "0" ? `<span class="burst today-sizes-lg anim pop">${BURST}<span class="bw" style="--fit:${fit(t.stamp, 9)}">${esc(t.stamp)}</span></span>` : "";
+  return `<article class="pick spotlight">
+    <div class="pw">${poster(title, lang)}${onPoster(opt, PICK.v, "pick", 0, t)}</div>
+    <div class="pick-body">
+      <h3 class="display display-pop pick-title">${esc(title[lang].title)}</h3>
+      <ul class="pick-tags"><li>${t.film}</li><li>${t.runtime(title.runtime)}</li><li>${title.year}</li></ul>
+      <p style="margin:0;font-weight:600">${esc(t.reason)}</p>
+      <div class="pick-svc">${todayBurst}<span><i class="dot me"></i>${esc(t.svcYou(PICK.svc[0]))}</span><span><i class="dot partner"></i>${esc(t.svcSam(PICK.svc[1]))}</span></div>
+    </div>
+    <div class="pick-btns"><span class="btn">${esc(t.watchNow)} →</span><span class="btn-quiet">${esc(t.planIt)}</span><span class="btn-quiet">${esc(t.another)}</span></div>
+  </article>`;
+}
+
+function app(phone) {
+  const t = T[state.lang], lang = state.lang, opt = state.opt;
+  const list = `<section style="display:grid;gap:22px"><h2 class="display sec-head">${esc(t.upNext)}</h2><ul class="list">${LIST.map((item, i) => listCard(item, i, t, lang, phone, opt)).join("")}</ul></section>`;
+  const pick = `<section style="display:grid;gap:22px"><h2 class="display sec-head">${esc(t.pick)}</h2>${pickCard(t, lang, opt)}</section>`;
+  const grid = `<section style="display:grid;gap:22px"><h2 class="display sec-head">${esc(t.browse)}</h2><ul class="grid">${(phone ? GRID.slice(0, 6) : GRID).map((item, i) => gridCard(item, i, t, lang, opt)).join("")}</ul></section>`;
+  const body = phone ? list + grid + pick : `<div class="wide-col">${list}</div><div class="wide-col">${pick}</div>${grid}`;
+  return `<div class="app ${phone ? "is-phone" : "is-wide"}" data-pal="${state.pal}" data-opt="${opt}" lang="${lang}" style="--bsz:${state.bsz}"><div class="pad">${body}</div></div>`;
+}
+
+function compareRow(opt) {
+  const t = T[state.lang], lang = state.lang;
+  const o = OPTIONS[opt];
+  const mini = `<div class="app is-phone" data-pal="${state.pal}" data-opt="${opt}" style="--bsz:${state.bsz}"><div style="display:flex;flex-wrap:wrap;gap:26px 24px;padding:26px 22px 22px;align-items:start">
+    <ul class="list" style="width:330px">${listCard(LIST[0], 0, t, lang, true, opt)}</ul>
+    <ul class="list" style="width:330px">${listCard(LIST[1], 1, t, lang, true, opt)}</ul>
+    <ul class="grid" style="grid-template-columns:150px">${gridCard(GRID[0], 2, t, lang, opt)}</ul>
+    <ul class="grid" style="grid-template-columns:150px">${gridCard(GRID[1], 3, t, lang, opt)}</ul>
+    <div class="pick" style="grid-template-columns:1fr;padding:12px"><div class="pw" style="width:120px">${poster(byId[PICK.id], lang)}${onPoster(opt, "both", "pick", 4, t)}</div></div>
+  </div></div>`;
+  return `<div class="cmp" data-opt="${opt}" aria-current="${state.opt === opt}" role="button" tabindex="0"><div><h3>${esc(o.name)}</h3><p>${esc(o.short)}</p></div>${mini}</div>`;
+}
+
+function fitDesk() {
+  const desk = document.getElementById("desk");
+  const inner = desk.firstElementChild;
+  if (!inner) return;
+  const s = Math.min(1, desk.clientWidth / 1180);
+  inner.style.transform = `scale(${s})`;
+  desk.style.height = `${inner.offsetHeight * s}px`;
+}
+
+function render() {
+  localStorage.setItem("badge-lab", JSON.stringify(state));
+  document.documentElement.style.setProperty("--slow", state.slow === "0" ? 1 : state.slow);
+  document.body.classList.toggle("no-motion", state.slow === "0");
+  document.getElementById("opts").innerHTML = Object.entries(OPTIONS).map(([k, o]) => `<button class="opt" data-opt="${k}" aria-pressed="${state.opt === k}"><b>${esc(o.name)}</b><span>${esc(o.short)}</span></button>`).join("");
+  for (const seg of document.querySelectorAll(".seg[data-key]")) for (const b of seg.querySelectorAll("button")) b.setAttribute("aria-pressed", String(state[seg.dataset.key] === b.dataset.v));
+  document.getElementById("bsz").value = state.bsz;
+  document.getElementById("bszOut").textContent = `${Math.round(state.bsz * 100)}%`;
+  const o = OPTIONS[state.opt];
+  document.getElementById("about").innerHTML = `<h2>${esc(o.name)}</h2><p>${esc(o.about)}</p>
+    <ul><li><b>Places:</b> Home list cards (Up next), the poster grid (Browse, For you, Search, Coming soon use the same card) and Pick (the big one).</li>
+    <li><b>Verdicts shown:</b> both of you (burst), only Sam / only you (dots: filled = can watch), free to watch, and no badge at all (Mad Max, Soul).</li></ul>`;
+  const scroll = document.querySelector("#phone > .app")?.scrollTop ?? 0;
+  document.getElementById("phone").innerHTML = app(true);
+  document.querySelector("#phone > .app").scrollTop = scroll;
+  document.getElementById("desk").innerHTML = app(false);
+  document.getElementById("stage").dataset.view = state.view;
+  document.getElementById("compare").innerHTML = Object.keys(OPTIONS).map(compareRow).join("");
+  requestAnimationFrame(fitDesk);
+}
+
+document.addEventListener("click", (e) => {
+  const opt = e.target.closest("[data-opt]:is(.opt, .cmp)");
+  if (opt) { state.opt = opt.dataset.opt; render(); if (opt.classList.contains("cmp")) window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  const b = e.target.closest(".seg[data-key] button");
+  if (b) { state[b.closest(".seg").dataset.key] = b.dataset.v; render(); }
+});
+document.addEventListener("keydown", (e) => {
+  const row = e.target.closest?.(".cmp");
+  if (row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); row.click(); }
+});
+document.getElementById("bsz").addEventListener("input", (e) => { state.bsz = +e.target.value; render(); });
+document.getElementById("replay").addEventListener("click", render);
+window.addEventListener("resize", fitDesk);
+document.fonts?.ready.then(fitDesk);
+window.addEventListener("load", fitDesk);
+render();
+</script>
+</body>
+</html>
