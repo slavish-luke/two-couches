@@ -39,7 +39,7 @@ run("intro-hole",[{transform:"scale(0) rotate(0deg)"},{transform:"scale(0) rotat
 anims.push(document.getElementById("intro-word").animate([{opacity:0,scale:.2,rotate:"-12deg"},{opacity:0,scale:.2,rotate:"-12deg",offset:.12},{opacity:1,scale:1.15,rotate:"4deg",offset:.27},{scale:.95,rotate:"-2deg",offset:.34},{opacity:1,scale:1,rotate:"-3deg",offset:.4},{opacity:1,scale:1,rotate:"-3deg",offset:.44},{opacity:0,scale:1.5,rotate:"-8deg",offset:.5},{opacity:0,scale:1.5,rotate:"-8deg"}],{duration:T,fill:"forwards"}));
 Promise.all(anims.map(function(a){return a.finished})).then(end,end);
 }catch(e){end()}}
-var face=getComputedStyle(d).getPropertyValue("--font-luckiest");
+var face=getComputedStyle(d).getPropertyValue("--font-skin-display");
 if(face&&document.fonts){document.fonts.load("400 48px "+face).then(start,start)}
 setTimeout(start,face?450:0);
 })()`;
