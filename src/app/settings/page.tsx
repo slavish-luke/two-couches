@@ -1,5 +1,4 @@
 import { Suspense, type ReactNode } from "react";
-import { PageLoading } from "@/components/page-loading";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { allTimeZones, countryOptions, formatVisitDate, isCountry, visitDateRange } from "@/lib/places";
 import { getServices } from "@/lib/services";
@@ -11,13 +10,14 @@ import { InstallSettings } from "./install-settings";
 import { NotificationSettings } from "./notification-settings";
 import { SettingsForm } from "./settings-form";
 import { SignOutButton } from "./sign-out-button";
+import { AdvisorSkeleton, SettingsSkeleton } from "./skeleton";
 import { VisitForm } from "./visit-form";
 
 export const generateMetadata = localisedTitle("settings");
 
 export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<SettingsSkeleton />}>
       <Settings searchParams={searchParams} />
     </Suspense>
   );
@@ -76,7 +76,7 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
               language={language}
             />
           </section>
-          <Suspense fallback={<div aria-busy className="card h-48 motion-safe:animate-pulse" />}>
+          <Suspense fallback={<AdvisorSkeleton />}>
             <Advisor />
           </Suspense>
         </>

@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { Couches } from "@/components/couch";
 import { StarIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
 import { Stars } from "@/components/stars";
 import { getGenres } from "@/lib/browse";
@@ -19,12 +18,13 @@ import { getPartner, requireProfile } from "@/lib/session";
 import { computeStats, statsYears, type Period, type StatsEntry } from "@/lib/stats-rules";
 import { tmdbLocale } from "@/lib/tmdb";
 import { titleHref } from "@/lib/watch";
+import { StatsSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("stats");
 
 export default function StatsPage({ searchParams }: PageProps<"/stats">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<StatsSkeleton />}>
       <Stats searchParams={searchParams} />
     </Suspense>
   );

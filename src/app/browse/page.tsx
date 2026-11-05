@@ -7,7 +7,6 @@ import { CountryChip } from "@/components/country-chip";
 import { ArrowIcon, BackIcon } from "@/components/icons";
 import { FilterSelect } from "@/components/filter-select";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
 import { TitleCard, type CardContext } from "@/components/title-card";
 import {
   batchPages,
@@ -26,6 +25,7 @@ import {
   type MinRating,
   type Sort,
 } from "@/lib/browse";
+import type { Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getListKeys } from "@/lib/list";
 import { localDate } from "@/lib/list-rules";
@@ -43,13 +43,14 @@ import {
   type MediaType,
   type Watcher,
 } from "@/lib/watch";
-import { ForYouLoading, ForYouRow } from "./for-you";
+import { ForYouRow } from "./for-you";
+import { BrowseResultsSkeleton, BrowseSkeleton, ForYouSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("browse");
 
 export default function BrowsePage({ searchParams }: PageProps<"/browse">) {
   return (
-    <Suspense fallback={<PageLoading variant="posters" wide />}>
+    <Suspense fallback={<BrowseSkeleton />}>
       <Browse searchParams={searchParams} />
     </Suspense>
   );
@@ -197,52 +198,10 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
     [...checked, ...rows.flatMap((row) => row.items)],
     them ? [me.country, them.country] : [me.country],
   );
-  let shown = checked;
-  if (filters.both) {
-    const byTitle = await availability;
-    shown = checked.filter((r) => whoCanWatch(me, them, byTitle[titleKey(r)] ?? {}).verdict === "both");
-  }
-
   const card: CardContext = { language, availability, me, them, partnerName, onList };
   const whose = { both: t.browse.whose.both, me: t.browse.whose.me, partner: t.browse.whose.partner(partnerName) };
   const dot = { both: "bg-stamp", me: "bg-me", partner: "bg-partner" };
   const selectQuery = filtersQuery({ ...filters, page: 1 });
-
-  let empty: ReactNode = null;
-  if (failed) {
-    empty = (
-      <p role="alert" className="font-semibold text-danger">
-        {t.browse.failed}
-      </p>
-    );
-  } else if (filters.both && me.services.length === 0) {
-    empty = <SettingsPrompt text={t.browse.noServices} link={t.browse.goToSettings} />;
-  } else if (filters.both && them && them.services.length === 0) {
-    empty = <p className="max-w-md font-medium text-muted">{t.browse.partnerNoServices(partnerName)}</p>;
-  } else if (shown.length === 0 && filters.both && checked.length > 0 && filters.page < totalPages) {
-    empty = (
-      <>
-        <p className="display-ink text-2xl">{t.browse.noneForBoth}</p>
-        <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn mt-2">
-          {t.browse.lookFurther} <ArrowIcon />
-        </Link>
-      </>
-    );
-  } else if (shown.length === 0) {
-    empty = (
-      <>
-        <p className="display-ink text-2xl">{t.browse.noMatches}</p>
-        {(isFiltered || filters.both) && (
-          <Link
-            href={filtersHref(filters, { service: null, genre: null, decade: null, rating: null, sort: "popular", both: them ? false : null })}
-            className="btn-quiet mt-2 text-sm"
-          >
-            {t.browse.clearFilters}
-          </Link>
-        )}
-      </>
-    );
-  }
 
   return (
     <div data-wide className="grid gap-8">
@@ -269,7 +228,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-[auto_1fr] lg:gap-x-10 xl:grid-cols-[minmax(0,1fr)_27rem]">
         {showRows && profile.couple_id && (
           <div className="lg:col-start-2 lg:row-start-1">
-            <Suspense fallback={<ForYouLoading />}>
+            <Suspense fallback={<ForYouSkeleton />}>
               <ForYouRow
                 coupleId={profile.couple_id}
                 type={type}
@@ -358,49 +317,20 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
             />
           </div>
 
-          <p className="max-w-[65ch] text-sm font-medium text-muted">
-            {filters.both
-              ? t.browse.scope.both
-              : chip || me.services.length > 0
-                ? t.browse.scope.mine
-                : t.browse.scope.everything}
-            {filters.both && !empty && ` ${t.browse.bothChecked(shown.length, checked.length)}`}
-          </p>
-
-          {empty ? (
-            <div className="card grid justify-items-center gap-2 px-6 py-12 text-center">
-              <Couches size={56} className="mb-2" />
-              {empty}
-            </div>
-          ) : (
-            <ul className="grid grid-cols-2 gap-x-5 gap-y-8 pt-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-              {shown.map((r, i) => (
-                <TitleCard key={titleKey(r)} result={r} context={card} index={i} eager={i < 2} />
-              ))}
-            </ul>
-          )}
-
-          {!failed && totalPages > 1 && (
-            <nav aria-label={t.browse.pagesLabel} className="mt-2 flex items-center justify-between gap-3">
-              {filters.page > 1 ? (
-                <Link href={filtersHref(filters, { page: filters.page - 1 })} className="btn-quiet">
-                  <BackIcon /> {t.browse.previous}
-                </Link>
-              ) : (
-                <span />
-              )}
-              <span className="rounded-full border-[2.5px] border-outline bg-surface px-3 py-0.5 text-sm font-bold">
-                {t.browse.page(filters.page)}
-              </span>
-              {filters.page < totalPages ? (
-                <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn">
-                  {t.browse.more} <ArrowIcon />
-                </Link>
-              ) : (
-                <span />
-              )}
-            </nav>
-          )}
+          {/* With "We can both watch" on, the grid waits for every title's availability: the rest is already here. */}
+          <Suspense fallback={<BrowseResultsSkeleton />}>
+            <BrowseResults
+              filters={filters}
+              checked={checked}
+              availability={availability}
+              card={card}
+              failed={failed}
+              totalPages={totalPages}
+              isFiltered={isFiltered}
+              serviceChosen={Boolean(chip)}
+              t={t}
+            />
+          </Suspense>
         </section>
         {rows.length > 0 && (
           <div className="grid content-start gap-8 lg:col-start-2 lg:row-start-2">
@@ -424,6 +354,112 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
         )}
       </div>
     </div>
+  );
+}
+
+/** The scope line, then the grid (or why it's empty) and the pages. Waits for availability when "both" is on. */
+async function BrowseResults(props: {
+  filters: Filters;
+  checked: DiscoverPage["results"];
+  availability: Promise<Record<string, Availability>>;
+  card: CardContext;
+  failed: boolean;
+  totalPages: number;
+  isFiltered: boolean;
+  /** Whether a service chip is selected. */
+  serviceChosen: boolean;
+  t: Messages;
+}) {
+  const { filters, checked, card, failed, totalPages, isFiltered, t } = props;
+  const { me, them, partnerName } = card;
+  let shown = checked;
+  if (filters.both) {
+    const byTitle = await props.availability;
+    shown = checked.filter((r) => whoCanWatch(me, them, byTitle[titleKey(r)] ?? {}).verdict === "both");
+  }
+
+  let empty: ReactNode = null;
+  if (failed) {
+    empty = (
+      <p role="alert" className="font-semibold text-danger">
+        {t.browse.failed}
+      </p>
+    );
+  } else if (filters.both && me.services.length === 0) {
+    empty = <SettingsPrompt text={t.browse.noServices} link={t.browse.goToSettings} />;
+  } else if (filters.both && them && them.services.length === 0) {
+    empty = <p className="max-w-md font-medium text-muted">{t.browse.partnerNoServices(partnerName)}</p>;
+  } else if (shown.length === 0 && filters.both && checked.length > 0 && filters.page < totalPages) {
+    empty = (
+      <>
+        <p className="display-ink text-2xl">{t.browse.noneForBoth}</p>
+        <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn mt-2">
+          {t.browse.lookFurther} <ArrowIcon />
+        </Link>
+      </>
+    );
+  } else if (shown.length === 0) {
+    empty = (
+      <>
+        <p className="display-ink text-2xl">{t.browse.noMatches}</p>
+        {(isFiltered || filters.both) && (
+          <Link
+            href={filtersHref(filters, { service: null, genre: null, decade: null, rating: null, sort: "popular", both: them ? false : null })}
+            className="btn-quiet mt-2 text-sm"
+          >
+            {t.browse.clearFilters}
+          </Link>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <p className="max-w-[65ch] text-sm font-medium text-muted">
+        {filters.both
+          ? t.browse.scope.both
+          : props.serviceChosen || me.services.length > 0
+            ? t.browse.scope.mine
+            : t.browse.scope.everything}
+        {filters.both && !empty && ` ${t.browse.bothChecked(shown.length, checked.length)}`}
+      </p>
+
+      {empty ? (
+        <div className="card grid justify-items-center gap-2 px-6 py-12 text-center">
+          <Couches size={56} className="mb-2" />
+          {empty}
+        </div>
+      ) : (
+        <ul className="grid grid-cols-2 gap-x-5 gap-y-8 pt-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+          {shown.map((r, i) => (
+            <TitleCard key={titleKey(r)} result={r} context={card} index={i} eager={i < 2} />
+          ))}
+        </ul>
+      )}
+
+      {!failed && totalPages > 1 && (
+        <nav aria-label={t.browse.pagesLabel} className="mt-2 flex items-center justify-between gap-3">
+          {filters.page > 1 ? (
+            <Link href={filtersHref(filters, { page: filters.page - 1 })} className="btn-quiet">
+              <BackIcon /> {t.browse.previous}
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="rounded-full border-[2.5px] border-outline bg-surface px-3 py-0.5 text-sm font-bold">
+            {t.browse.page(filters.page)}
+          </span>
+          {filters.page < totalPages ? (
+            <Link href={filtersHref(filters, { page: filters.page + 1 })} className="btn">
+              {t.browse.more} <ArrowIcon />
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
+    </>
   );
 }
 

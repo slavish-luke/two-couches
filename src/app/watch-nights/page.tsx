@@ -6,7 +6,7 @@ import { CalendarSubscribe } from "@/app/calendar/subscribe";
 import { Couches } from "@/components/couch";
 import { PlusIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
+import { WatchNightsSkeleton } from "./skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { formatDayLong } from "@/lib/night-rules";
 import { getWatchNights, type WatchNight } from "@/lib/nights";
@@ -19,7 +19,7 @@ export const generateMetadata = localisedTitle("watchNights");
 
 export default function WatchNightsPage() {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<WatchNightsSkeleton />}>
       <WatchNights />
     </Suspense>
   );

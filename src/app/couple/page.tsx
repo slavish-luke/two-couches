@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Couches } from "@/components/couch";
-import { PageLoading } from "@/components/page-loading";
+import { CoupleSkeleton } from "./skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { requireProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -12,7 +12,7 @@ export const generateMetadata = localisedTitle("couple");
 
 export default function CouplePage() {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<CoupleSkeleton />}>
       <Couple />
     </Suspense>
   );

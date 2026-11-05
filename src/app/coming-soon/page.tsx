@@ -4,7 +4,6 @@ import { Suspense, type ReactNode } from "react";
 import { Burst } from "@/components/burst";
 import { Couches } from "@/components/couch";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
 import { RemindButton } from "@/components/remind-button";
 import { TitleCard, type CardContext } from "@/components/title-card";
@@ -28,12 +27,13 @@ import {
 } from "@/lib/upcoming";
 import { isMediaType, titleHref, titleKey, type MediaType, type TitleRef, type Watcher } from "@/lib/watch";
 import { MarkAlertsSeen } from "./mark-seen";
+import { ComingSoonSkeleton, ReleaseRowsSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("comingSoon");
 
 export default function ComingSoonPage({ searchParams }: PageProps<"/coming-soon">) {
   return (
-    <Suspense fallback={<PageLoading variant="posters" />}>
+    <Suspense fallback={<ComingSoonSkeleton />}>
       <ComingSoon searchParams={searchParams} />
     </Suspense>
   );
@@ -174,7 +174,7 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
         </Row>
       )}
 
-      <Suspense fallback={<p className="font-semibold text-muted motion-safe:animate-pulse">{t.upcoming.loading}</p>}>
+      <Suspense fallback={<ReleaseRowsSkeleton />}>
         {type === "movie" ? <FilmSections context={context} /> : <SeriesSections context={context} />}
       </Suspense>
     </div>

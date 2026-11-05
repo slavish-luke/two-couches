@@ -84,7 +84,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </span>
               <span className="display whitespace-nowrap text-[1.4rem] min-[400px]:text-[1.6rem] sm:text-[2.3rem]">Two Couches</span>
             </Link>
-            <Suspense>
+            {/* Holds the nav's height while the session is read, so the page below doesn't drop when it arrives. */}
+            <Suspense fallback={<div aria-hidden className="h-11 md:h-[50px]" />}>
               <AccountNav />
             </Suspense>
           </div>

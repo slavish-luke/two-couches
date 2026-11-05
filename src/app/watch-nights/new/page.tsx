@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BackIcon } from "@/components/icons";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { PageLoading } from "@/components/page-loading";
+import { NightFormSkeleton } from "../skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { suggestStart } from "@/lib/night-rules";
 import { titleOptions } from "@/lib/nights";
@@ -17,7 +17,7 @@ export const generateMetadata = localisedTitle("planNight");
 
 export default function NewWatchNightPage({ searchParams }: PageProps<"/watch-nights/new">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<NightFormSkeleton />}>
       <NewWatchNight searchParams={searchParams} />
     </Suspense>
   );
