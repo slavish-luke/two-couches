@@ -356,7 +356,8 @@
   font-weight: 400;
   line-height: 0.95;
   letter-spacing: 0.02em;
-  color: var(--p-surface);
+  /* A skin or palette can fill its lettering in another colour (--display-fill); paper by default. */
+  color: var(--display-fill, var(--p-surface));
   -webkit-text-stroke: max(2px, 0.05em) var(--outline);
   paint-order: stroke fill;
   text-shadow: 0.07em 0.07em 0 var(--outline);
@@ -906,5 +907,425 @@ html[data-intro="playing"] .intro {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+}
+
+/*
+ * ======================================================================================================
+ * POW! Comic Book (skin "comic", palettes "pow-*"; design/labs/cartoon-lab.html#pow). Every screen is a
+ * comic-book page: newsprint with halftone dots, square panels in thick ink with gutters and no shadow,
+ * Bangers lettering, caption boxes, the two clocks as speech bubbles, a masthead across the top and a
+ * BOOM! burst for what you can both watch. Everything for this skin lives in this section.
+ * ======================================================================================================
+ */
+[data-skin="comic"] {
+  --font-skin-display: var(--font-bangers), sans-serif;
+  --font-skin-body: var(--font-shantell), sans-serif;
+  --outline-width: 4px;
+  --skin-radius-panel: 0px;
+  --skin-radius-control: 0px;
+  --skin-radius-poster: 0px;
+  /* Panels are flat comic frames; only controls cast a hard shadow. */
+  --lift: 0px;
+  --lift-sm: 4px;
+  /* The nav marks the current section like the lab: an ink box with the display colour in it. */
+  --nav-pill: var(--outline);
+  --nav-on: var(--display-fill);
+}
+
+/*
+ * The comic palettes add four roles: --dots (the halftone on the ground), --caption (caption boxes and the
+ * masthead), --display-fill (lettering on the ground) and --logo-fill (the wordmark on the masthead).
+ */
+
+/* Newsprint: the lab's CMYK on newsprint. Cyan spotlight, yellow captions, a magenta BOOM! for both. */
+[data-palette="pow-newsprint"] {
+  --p-bg: #fffdf3;
+  --p-surface: #ffffff;
+  --p-ink: #111111;
+  --p-muted: #4f4a42;
+  --p-line: rgb(17 17 17 / 0.2);
+  --ray: transparent;
+  --dots: rgb(17 17 17 / 0.08);
+  --outline: #111111;
+  --me: #ff9f1c;
+  --me-soft: #ffe2b8;
+  /* Violet, not the lab's cyan: a cyan partner dot vanished inside the cyan spotlight. */
+  --partner: #9d7cff;
+  --partner-soft: #e6dcff;
+  --stamp: #ff2f8e;
+  --on-stamp: #111111;
+  --both: #b8005f;
+  --both-soft: #ffe0ec;
+  --accent: #00b2f0;
+  --on-accent: #111111;
+  --accent-soft: #cdeffd;
+  --accent-muted: #0b2f3d;
+  --accent-line: rgb(17 17 17 / 0.3);
+  --accent-both: #6e0039;
+  --accent-head: #ffffff;
+  --pop: #ffe14d;
+  --caption: #ffe14d;
+  --display-fill: #ffe14d;
+  --logo-fill: #ffffff;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Pulp: an old pulp magazine. Yellowed paper, brown-black ink, a pulp-red spotlight, mustard captions. */
+[data-palette="pow-pulp"] {
+  --p-bg: #f1dfb6;
+  --p-surface: #fff8e8;
+  --p-ink: #2b1d14;
+  --p-muted: #5e4838;
+  --p-line: rgb(43 29 20 / 0.22);
+  --ray: transparent;
+  --dots: rgb(43 29 20 / 0.12);
+  --outline: #2b1d14;
+  --me: #f28c28;
+  --me-soft: #fde0c2;
+  --partner: #3fb0d9;
+  --partner-soft: #d5eef7;
+  --stamp: #ff3d8b;
+  --on-stamp: #2b1d14;
+  --both: #a3004f;
+  --both-soft: #ffdcea;
+  --accent: #c8312b;
+  --on-accent: #ffffff;
+  --accent-soft: #f8d9d4;
+  --accent-muted: #fff0ea;
+  --accent-line: rgb(255 255 255 / 0.4);
+  --accent-both: #fff0f7;
+  --accent-head: #ffd84a;
+  --pop: #ffd84a;
+  --caption: #ffd84a;
+  --display-fill: #ffd84a;
+  --logo-fill: #fff8e8;
+  --danger: #a3121c;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* Midnight: for evenings. A night-blue page with pale dots, newsprint panels, a yellow spotlight like a lamp. */
+[data-palette="pow-midnight"] {
+  --p-bg: #151a3d;
+  --p-surface: #fffdf3;
+  --p-ink: #111111;
+  --p-muted: #4f4a42;
+  --p-line: rgb(17 17 17 / 0.2);
+  --g-ink: #fffdf3;
+  --g-muted: #c3c8f2;
+  --ray: transparent;
+  --dots: rgb(255 253 243 / 0.1);
+  --outline: #07081a;
+  --me: #ff9f1c;
+  --me-soft: #ffe2b8;
+  --partner: #00b2f0;
+  --partner-soft: #cdeffd;
+  --stamp: #ff2f8e;
+  --on-stamp: #111111;
+  --both: #b8005f;
+  --both-soft: #ffe0ec;
+  --accent: #ffe14d;
+  --on-accent: #111111;
+  --accent-soft: #fff4bf;
+  --accent-muted: #4a3b00;
+  --accent-line: rgb(17 17 17 / 0.3);
+  --accent-both: #8c0048;
+  --accent-head: #ffffff;
+  --pop: #ffe14d;
+  --caption: #00b2f0;
+  --display-fill: #ffe14d;
+  --logo-fill: #ffe14d;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  color-scheme: light;
+}
+
+/* The ground: newsprint with a halftone dot screen. */
+[data-skin="comic"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(var(--dots) 1.2px, transparent 1.4px) 0 0 / 9px 9px;
+}
+
+/* A page peeling away is a sheet of the same dotted newsprint. */
+html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
+  background:
+    radial-gradient(var(--dots) 1.2px, transparent 1.4px) 0 0 / 9px 9px,
+    var(--bg);
+}
+
+/* Settings → Look: this skin's preview tile, in its own colours. */
+[data-look-preview][data-skin="comic"] {
+  background:
+    radial-gradient(var(--dots) 1.2px, transparent 1.4px) 0 0 / 9px 9px,
+    var(--p-bg);
+}
+
+/* Bangers is narrow: it reads better with a little air between the letters. */
+[data-skin="comic"] :is(.display, .display-pop, .display-ink, .btn, .tab, .intro-word) {
+  letter-spacing: 0.05em;
+}
+
+/* The masthead: a caption-coloured strip across the top, the wordmark in it like the lab's title panel. */
+[data-skin="comic"] body > header {
+  --ink: var(--p-ink);
+  --muted: var(--p-muted);
+  color: var(--ink);
+  background: var(--caption);
+  border-bottom: var(--outline-width) solid var(--outline);
+}
+[data-skin="comic"] body > header > div {
+  padding-bottom: 0.75rem;
+}
+[data-skin="comic"] body > header .display {
+  color: var(--logo-fill);
+}
+
+/* The wide nav: plain comic lettering on the masthead, the current one in a tipped ink box. */
+[data-skin="comic"] nav:not([data-tab-bar]) > ul {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+[data-skin="comic"] nav:not([data-tab-bar]) [data-section-link] {
+  font-family: var(--font-skin-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+[data-skin="comic"] [data-section-link]:not([aria-current]):hover {
+  color: var(--ink);
+}
+[data-skin="comic"] [data-nav-pill],
+[data-skin="comic"] [data-section-link][style*="background"] {
+  border-radius: 0;
+  box-shadow: none;
+  rotate: -3deg;
+}
+[data-skin="comic"] [data-tab-bar] {
+  border-top-width: var(--outline-width);
+}
+
+/* Panels: square frames in thick ink, flat on the page, never tipped. */
+[data-skin="comic"] :is(.card, .spotlight) {
+  box-shadow: none;
+}
+[data-skin="comic"] .spotlight {
+  rotate: none;
+}
+[data-skin="comic"] .tilt-row {
+  --tilt: 0deg;
+}
+[data-skin="comic"] :is(.chip, .tab, .strand) {
+  border-radius: 0;
+}
+/* Tabs are solid paper, as in the lab (see-through ones looked greyed out on Midnight's dark page). */
+[data-skin="comic"] .tab:not([aria-current="page"]) {
+  background: var(--p-surface);
+}
+
+/* A panel's own heading (the first thing in a card) sits in a caption box. */
+[data-skin="comic"] .card > :is(h2, h3).display-ink:first-child,
+[data-skin="comic"] .card > :first-child > :is(h2, h3, legend).display-ink:first-child {
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  background: var(--caption);
+  color: var(--p-ink);
+  border: 3px solid var(--outline);
+  padding: 0.3em 0.5em 0.15em;
+}
+
+/* Titles in comic lettering, like the lab's cells. */
+[data-skin="comic"] [data-item-title] {
+  font-family: var(--font-skin-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+[data-skin="comic"] [data-title-card] [data-item-title] {
+  font-size: 1.3rem;
+}
+
+/* Poster grids (TitleCard): each title is a little comic cell, poster on top. */
+[data-skin="comic"] [data-title-card] {
+  --ink: var(--p-ink);
+  --muted: var(--p-muted);
+  color: var(--ink);
+  background: var(--p-surface);
+  border: 3px solid var(--outline);
+  padding: 8px 8px 10px;
+  /* Narrow cells on phones: a long word ("İlgilenmiyorum") breaks rather than crossing the border. */
+  overflow-wrap: anywhere;
+}
+@media (width < 40rem) {
+  [data-skin="comic"] [data-title-card] {
+    padding: 5px 5px 8px;
+  }
+}
+[data-skin="comic"] [data-title-card] .rounded-poster {
+  box-shadow: none;
+}
+
+/* Loading cut-outs match the flat panels. */
+[data-skin="comic"] div[aria-busy="true"] :is(.rounded-panel, .rounded-poster) {
+  box-shadow: none;
+}
+[data-skin="comic"] div[aria-busy="true"] .rounded-full {
+  border-radius: 0;
+}
+
+/* Buttons: bigger comic lettering. */
+[data-skin="comic"] .btn {
+  font-size: 1.3rem;
+  letter-spacing: 0.06em;
+  padding-top: 0.45rem;
+  padding-bottom: 0.35rem;
+}
+
+/* Home's clocks: a two-tone panel, a caption box in its corner and each time in a speech bubble. */
+[data-skin="comic"] [data-clocks] {
+  padding-top: 2.6rem;
+  background: linear-gradient(135deg, var(--me-soft) 0 50%, var(--partner-soft) 50%);
+}
+[data-skin="comic"] [data-apart] {
+  top: 0;
+  left: 0;
+  translate: none;
+  rotate: none;
+  border-width: 0 3px 3px 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--caption);
+  color: var(--p-ink);
+  padding: 5px 10px 3px;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+[data-skin="comic"] [data-clock] {
+  position: relative;
+  margin-top: 12px;
+  padding: 8px 14px 10px;
+  max-width: 100%;
+  background: var(--p-surface);
+  border: 3px solid var(--outline);
+  border-radius: 50% / 45%;
+}
+/* The bubble's tail points up at whoever is talking. */
+[data-skin="comic"] [data-clock]::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 42%;
+  border: 8px solid transparent;
+  border-bottom: 14px solid var(--outline);
+  border-top: 0;
+}
+
+/* Who can stream it: the paper tab is a little speech bubble, "both" a BOOM! burst. */
+[data-skin="comic"] .poster-tab {
+  border-radius: 0;
+  rotate: -6deg;
+}
+[data-skin="comic"] .poster-tab-paper {
+  border-radius: 50%;
+  padding: 4px 11px;
+}
+[data-skin="comic"] .poster-tab-both {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 9px 15px 7px;
+  filter: drop-shadow(2px 2px 0 var(--outline));
+}
+[data-skin="comic"] .poster-tab-both::before,
+[data-skin="comic"] .poster-tab-both::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  mask: var(--comic-burst) center / 100% 100% no-repeat;
+}
+/* The burst twice: in ink with a thick stroke (its outline), then filled in the "both" colour on top. */
+[data-skin="comic"] .poster-tab-both::before {
+  --comic-burst: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50.0 6.0L58.2 22.2L73.8 13.0L71.9 31.0L90.0 31.7L78.7 45.9L93.6 56.3L76.4 62.0L83.3 78.8L65.7 74.4L62.4 92.2L50.0 79.0L37.6 92.2L34.3 74.4L16.7 78.8L23.6 62.0L6.4 56.3L21.3 45.9L10.0 31.7L28.1 31.0L26.2 13.0L41.8 22.2Z' stroke='%23000' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background: var(--outline);
+}
+[data-skin="comic"] .poster-tab-both::after {
+  --comic-burst: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M50.0 6.0L58.2 22.2L73.8 13.0L71.9 31.0L90.0 31.7L78.7 45.9L93.6 56.3L76.4 62.0L83.3 78.8L65.7 74.4L62.4 92.2L50.0 79.0L37.6 92.2L34.3 74.4L16.7 78.8L23.6 62.0L6.4 56.3L21.3 45.9L10.0 31.7L28.1 31.0L26.2 13.0L41.8 22.2Z'/%3E%3C/svg%3E");
+  background: var(--stamp);
+}
+[data-skin="comic"] .poster-tab-word {
+  color: var(--display-fill);
+}
+
+/* The big starburst (title page, both ready, intro) is the squashed BOOM! of the lab. */
+[data-skin="comic"] .burst svg {
+  scale: 1.12 0.86;
+}
+[data-skin="comic"] .intro-word {
+  color: var(--display-fill);
+}
+
+/* Sound effects (<Sfx>): hidden in other skins; here a tipped word in comic lettering over a corner. */
+.sfx {
+  display: none;
+}
+[data-skin="comic"] .sfx {
+  --r: -12deg;
+  display: block;
+  position: absolute;
+  top: -0.55em;
+  right: -0.3em;
+  rotate: var(--r);
+  pointer-events: none;
+  white-space: nowrap;
+  font: 400 1.4rem / 1 var(--font-skin-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--display-fill);
+  -webkit-text-stroke: 1.5px var(--outline);
+  paint-order: stroke fill;
+  text-shadow: 2px 2px 0 var(--outline);
+}
+
+/* Comic motion: cells tip and grow a touch when pointed at, buttons swing the other way. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-skin="comic"] .sfx {
+    animation: pop 0.55s var(--ease-spring) 0.2s both;
+  }
+  [data-skin="comic"] .tilt-row {
+    transition:
+      rotate 0.15s var(--ease-spring),
+      scale 0.15s var(--ease-spring);
+  }
+  [data-skin="comic"] .tilt-row:hover {
+    animation: none;
+    rotate: -1deg;
+    scale: 1.01;
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  [data-skin="comic"] .btn:hover {
+    translate: none;
+    rotate: 2deg;
+    scale: 1.06;
+  }
+  [data-skin="comic"] .btn:active {
+    translate: 3px 3px;
+    rotate: none;
+    scale: 1.03 0.95;
   }
 }

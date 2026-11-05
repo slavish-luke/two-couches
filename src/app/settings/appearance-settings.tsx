@@ -77,8 +77,12 @@ export function AppearanceSettings({ language }: { language: string }) {
               onChange={() => choose({ skin: option_, palette: SKINS[option_][0] })}
               className={option}
             >
+              {/* Drawn in its own look: the current palette for the current skin, another skin's standard one. */}
               <span
                 aria-hidden
+                data-look-preview
+                data-skin={option_}
+                data-palette={option_ === skin ? undefined : SKINS[option_][0]}
                 className="relative flex h-24 items-end justify-center gap-1 overflow-hidden rounded-control border-[3px] border-outline bg-pop bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] pb-2"
               >
                 <Couch who="me" size={50} />

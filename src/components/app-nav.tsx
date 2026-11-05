@@ -204,11 +204,12 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
         <span className="sr-only"> ({t.newAlerts(newAlerts)})</span>
       </>
     );
+  // The accent unless the skin colours the pill (--nav-pill) and the current link's text (--nav-on) itself.
   const pill =
-    "pointer-events-none absolute rounded-full border-[3px] border-outline bg-accent shadow-[2px_2px_0_var(--outline)] transition-[left,top,width,height] duration-[380ms] ease-[cubic-bezier(.3,1.5,.5,1)]";
+    "pointer-events-none absolute rounded-full border-[3px] border-outline bg-[color:var(--nav-pill,var(--accent))] shadow-[2px_2px_0_var(--outline)] transition-[left,top,width,height] duration-[380ms] ease-[cubic-bezier(.3,1.5,.5,1)]";
   // Before the pill has measured, the current link paints its own.
   const ownPill = (ready: boolean, i: number) =>
-    !ready && i === index ? { background: "var(--accent)", boxShadow: "inset 0 0 0 3px var(--outline)" } : undefined;
+    !ready && i === index ? { background: "var(--nav-pill, var(--accent))", boxShadow: "inset 0 0 0 3px var(--outline)" } : undefined;
 
   return (
     <>
@@ -217,7 +218,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
           ref={barList}
           className="relative flex items-center rounded-full border-[3px] border-outline bg-surface p-1 shadow-[3px_3px_0_var(--outline)]"
         >
-          <li ref={barPill} aria-hidden className={pill} style={{ opacity: 0 }} />
+          <li ref={barPill} aria-hidden data-nav-pill className={pill} style={{ opacity: 0 }} />
           {SECTIONS.map(({ key, href }, i) => (
             <li key={key}>
               <Link
@@ -226,7 +227,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
                 aria-current={current(href)}
                 transitionTypes={flightTypes(index, i)}
                 style={ownPill(barReady, i)}
-                className="relative z-[1] block rounded-full px-3 py-1.5 text-[15px] font-bold text-ink transition-colors duration-200 hover:text-accent aria-[current=page]:text-on-accent xl:px-4 xl:text-base"
+                className="relative z-[1] block rounded-full px-3 py-1.5 text-[15px] font-bold text-ink transition-colors duration-200 hover:text-accent aria-[current=page]:text-[color:var(--nav-on,var(--on-accent))] xl:px-4 xl:text-base"
               >
                 <span className="xl:hidden">{t.short[key]}</span>
                 <span className="hidden xl:inline">{t[key]}</span>
@@ -249,7 +250,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
         className="fixed inset-x-0 bottom-0 z-20 border-t-[3px] border-outline bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <ul ref={tabList} className="relative mx-auto grid max-w-md grid-cols-5 px-1.5 py-1.5">
-          <li ref={tabPill} aria-hidden className={pill} style={{ opacity: 0 }} />
+          <li ref={tabPill} aria-hidden data-nav-pill className={pill} style={{ opacity: 0 }} />
           {SECTIONS.map(({ key, href, icon }, i) => (
             <li key={key}>
               <Link
@@ -258,7 +259,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
                 aria-current={current(href)}
                 transitionTypes={flightTypes(index, i)}
                 style={ownPill(tabReady, i)}
-                className="relative z-[1] flex flex-col items-center gap-0.5 rounded-full px-1 pb-1 pt-1.5 text-xs font-bold text-ink aria-[current=page]:text-on-accent"
+                className="relative z-[1] flex flex-col items-center gap-0.5 rounded-full px-1 pb-1 pt-1.5 text-xs font-bold text-ink aria-[current=page]:text-[color:var(--nav-on,var(--on-accent))]"
               >
                 <span className="relative">
                   <Icon>{icon}</Icon>

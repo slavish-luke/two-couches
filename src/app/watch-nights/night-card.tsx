@@ -2,10 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Poster } from "@/components/poster";
 import type { Messages } from "@/lib/i18n";
-import { formatDay, formatRelative, formatTime } from "@/lib/night-rules";
+import { fitFor, formatDay, formatRelative, formatTime } from "@/lib/night-rules";
 import type { WatchNight } from "@/lib/nights";
 import { titleHref } from "@/lib/watch";
 import { ExternalIcon } from "@/components/icons";
+import { Sfx } from "@/components/sfx";
 import { ReadyCheck } from "./ready-check";
 
 type Person = { id: string; name: string; timeZone: string };
@@ -57,7 +58,7 @@ export function NightCard(props: {
       <div className="grid min-w-0 flex-1 content-start gap-2 max-sm:contents max-sm:*:col-span-2 max-sm:[&>:nth-child(-n+2)]:col-span-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
           {night.title ? (
-            <Link href={titleHref(night.title)} className="text-xl font-bold leading-snug hover:underline">
+            <Link href={titleHref(night.title)} data-item-title className="text-xl font-bold leading-snug hover:underline">
               {night.title.title}
             </Link>
           ) : (
@@ -81,7 +82,7 @@ export function NightCard(props: {
           {people.map(({ person, fill }) => (
             <div
               key={person.id}
-              className="paper grid min-w-0 content-start gap-0.5 rounded-control border-[3px] border-outline px-2.5 pb-1.5 pt-1"
+              className="paper relative grid min-w-0 content-start gap-0.5 rounded-control border-[3px] border-outline px-2.5 pb-1.5 pt-1"
             >
               <dt className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
                 <span aria-hidden className={`size-2.5 shrink-0 rounded-full border-2 border-outline ${fill}`} />
@@ -90,7 +91,11 @@ export function NightCard(props: {
               <dd className={`display-ink whitespace-nowrap leading-none ${listing ? "text-[clamp(1.35rem,2.2vw,1.7rem)]" : "text-2xl"}`}>
                 {formatTime(start, person.timeZone, language)}
               </dd>
-              <dd className="text-xs font-semibold text-muted">{formatDay(start, person.timeZone, language)}</dd>
+              <dd className="text-xs font-semibold text-muted">
+                {formatDay(start, person.timeZone, language)}
+                {/* A skin's sound effect when it's in this person's sleeping hours (the time already says so). */}
+                {fitFor(start, person.timeZone) === "asleep" && <Sfx>{t.nights.sfxAsleep}</Sfx>}
+              </dd>
             </div>
           ))}
         </dl>

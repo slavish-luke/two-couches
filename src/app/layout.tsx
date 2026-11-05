@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka, Luckiest_Guy } from "next/font/google";
+import { Bangers, Fredoka, Luckiest_Guy, Shantell_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -34,6 +34,10 @@ const fredokaIdot = localFont({
   adjustFontFallback: false,
   declarations: [{ prop: "unicode-range", value: "U+0130" }],
 });
+// POW! Comic Book's faces: Bangers for comic lettering, Shantell Sans (handwriting with a bounce) for reading.
+// Both cover every Turkish letter (latin-ext). Not preloaded: they download only when the skin is chosen.
+const bangers = Bangers({ variable: "--font-bangers", weight: "400", subsets: ["latin", "latin-ext"], preload: false });
+const shantell = Shantell_Sans({ variable: "--font-shantell", subsets: ["latin", "latin-ext"], preload: false });
 
 const TMDB_IMAGES = "https://image.tmdb.org";
 
@@ -64,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
       suppressHydrationWarning
-      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} h-full antialiased`}
+      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} ${bangers.variable} ${shantell.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />

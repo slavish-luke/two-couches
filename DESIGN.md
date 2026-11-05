@@ -398,3 +398,35 @@ A `[data-skin="…"]` block with `--font-skin-display`, `--font-skin-body`, `--o
 - **Don't** put stroke-and-shadow `display` lettering on paper, or plain `display-ink` on the ground.
 - **Don't** animate blur, filters or fixed backgrounds in page transitions, or play the intro more than once per launch.
 - **Don't** use glyph characters for icons or arrows in strings, or uppercase small tracked labels above headings.
+
+## Skin: POW! Comic Book
+
+**North star: "Two couches in the funny pages."** The second skin (`comic`, Settings → Look → POW! Comic Book), ported from `design/labs/cartoon-lab.html#pow`. Every screen is a comic-book page: newsprint with a halftone dot screen, square panels in thick ink sitting flat in their gutters, a caption-yellow masthead across the top with the wordmark in it, Bangers lettering for everything shouted, Shantell Sans (handwriting with a bounce) for everything read, the two clocks as speech bubbles, and a magenta BOOM! for what you can both watch. All of its CSS is one section at the end of `globals.css`.
+
+### Shape and depth
+- **Skin block:** `--font-skin-display` Bangers, `--font-skin-body` Shantell Sans, `--outline-width` 4px, every radius 0 (panels, controls, posters), `--lift` 0 and `--lift-sm` 4px. Panels are flat comic frames (`.card` and `.spotlight` drop every shadow, hover ones included); only controls (`.btn`, `.btn-quiet`, selected chips, the current tab) cast the 4px hard shadow, as the lab's button does. Panels never tip (`.spotlight`, `.tilt-row`), except Pick's dealt card. Chips, tabs and strands are square boxes; name tags and the "one of you" poster tab stay round, like speech balloons.
+- **Ground:** `body::before` draws `radial-gradient(var(--dots) 1.2px, transparent 1.4px)` on a 9px grid over `--p-bg`; the peel sheet and the Look preview tile use the same dots.
+- **Masthead:** `body > header` is filled with `--caption` and has a 4px ink bottom edge; the wordmark is filled with `--logo-fill`. The wide nav loses its pill bar: section links are Bangers on the masthead and the current one sits in a tipped (-3°) ink box with `--nav-on` (the display colour) lettering, on the bar and the phone tab bar alike.
+
+### Lettering
+- Bangers is all caps, so it follows the uppercase rule like Luckiest Guy (its latin-ext file has İ, Ş, Ğ; checked with fontTools). It gets 0.05em tracking. Display lettering on the ground is filled with `--display-fill` (yellow), stroked and shadowed in ink; the spotlight's head keeps `display-pop` (white on the cyan spotlight, like the lab's "INCEPTION!").
+- Titles of films and series (`[data-item-title]`: Home's list cards, poster grids, night cards) are set in Bangers too, as in the lab's cells.
+- **Caption boxes:** a card's own heading (its first `h2`/`h3`/`legend` in `display-ink`) sits in a `--caption` box with a 3px ink border; Home's "13 h apart" badge is a caption stuck in the clocks panel's top-left corner.
+
+### Signature pieces
+- **Clocks panel:** split diagonally into `--me-soft` and `--partner-soft`; each clock is a white speech bubble (`border-radius: 50% / 45%`, 3px ink) with an ink tail pointing up at its couch.
+- **Poster cells:** each `TitleCard` (`[data-title-card]`) is a white cell with a 3px ink border around the poster and title (5px padding on phones), the poster itself flat.
+- **BOOM!:** the "both" poster tab becomes an 11-point burst (two masked layers: an ink one with a thick stroke, the `--stamp` fill on top, stretched to the tab, with a 2px drop shadow) with the word in `--display-fill`; the "one of you" tab is an oval speech bubble. The big `Burst` is squashed (`scale: 1.12 0.86`) like the lab's flattened BOOM, its word yellow. The intro's word is yellow on the magenta burst over the accent cover.
+- **Sound effects:** `<Sfx>` (`src/components/sfx.tsx`) is hidden in other skins. Here it is a tipped Bangers word in `--display-fill` with an ink stroke, stuck over the top-right corner of the nearest positioned box, popping in after 0.2 s. Used once so far: "ZZZ…" on a night ticket whose time falls in that person's sleeping hours (`fitFor()` says asleep).
+- **Motion:** the spring clock stays. List rows tip -1° and grow 1% when pointed at (instead of the wiggle); `.btn` swings to +2° and grows 6% on hover and squashes on press.
+
+### Palettes
+Each defines the usual roles plus four of its own: `--dots` (the halftone), `--caption` (captions and the masthead), `--display-fill` (lettering on the ground) and `--logo-fill` (the wordmark). Every text pair passes 4.5:1.
+- **Newsprint** (`pow-newsprint`, standard, the lab's CMYK): newsprint `#fffdf3` ground with 8% ink dots, white panels, ink `#111111`, cyan `#00b2f0` spotlight with ink text, yellow `#ffe14d` captions, buttons and lettering, magenta `#ff2f8e` BOOM!, orange `#ff9f1c` you and violet `#9d7cff` partner. The lab's partner was cyan like the spotlight; a cyan partner dot vanished inside it (Pick's service lines), so the partner is violet.
+- **Pulp** (`pow-pulp`): yellowed `#f1dfb6` paper with brown dots, cream panels, brown-black ink `#2b1d14`, pulp-red `#c8312b` spotlight with white text, mustard `#ffd84a` captions and lettering.
+- **Midnight** (`pow-midnight`, for evenings): night-blue `#151a3d` ground with pale dots (`--g-ink`/`--g-muted` for text on it), newsprint panels, a yellow spotlight like a lamp, a cyan masthead and captions.
+
+The Overlap Rule holds here too: the lab used magenta for its buttons and current tab as well as the BOOM!, but magenta is only for "both", so buttons are yellow (`--pop`) and the current tab is the accent.
+
+### Skin hooks (generic, any skin may use them)
+`--display-fill` (the `display` utility's fill, paper by default), `--nav-pill` / `--nav-on` (the travelling nav pill and the current link's text; the accent and `--on-accent` by default), `data-nav-pill` on the pills, `data-clocks` / `data-apart` / `data-clock` (Home's clocks panel, its "h apart" badge, each `VenueClock`), `data-item-title` and `data-title-card`, `data-look-preview` (the Look tile, which now carries its own `data-skin` and, for a skin other than the current one, that skin's standard `data-palette`, so each tile is drawn in its own look), and `.sfx`.

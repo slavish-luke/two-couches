@@ -167,6 +167,8 @@ const en = {
       stopFailed: "Couldn't turn the link off. Try again.",
     },
   },
+  /** A comic sound effect on a ticket whose time falls in that person's sleeping hours (decoration only). */
+  sfxAsleep: "ZZZ…",
 };
 
 const tr: typeof en = {
@@ -338,6 +340,7 @@ const tr: typeof en = {
       stopFailed: "Bağlantı kapatılamadı. Tekrar dene.",
     },
   },
+  sfxAsleep: "ZZZ…",
 };
 
 const messages = { en, tr };

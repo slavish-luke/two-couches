@@ -97,6 +97,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       <aside className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
         <section
           aria-label={t.list.people.label}
+          data-clocks
           className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3"
         >
           {people.map((person, i) => {
@@ -142,7 +143,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             );
           })}
           {mine?.country && theirs?.country && (
-            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 -rotate-6 whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-2.5 pb-0.5 pt-1 font-display text-sm uppercase leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)] sm:px-3 sm:pb-1 sm:pt-1.5 sm:text-base">
+            <span data-apart className="absolute -top-3.5 left-1/2 -translate-x-1/2 -rotate-6 whitespace-nowrap rounded-full border-[3px] border-outline bg-accent px-2.5 pb-0.5 pt-1 font-display text-sm uppercase leading-none tracking-[0.03em] text-on-accent shadow-[3px_3px_0_var(--outline)] sm:px-3 sm:pb-1 sm:pt-1.5 sm:text-base">
               {t.list.people.apart(hoursApart(now, mine.time_zone, theirs.time_zone))}
             </span>
           )}
@@ -386,7 +387,7 @@ async function ListSection(props: {
                   )}
                 </div>
                 <div className="grid min-w-0 content-start gap-1">
-                  <span className="text-xl font-bold leading-tight group-hover:underline sm:text-2xl">{entry.title}</span>
+                  <span data-item-title className="text-xl font-bold leading-tight group-hover:underline sm:text-2xl">{entry.title}</span>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
                     <span>
                       {t.common.mediaType[entry.media_type]}
