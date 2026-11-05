@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { AvailabilityBadge } from "@/components/availability-badge";
 import { Couch, Couches } from "@/components/couch";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
 import { Poster, posterMorph } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
 import { Stars } from "@/components/stars";
@@ -22,13 +21,14 @@ import { getAvailability } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import { isMediaType, titleHref, titleKey, whoCanWatch, type Availability, type MediaType, type Watcher } from "@/lib/watch";
 import { AfterNight } from "./after-night/after-night";
+import { HomeSkeleton, ListSkeleton, PickLinkSkeleton } from "./home-skeleton";
 import { PickLink } from "./pick/pick-link";
 import { VisitChip } from "./settings/visit-chip";
 import { NightCard } from "./watch-nights/night-card";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
-    <Suspense fallback={<PageLoading variant="home" wide />}>
+    <Suspense fallback={<HomeSkeleton />}>
       <OurList searchParams={searchParams} />
     </Suspense>
   );
@@ -148,25 +148,24 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
           )}
         </section>
 
+        {/* No boundary of its own: the spotlight arrives with the aside, so nothing below it jumps when it does. */}
         {partner && (
-          <Suspense>
-            <NextNight
-              coupleId={profile.couple_id}
-              me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
-              partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
-              locales={
-                partner.country
-                  ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
-                  : [tmdbLocale(profile.language, profile.home_country)]
-              }
-            />
-          </Suspense>
+          <NextNight
+            coupleId={profile.couple_id}
+            me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
+            partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
+            locales={
+              partner.country
+                ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
+                : [tmdbLocale(profile.language, profile.home_country)]
+            }
+          />
         )}
         <AfterNight />
 
         <div className="grid gap-4">
           <SearchBox language={language} />
-          <Suspense>
+          <Suspense fallback={<PickLinkSkeleton />}>
             <PickLink />
           </Suspense>
         </div>
@@ -174,24 +173,26 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
 
       <div className="min-w-0 lg:col-span-7 xl:col-span-8">
         <ListSync coupleId={profile.couple_id} />
-        <ListSection
-          coupleId={profile.couple_id}
-          me={{ id: profile.id, country: profile.country, services: profile.services }}
-          locale={tmdbLocale(profile.language, profile.home_country)}
-          language={profile.language}
-          timeZone={profile.time_zone}
-          partner={
-            partner?.country
-              ? {
-                  id: partner.id,
-                  name: partner.display_name || t.common.yourPartner,
-                  watcher: { country: partner.country, services: partner.services },
-                  locale: tmdbLocale(partner.language, partner.home_country),
-                }
-              : null
-          }
-          params={params}
-        />
+        <Suspense fallback={<ListSkeleton />}>
+          <ListSection
+            coupleId={profile.couple_id}
+            me={{ id: profile.id, country: profile.country, services: profile.services }}
+            locale={tmdbLocale(profile.language, profile.home_country)}
+            language={profile.language}
+            timeZone={profile.time_zone}
+            partner={
+              partner?.country
+                ? {
+                    id: partner.id,
+                    name: partner.display_name || t.common.yourPartner,
+                    watcher: { country: partner.country, services: partner.services },
+                    locale: tmdbLocale(partner.language, partner.home_country),
+                  }
+                : null
+            }
+            params={params}
+          />
+        </Suspense>
       </div>
     </div>
   );

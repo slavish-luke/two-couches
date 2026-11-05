@@ -13,10 +13,6 @@ import { titleKey, whoCanWatch, type MediaType } from "@/lib/watch";
 /** A fixed selection, three across in the rail (six across on tablets). */
 const ROW_LENGTH = 6;
 
-/** Wordless placeholder while suggestions load: the first visit asks TMDB about each seed title. */
-export function ForYouLoading() {
-  return <div aria-busy className="h-96 rounded-panel border-[3px] border-outline bg-accent shadow-[6px_6px_0_var(--outline)] motion-safe:animate-pulse" />;
-}
 
 /**
  * Suggestions from the couple's list and ratings (see getForYou()), ones you can both watch first, each

@@ -33,7 +33,6 @@ const en = {
   nextOnList: { heading: "Next episodes on our list", note: "Series you're watching or want to watch" },
   seasonPremiere: "New season",
   newEpisodes: { heading: "New episodes this fortnight", note: "On the services you each pay for" },
-  loading: "Loading upcoming releases…",
   nothingHere: "Nothing to show here right now.",
   failed: "Couldn't load upcoming releases from TMDB. Try again in a minute.",
 };
@@ -69,7 +68,6 @@ const tr: typeof en = {
   nextOnList: { heading: "Listemizdeki dizilerin yeni bölümleri", note: "İzlediğiniz ya da izlemek istediğiniz diziler" },
   seasonPremiere: "Yeni sezon",
   newEpisodes: { heading: "Önümüzdeki iki hafta yeni bölümler", note: "Her birinizin abone olduğu platformlarda" },
-  loading: "Yakında çıkacaklar yükleniyor…",
   nothingHere: "Şu an burada gösterilecek bir şey yok.",
   failed: "Yakında çıkacaklar TMDB'den yüklenemedi. Bir dakika sonra tekrar dene.",
 };

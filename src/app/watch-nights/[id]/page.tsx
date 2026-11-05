@@ -3,7 +3,7 @@ import { BackIcon } from "@/components/icons";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
+import { NightFormSkeleton } from "../skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { zonedParts } from "@/lib/night-rules";
 import { getWatchNight, titleOptions } from "@/lib/nights";
@@ -19,7 +19,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function EditWatchNightPage({ params }: PageProps<"/watch-nights/[id]">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<NightFormSkeleton editing />}>
       <EditWatchNight params={params} />
     </Suspense>
   );

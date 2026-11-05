@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Couch } from "@/components/couch";
-import { PageLoading } from "@/components/page-loading";
+import { OfflineSkeleton } from "./skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 
 export const generateMetadata = localisedTitle("offline");
@@ -8,7 +8,7 @@ export const generateMetadata = localisedTitle("offline");
 // Fetched by the service worker when it installs, and shown for pages it can't load without a connection.
 export default function OfflinePage() {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<OfflineSkeleton />}>
       <Offline />
     </Suspense>
   );
