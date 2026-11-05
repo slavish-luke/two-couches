@@ -97,6 +97,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       <aside className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
         <section
           aria-label={t.list.people.label}
+          data-clocks
           className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3"
         >
           {people.map((person, i) => {

@@ -1158,7 +1158,7 @@ html[data-skin="scrapbook"] {
  * Home's clocks: each person's clock is a sticker in their colour, stuck on at an angle with a strip of washi
  * tape, and the "h apart" badge stuck under them.
  */
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 {
+[data-skin="scrapbook"] [data-clocks] {
   overflow: visible;
   border-color: transparent;
   background: none;
@@ -1167,7 +1167,7 @@ html[data-skin="scrapbook"] {
   padding: 14px 4px 26px;
 }
 
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 > :is(div, a) {
+[data-skin="scrapbook"] [data-clocks] > :is(div, a) {
   --muted: var(--p-ink);
   position: relative;
   align-self: stretch;
@@ -1178,18 +1178,18 @@ html[data-skin="scrapbook"] {
   box-shadow: var(--stk-drop);
 }
 
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 > .col-start-1 {
+[data-skin="scrapbook"] [data-clocks] > .col-start-1 {
   background: var(--me);
   rotate: -3deg;
 }
 
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 > .col-start-2 {
+[data-skin="scrapbook"] [data-clocks] > .col-start-2 {
   background: var(--partner);
   rotate: 3deg;
 }
 
 /* Washi tape: a translucent strip over a sticker's top edge. */
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 > :is(div, a)::before,
+[data-skin="scrapbook"] [data-clocks] > :is(div, a)::before,
 [data-skin="scrapbook"] .spotlight::before {
   content: "";
   position: absolute;
@@ -1204,7 +1204,7 @@ html[data-skin="scrapbook"] {
   pointer-events: none;
 }
 
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 > .col-start-2::before {
+[data-skin="scrapbook"] [data-clocks] > .col-start-2::before {
   rotate: 5deg;
 }
 
@@ -1219,7 +1219,7 @@ html[data-skin="scrapbook"] {
   rotate: 8deg;
 }
 
-[data-skin="scrapbook"] aside > section.card.grid-cols-2 > span.absolute {
+[data-skin="scrapbook"] [data-clocks] > span.absolute {
   top: auto;
   bottom: 0;
 }
@@ -1441,7 +1441,7 @@ html[data-skin="scrapbook"] {
   }
 
   /* Name tags on a person's own sticker turn white, so they don't vanish into it. */
-  [data-skin="scrapbook"] aside > section.card.grid-cols-2 > div > span:is(.bg-me, .bg-partner) {
+  [data-skin="scrapbook"] [data-clocks] > div > span:is(.bg-me, .bg-partner) {
     background-color: var(--p-surface);
   }
 

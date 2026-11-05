@@ -10,7 +10,7 @@ export function HomeSkeleton() {
   return (
     <Skeleton wide className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-8 lg:grid-cols-12">
       <div className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
-        <div className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3">
+        <div data-clocks className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3">
           {(["me", "partner"] as const).map((who, i) => (
             <div
               key={who}
