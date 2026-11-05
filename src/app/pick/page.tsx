@@ -6,7 +6,6 @@ import { AddButton } from "@/components/add-button";
 import { Couches } from "@/components/couch";
 import { ArrowIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
 import { Poster } from "@/components/poster";
 import { PosterTab } from "@/components/poster-tab";
 import type { Messages } from "@/lib/i18n";
@@ -32,12 +31,13 @@ import { getPartner, requireProfile } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
 import { streamableFor, titleHref, type Watcher } from "@/lib/watch";
 import { forYouCandidates, listCandidates, type PickItem } from "./data";
+import { PickCardSkeleton, PickSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("pick");
 
 export default function PickPage({ searchParams }: PageProps<"/pick">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PickSkeleton />}>
       <PickForTonight searchParams={searchParams} />
     </Suspense>
   );
@@ -180,9 +180,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
       {minutes !== null && (
         <Suspense
           key={pickHref(state, {})}
-          fallback={
-            <div aria-busy className="h-80 rounded-panel border-[3px] border-outline bg-surface/60 motion-safe:animate-pulse" />
-          }
+          fallback={<PickCardSkeleton />}
         >
           <PickResult
             couple={{

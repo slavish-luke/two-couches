@@ -74,8 +74,17 @@ export function SkelPageTitle({
   );
 }
 
-/** Poster blanks at `<Poster>`'s sizes: xs 40×60, sm 64×96, md 92×138, or fluid (fills its container, 2:3). */
-const POSTER = { xs: "h-[60px] w-10", sm: "h-24 w-16", md: "h-[138px] w-[92px]", fluid: "aspect-[2/3] w-full" } as const;
+/**
+ * Poster blanks at `<Poster>`'s sizes: xs 40×60, sm 64×96, md 92×138, lg 200×300 (240×360 from `sm`, as the
+ * title page shows it), or fluid (fills its container, 2:3).
+ */
+const POSTER = {
+  xs: "h-[60px] w-10",
+  sm: "h-24 w-16",
+  md: "h-[138px] w-[92px]",
+  lg: "h-[300px] w-[200px] sm:h-[360px] sm:w-[240px]",
+  fluid: "aspect-[2/3] w-full",
+} as const;
 
 export function SkelPoster({ size, className = "" }: { size: keyof typeof POSTER; className?: string }) {
   return <span aria-hidden className={`block shrink-0 rounded-poster border-[3px] border-outline bg-accent-soft ${POSTER[size]} ${className}`} />;

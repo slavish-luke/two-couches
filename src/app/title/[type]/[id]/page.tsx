@@ -6,7 +6,6 @@ import { Burst } from "@/components/burst";
 import { DismissButton } from "@/components/dismiss-button";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
-import { PageLoading } from "@/components/page-loading";
 import { Poster, posterMorph } from "@/components/poster";
 import { PosterDeck } from "@/components/poster-deck";
 import { RemindButton } from "@/components/remind-button";
@@ -33,12 +32,13 @@ import {
   type Watcher,
 } from "@/lib/watch";
 import { ListPanel } from "./list-panel";
+import { TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("title");
 
 export default function TitlePage({ params }: PageProps<"/title/[type]/[id]">) {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<TitleSkeleton />}>
       <TitleView params={params} />
     </Suspense>
   );
@@ -126,13 +126,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
         </div>
       </div>
 
-      <Suspense
-        fallback={
-          <p className="card font-semibold text-muted" aria-busy>
-            {t.title.checking}
-          </p>
-        }
-      >
+      <Suspense fallback={<WhereToWatchSkeleton />}>
         <WhereToWatch titleRef={ref} />
       </Suspense>
 
