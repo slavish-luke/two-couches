@@ -77,9 +77,12 @@ export function AppearanceSettings({ language }: { language: string }) {
               onChange={() => choose({ skin: option_, palette: SKINS[option_][0] })}
               className={option}
             >
+              {/* Drawn in the skin's own standard look: a skin restyles .look-preview[data-skin=…] in globals.css. */}
               <span
                 aria-hidden
-                className="relative flex h-24 items-end justify-center gap-1 overflow-hidden rounded-control border-[3px] border-outline bg-pop bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] pb-2"
+                data-skin={option_}
+                data-palette={SKINS[option_][0]}
+                className="look-preview relative flex h-24 items-end justify-center gap-1 overflow-hidden rounded-control border-[3px] border-outline bg-pop bg-[repeating-conic-gradient(from_0deg_at_50%_-10%,var(--ray)_0_6deg,transparent_6deg_12deg)] pb-2"
               >
                 <Couch who="me" size={50} />
                 <Couch who="partner" size={50} />

@@ -141,7 +141,7 @@
   --accent-soft: #ffe3c7;
   --accent-muted: #4d2600;
   --accent-line: rgb(29 26 43 / 0.3);
-  --accent-both: #1f3d00;
+  --accent-both: #142b00;
   --accent-head: #fffaf0;
   --pop: #6ee7bf;
   --danger: #b0101f;
@@ -906,5 +906,471 @@ html[data-intro="playing"] .intro {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+}
+
+/* ======================================================================================================
+ * CANDY SHOP (data-skin="candy", palettes cdy-…): a packed, happy pop shop (design/labs/cartoon-lab.html#cdy).
+ * Rounded candy-coloured boxes with no ink outlines and no leaning, a hot-pink shop sign for a header,
+ * Dela Gothic One lettering in mixed case, Rubik for reading, buttons that press down into their own shade,
+ * selected tabs and chips in ink, and a lime sticker (not a starburst) for what you can both watch.
+ * Small ink marks (dots, the couches, poster tabs) keep their outline. Everything Candy is in this section.
+ *
+ * Palettes add Candy's own tokens: --cdy-bar / --cdy-on-bar (the shop sign and phone tab bar),
+ * --cdy-logo (the wordmark on it), --cdy-sugar (soft panel edges and shades), --cdy-sugar-soft (tabs,
+ * strands, blank posters), --cdy-edge (field and quiet-button edges, 3:1 on paper) and --cdy-box-a/-b
+ * (the candy boxes: Home's clocks and Pick).
+ * ====================================================================================================== */
+
+[data-skin="candy"] {
+  --font-skin-display: var(--font-dela), sans-serif;
+  --font-skin-body: var(--font-rubik), sans-serif;
+  --outline-width: 3px;
+  --skin-radius-panel: 22px;
+  --skin-radius-control: 14px;
+  --skin-radius-poster: 12px;
+  /* Candy's boxes are flat: no hard offset shadows. Buttons press into their own shade instead. */
+  --lift: 0px;
+  --lift-sm: 0px;
+}
+
+/* Strawberry Milk (standard): the lab's shop. Pale pink, hot-pink sign, grape spotlight, lime sticker. */
+[data-palette="cdy-strawberry"] {
+  --p-bg: #fff1f8;
+  --p-surface: #ffffff;
+  --p-ink: #2b124c;
+  --p-muted: #5f4579;
+  --p-line: rgb(43 18 76 / 0.14);
+  --ray: transparent;
+  --outline: #2b124c;
+  --me: #ffb0d6;
+  --me-soft: #ffe2f0;
+  --partner: #9fe3ff;
+  --partner-soft: #dcf5ff;
+  --stamp: #c8f53b;
+  --on-stamp: #2b124c;
+  --both: #3b6a00;
+  --both-soft: #effbd2;
+  --accent: #6c3cef;
+  --on-accent: #ffffff;
+  --accent-soft: #ece4ff;
+  --accent-muted: #f1ebff;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #dcff7a;
+  --accent-head: #ffffff;
+  --pop: #ff9a1f;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff4fa3;
+  --cdy-bar: #ff4fa3;
+  --cdy-on-bar: #2b124c;
+  --cdy-logo: #ffffff;
+  --cdy-sugar: #ffd3ea;
+  --cdy-sugar-soft: #ffe3f1;
+  --cdy-edge: #c0508f;
+  --cdy-pick: #2b124c;
+  --cdy-on-pick: #ffffff;
+  --cdy-box-a: #c8f53b;
+  --cdy-box-b: #ffb35c;
+  color-scheme: light;
+}
+
+/* Mint Chip: mint ice cream with chocolate chips. Mint sign, chocolate spotlight, a hot-pink sticker. */
+[data-palette="cdy-mint"] {
+  --p-bg: #e6fbf1;
+  --p-surface: #ffffff;
+  --p-ink: #2b124c;
+  --p-muted: #5f4579;
+  --p-line: rgb(43 18 76 / 0.14);
+  --ray: transparent;
+  --outline: #2b124c;
+  --me: #ffb36b;
+  --me-soft: #ffe6cc;
+  --partner: #b9a4ff;
+  --partner-soft: #ebe4ff;
+  --stamp: #ff4fa3;
+  --on-stamp: #2b124c;
+  --both: #b0005f;
+  --both-soft: #ffd9ec;
+  --accent: #5c3a26;
+  --on-accent: #ffffff;
+  --accent-soft: #f3e6dc;
+  --accent-muted: #f3e3d6;
+  --accent-line: rgb(255 255 255 / 0.3);
+  --accent-both: #ffbfdf;
+  --accent-head: #a6f5d6;
+  --pop: #ffe14d;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff4fa3;
+  --cdy-bar: #2ccf9f;
+  --cdy-on-bar: #2b124c;
+  --cdy-logo: #ffffff;
+  --cdy-sugar: #bdeedb;
+  --cdy-sugar-soft: #d6f7e9;
+  --cdy-edge: #2f8f6f;
+  --cdy-pick: #2b124c;
+  --cdy-on-pick: #ffffff;
+  --cdy-box-a: #a6f0cf;
+  --cdy-box-b: #ffc9e4;
+  color-scheme: light;
+}
+
+/* Midnight Snack: for evenings. A dark plum shop, tangerine sign, hot-pink spotlight, lime sticker. */
+[data-palette="cdy-midnight"] {
+  --p-bg: #22103d;
+  --p-surface: #fff8fc;
+  --p-ink: #2b124c;
+  --p-muted: #5f4579;
+  --p-line: rgb(43 18 76 / 0.14);
+  --g-ink: #fff1f8;
+  --g-muted: #d8c4f2;
+  --ray: transparent;
+  --outline: #14072a;
+  --me: #ff9ccc;
+  --me-soft: #ffe0ef;
+  --partner: #7fdcff;
+  --partner-soft: #d6f4ff;
+  --stamp: #c8f53b;
+  --on-stamp: #2b124c;
+  --both: #3b6a00;
+  --both-soft: #effbd2;
+  --accent: #ff5fae;
+  --on-accent: #2b124c;
+  --accent-soft: #ffe0ef;
+  --accent-muted: #4a1238;
+  --accent-line: rgb(43 18 76 / 0.3);
+  --accent-both: #142b00;
+  --accent-head: #2b124c;
+  --pop: #7fdcff;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff4fa3;
+  --cdy-bar: #ff9a1f;
+  --cdy-on-bar: #2b124c;
+  --cdy-logo: #ffffff;
+  --cdy-sugar: #4a2a72;
+  --cdy-sugar-soft: #f3e6ff;
+  --cdy-edge: #8e5cc4;
+  --cdy-pick: #ff5fae;
+  --cdy-on-pick: #2b124c;
+  --cdy-box-a: #c8f53b;
+  --cdy-box-b: #ffb35c;
+  color-scheme: light;
+}
+
+/* The shop sign: the header becomes a rounded bar in the palette's sign colour, inset like the page. */
+[data-skin="candy"] body > header > div {
+  width: calc(100% - 2rem);
+  max-width: 86rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.625rem 0.5rem 0.875rem;
+  border-radius: var(--radius-panel);
+  background: var(--cdy-bar);
+  --ink: var(--cdy-on-bar);
+  color: var(--cdy-on-bar);
+}
+
+@media (width >= 40rem) {
+  [data-skin="candy"] body > header > div {
+    width: calc(100% - 3rem);
+    padding-left: 1.25rem;
+  }
+}
+
+@media (width >= 64rem) {
+  [data-skin="candy"] body > header > div {
+    width: calc(100% - 4rem);
+  }
+}
+
+/* The phone tab bar is the same sign along the bottom. */
+[data-skin="candy"] [data-tab-bar] {
+  border-top: 0;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--cdy-bar);
+  --ink: var(--cdy-on-bar);
+}
+
+@layer components {
+  [data-skin="candy"] .card {
+    border-color: var(--cdy-sugar);
+    box-shadow: none;
+  }
+  [data-skin="candy"] .spotlight {
+    border-color: transparent;
+    box-shadow: none;
+  }
+  [data-skin="candy"] .field {
+    border-color: var(--cdy-edge);
+  }
+  [data-skin="candy"] .field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  /* The bright button: no outline, pressed down into a darker shade of itself (the lab's lime press). */
+  [data-skin="candy"] .btn {
+    border-color: transparent;
+    box-shadow: 0 4px 0 color-mix(in oklab, var(--pop), #000 38%);
+    text-transform: none;
+    letter-spacing: 0;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+  [data-skin="candy"] .btn:hover {
+    translate: 0 -2px;
+    rotate: none;
+    scale: 1.04;
+    box-shadow: 0 6px 0 color-mix(in oklab, var(--pop), #000 38%);
+  }
+  [data-skin="candy"] .btn:active {
+    translate: 0 3px;
+    scale: 1;
+    box-shadow: 0 1px 0 color-mix(in oklab, var(--pop), #000 38%);
+  }
+  [data-skin="candy"] .btn-quiet {
+    border-color: var(--cdy-edge);
+    box-shadow: 0 3px 0 var(--cdy-sugar);
+  }
+  [data-skin="candy"] .btn-quiet:hover {
+    translate: 0 -1px;
+    box-shadow: 0 4px 0 var(--cdy-sugar);
+  }
+  [data-skin="candy"] .btn-quiet:active {
+    translate: 0 2px;
+    box-shadow: none;
+  }
+  /* Chips and tabs: soft candy pills; the selected one is ink with white writing (the lab's views). */
+  [data-skin="candy"] .chip {
+    border-color: var(--cdy-sugar);
+  }
+  [data-skin="candy"] .chip:hover {
+    rotate: none;
+  }
+  [data-skin="candy"] .tab {
+    border-color: transparent;
+    background: var(--cdy-sugar-soft);
+    rotate: none;
+    text-transform: none;
+    letter-spacing: -0.01em;
+  }
+  [data-skin="candy"] :is(.chip, .tab):is(
+      [aria-pressed="true"],
+      [aria-current="page"],
+      [aria-current="true"],
+      [aria-checked="true"],
+      :has(:checked)
+    ) {
+    border-color: var(--cdy-pick);
+    background: var(--cdy-pick);
+    color: var(--cdy-on-pick);
+    box-shadow: none;
+    rotate: none;
+  }
+  [data-skin="candy"] .strand {
+    border-color: transparent;
+    background: var(--cdy-sugar-soft);
+  }
+  /* Who can stream it: still a sticker on the poster's top edge, but flat and in Candy's lettering. */
+  [data-skin="candy"] .poster-tab {
+    box-shadow: none;
+    border-radius: 12px;
+  }
+  [data-skin="candy"] .poster-tab-word {
+    color: var(--on-stamp);
+    -webkit-text-stroke: 0;
+    letter-spacing: 0;
+  }
+  /* The deck: cards with a white border, like sweets in their wrappers, on a soft candy shade. */
+  [data-skin="candy"] .deck-card {
+    border: 4px solid var(--p-surface);
+    box-shadow: 0 4px 0 var(--cdy-sugar);
+  }
+  [data-skin="candy"] .deck-card[data-top] {
+    box-shadow: 0 8px 0 var(--cdy-sugar);
+  }
+  /* Rows sit straight; pointing at one lifts it and tips it a little (the lab's tiles). */
+  [data-skin="candy"] .tilt-row,
+  [data-skin="candy"] .tilt-row:nth-child(2n) {
+    --tilt: 0deg;
+  }
+}
+
+@layer utilities {
+  /* No hard ink shadows anywhere: every "x y 0 ink" shadow class goes, whatever its size. */
+  [data-skin="candy"] :is([class*="_0_var(--outline)]"], .outlined, .outlined-sm) {
+    box-shadow: none;
+  }
+  /* Thick ink outlines become soft sugar edges; thin ones (dots, small pills) keep their ink. */
+  [data-skin="candy"] :is(.border-\[3px\], .border-\[2\.5px\]).border-outline {
+    border-color: var(--cdy-sugar);
+  }
+  /* Posters have no outline, just round corners; a missing poster is a soft candy blank. */
+  [data-skin="candy"] .rounded-poster.border-outline {
+    border-width: 0;
+  }
+  [data-skin="candy"] div.rounded-poster {
+    background: var(--cdy-sugar-soft);
+  }
+  /* Nothing leans: panels, page titles and the logo sit straight in their grid (stickers still tilt). */
+  [data-skin="candy"] :is(.spotlight, .card, .display, body > header a[href="/"]) {
+    rotate: none;
+  }
+  /* Lettering: Dela Gothic One in mixed case, plain ink (no stroke, no hard shadow). */
+  [data-skin="candy"] :is(.display, .display-pop, .display-ink) {
+    text-transform: none;
+    letter-spacing: -0.01em;
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+    line-height: 1.08;
+  }
+  /*
+   * Dela Gothic One is much wider than Luckiest Guy at the same size, so everything set in it is drawn
+   * about 14% smaller (its x-height is 0.556 em), whatever font size the page gives it. The page's sizes
+   * stay as they are, so nothing else moves.
+   */
+  [data-skin="candy"] :is(.display, .display-pop, .display-ink, .font-display, .btn, .tab, .poster-tab-word) {
+    font-size-adjust: 0.48;
+  }
+  /* A night ticket's time ("12:00 AM") has to fit half a narrow card: Dela's figures are wide. */
+  [data-skin="candy"] dd.display-ink.whitespace-nowrap {
+    font-size-adjust: 0.4;
+    letter-spacing: -0.03em;
+  }
+  /* The wordmark shares a phone's sign with two buttons. */
+  @media (width < 40rem) {
+    [data-skin="candy"] body > header .display {
+      font-size-adjust: 0.42;
+    }
+  }
+  [data-skin="candy"] .display {
+    color: var(--ink);
+  }
+  [data-skin="candy"] .display-pop {
+    color: var(--accent-head);
+  }
+  /* The wordmark on the shop sign: white with a hard drop of ink, like the lab's sign. */
+  [data-skin="candy"] body > header .display {
+    color: var(--cdy-logo);
+    text-shadow: 0 0.09em 0 var(--outline);
+    letter-spacing: -0.02em;
+  }
+  /* The sign's section links: sign-coloured writing; the current one sits on a white pill. */
+  [data-skin="candy"] :is(body > header nav, [data-tab-bar]) ul:is(*, .border-outline) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+  [data-skin="candy"] :is(body > header nav, [data-tab-bar]) ul > li[aria-hidden].border-outline {
+    border-color: transparent;
+    background: var(--p-surface);
+    box-shadow: none;
+  }
+  [data-skin="candy"] [data-section-link] {
+    color: var(--cdy-on-bar);
+  }
+  [data-skin="candy"] [data-section-link]:hover {
+    color: var(--cdy-on-bar);
+    background: rgb(255 255 255 / 0.25);
+  }
+  [data-skin="candy"] [data-section-link][aria-current="page"] {
+    color: var(--p-ink);
+  }
+  /* Before the pill has measured, the current link paints its own (an inline style). */
+  [data-skin="candy"] [data-section-link][style] {
+    background: var(--p-surface) !important;
+    box-shadow: none !important;
+  }
+  /* Search and Settings: white buttons on the sign; the current one is ink. */
+  [data-skin="candy"] body > header a[aria-label][title] {
+    border-color: transparent;
+    background: var(--p-surface);
+    color: var(--p-ink);
+  }
+  [data-skin="candy"] body > header a[aria-label][title][aria-current="page"] {
+    background: var(--cdy-pick);
+    color: var(--cdy-on-pick);
+  }
+  /* The Pick chips set their selected fill by hand: ink, like every other selected chip. */
+  [data-skin="candy"] .chip.bg-accent {
+    background: var(--cdy-pick);
+    color: var(--cdy-on-pick);
+  }
+  /* Candy boxes: Home's clocks are the lime "Right now" box, Pick is the tangerine one (the lab's mosaic). */
+  [data-skin="candy"] [data-wide] > aside > section.card:first-child {
+    border-color: transparent;
+    background: var(--cdy-box-a);
+    padding-top: 1.25rem;
+  }
+  /* The "13 h apart" badge moves to the box's top-right corner, clear of the box's tab. */
+  [data-skin="candy"] [data-wide] > aside > section.card:first-child > span.absolute {
+    left: auto;
+    right: 0.875rem;
+    translate: none;
+    rotate: 4deg;
+  }
+  [data-skin="candy"] a.card[href="/pick"] {
+    border-color: transparent;
+    background: var(--cdy-box-b);
+  }
+  [data-skin="candy"] a.card[href="/pick"]:hover {
+    rotate: -1deg;
+  }
+  /* The big "both" moments: a round lime sticker with an ink edge instead of the starburst. */
+  [data-skin="candy"] .burst {
+    border: 3px solid var(--outline);
+    border-radius: 34%;
+    background: var(--stamp);
+    box-shadow: inset 0 0 0 4px rgb(255 255 255 / 0.45);
+  }
+  [data-skin="candy"] .burst > svg {
+    display: none;
+  }
+  [data-skin="candy"] .burst .display {
+    color: var(--on-stamp);
+    text-transform: uppercase;
+  }
+  /* Settings → Look: the skin's tile is its shop, a sign over the pale ground (the tile carries the palette). */
+  .look-preview[data-skin="candy"] {
+    border-color: var(--cdy-sugar);
+    background:
+      linear-gradient(var(--cdy-bar) 0 30%, transparent 30%),
+      linear-gradient(var(--cdy-box-a), var(--cdy-box-a)) 50% 82% / 46% 42% no-repeat,
+      var(--p-bg);
+  }
+}
+
+/* A box's little ink tab on its top edge (the lab's "Right now"): Home's clocks, named by its label. */
+[data-skin="candy"] [data-wide] > aside > section.card:first-child::before {
+  content: attr(aria-label);
+  content: attr(aria-label) / "";
+  position: absolute;
+  top: -0.75rem;
+  left: 0.875rem;
+  padding: 0.2rem 0.65rem 0.25rem;
+  border-radius: 9999px;
+  background: var(--p-ink);
+  color: var(--p-surface);
+  font: 400 0.8125rem/1.2 var(--font-skin-display);
+  white-space: nowrap;
+}
+
+/* The opening animation's words, in Candy's lettering (mixed case; the ink edge stays, the shadow drops straight down). */
+[data-skin="candy"] .intro-word {
+  text-transform: none;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0.09em 0 var(--outline);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-skin="candy"] .tilt-row {
+    transition:
+      translate 0.2s var(--ease-spring),
+      rotate 0.2s var(--ease-spring);
+  }
+  [data-skin="candy"] .tilt-row:hover {
+    animation: none;
+    translate: 0 -4px;
+    rotate: -1deg;
   }
 }

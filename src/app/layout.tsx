@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka, Luckiest_Guy } from "next/font/google";
+import { Dela_Gothic_One, Fredoka, Luckiest_Guy, Rubik } from "next/font/google";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -35,7 +35,12 @@ const fredokaIdot = localFont({
   declarations: [{ prop: "unicode-range", value: "U+0130" }],
 });
 
-const TMDB_IMAGES = "https://image.tmdb.org";
+// Candy Shop's faces (not preloaded: they download only while that look is on): Dela Gothic One for lettering,
+// Rubik for reading. Both cover Turkish (fonts/README.md).
+const dela = Dela_Gothic_One({ variable: "--font-dela", weight: "400", subsets: ["latin", "latin-ext"], preload: false });
+const rubik = Rubik({ variable: "--font-rubik", subsets: ["latin", "latin-ext"], preload: false });
+
+const TMDB_IMAGES ="https://image.tmdb.org";
 
 export const metadata: Metadata = {
   title: "Two Couches",
@@ -64,7 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
       suppressHydrationWarning
-      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} h-full antialiased`}
+      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} ${dela.variable} ${rubik.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />
