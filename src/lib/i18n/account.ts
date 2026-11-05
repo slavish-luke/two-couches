@@ -64,8 +64,11 @@ const en = {
     intro: "How the app looks on this device. Each look keeps the same roles: a colour for you, one for your partner, and a starburst for what you can both watch.",
     look: "Look",
     colours: "Colours",
-    skins: { saturday: "Saturday Morning" } satisfies Record<Skin, string>,
-    skinNotes: { saturday: "Sunny cartoon panels, thick outlines and a starburst for what you can both watch." } satisfies Record<Skin, string>,
+    skins: { saturday: "Saturday Morning", scrapbook: "Sticker Scrapbook" } satisfies Record<Skin, string>,
+    skinNotes: {
+      saturday: "Sunny cartoon panels, thick outlines and a starburst for what you can both watch.",
+      scrapbook: "Puffy die-cut stickers, washi tape and polaroid posters, with a star sticker for what you can both watch.",
+    } satisfies Record<Skin, string>,
     palettes: {
       sunburst: "Sunburst",
       pool: "Pool Party",
@@ -75,6 +78,8 @@ const en = {
       bubblegum: "Bubblegum",
       sky: "Big Sky",
       nightowl: "Night Owl",
+      "stk-lilac": "Lilac Paper",
+      "stk-midnight": "Midnight Glitter",
     } satisfies Record<Palette, string>,
   },
   dataSaver: {
@@ -201,8 +206,11 @@ const tr: typeof en = {
     intro: "Uygulamanın bu cihazdaki görünümü. Her görünüm aynı rolleri korur: sana bir renk, partnerine bir renk, ikinizin de izleyebildikleri için bir yıldız patlaması.",
     look: "Tarz",
     colours: "Renkler",
-    skins: { saturday: "Cumartesi Sabahı" },
-    skinNotes: { saturday: "Güneşli çizgi film panelleri, kalın çizgiler ve ikinizin de izleyebildikleri için bir yıldız patlaması." },
+    skins: { saturday: "Cumartesi Sabahı", scrapbook: "Çıkartma Defteri" },
+    skinNotes: {
+      saturday: "Güneşli çizgi film panelleri, kalın çizgiler ve ikinizin de izleyebildikleri için bir yıldız patlaması.",
+      scrapbook: "Kabarık çıkartmalar, renkli bantlar ve polaroid afişler; ikinizin de izleyebildikleri için bir yıldız çıkartması.",
+    },
     palettes: {
       sunburst: "Güneş Patlaması",
       pool: "Havuz Partisi",
@@ -212,6 +220,8 @@ const tr: typeof en = {
       bubblegum: "Sakız Pembesi",
       sky: "Masmavi Gökyüzü",
       nightowl: "Gece Kuşu",
+      "stk-lilac": "Leylak Kâğıt",
+      "stk-midnight": "Gece Pırıltısı",
     },
   },
   dataSaver: {

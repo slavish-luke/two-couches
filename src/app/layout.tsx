@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka, Luckiest_Guy } from "next/font/google";
+import { Fredoka, Luckiest_Guy, Nunito } from "next/font/google";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -34,6 +34,11 @@ const fredokaIdot = localFont({
   adjustFontFallback: false,
   declarations: [{ prop: "unicode-range", value: "U+0130" }],
 });
+// Sticker Scrapbook's faces: Bagel Fat One for sticker lettering, Nunito for reading. Bagel's Google files lack
+// İ Ş ş Ğ ğ (and come as a hundred-odd Korean slices), so it's one local file: Google's latin set plus those five
+// letters, built from Bagel's own I, S, s, G, g, dot and cedilla (fonts/README.md).
+const bagel = localFont({ src: "./fonts/bagel-fat-one.woff2", variable: "--font-bagel", weight: "400", preload: false });
+const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin", "latin-ext"], preload: false });
 
 const TMDB_IMAGES = "https://image.tmdb.org";
 
@@ -64,7 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
       suppressHydrationWarning
-      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} h-full antialiased`}
+      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} ${bagel.variable} ${nunito.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />

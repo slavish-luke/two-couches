@@ -912,3 +912,595 @@ html[data-intro="playing"] .intro {
     animation: none !important;
   }
 }
+
+/* ==========================================================================================================
+ * STICKER SCRAPBOOK (data-skin="scrapbook", palettes stk-*). design/labs/cartoon-lab.html#stk.
+ *
+ * Everything is a puffy die-cut sticker: white edges instead of ink outlines (the palette's --outline is the
+ * sticker edge), soft drop shadows instead of hard offsets, lilac paper with a dot grid, washi tape, polaroid
+ * posters and a sunny star sticker for what you can both watch. Bagel Fat One for sticker lettering (mixed
+ * case: it draws real lower case; fonts/bagel-fat-one.woff2 adds İ Ş ş Ğ ğ), Nunito for reading. Things boing
+ * when you touch them. Everything for this skin lives in this section; Saturday Morning is untouched.
+ * ========================================================================================================== */
+
+[data-skin="scrapbook"] {
+  --font-skin-display: var(--font-bagel), sans-serif;
+  --font-skin-body: var(--font-nunito), sans-serif;
+  --outline-width: 4px;
+  --skin-radius-panel: 24px;
+  --skin-radius-control: 16px;
+  --skin-radius-poster: 10px;
+  /* No hard offsets: stickers cast a soft drop instead (--stk-drop, from the palette's --shade). */
+  --lift: 0px;
+  --lift-sm: 0px;
+  --stk-hair: 0 0 0 1px var(--hair);
+  --stk-drop: var(--stk-hair), 0 10px 18px -8px var(--shade);
+  --stk-drop-sm: var(--stk-hair), 0 5px 9px -4px var(--shade);
+  --stk-drop-lg: var(--stk-hair), 0 16px 26px -10px var(--shade);
+  --field-line: color-mix(in srgb, var(--p-ink) 50%, transparent);
+  /* Boingier than Saturday Morning's spring. */
+  --ease-spring: cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+/*
+ * Lilac Paper (the standard): lilac paper with a white dot grid, white stickers, a bubblegum and a sky couch,
+ * a violet spotlight with a sunshine head, mint buttons and a sunshine star sticker for "both".
+ * Skin-only tokens: --shade (drop shadows), --hair (the faint line round a sticker's white edge), --dots (the
+ * ground's grid), --tape (washi tape), --wash (fields on paper), --tab-fill (how much paper a view tab that
+ * isn't current shows), --sun (the logo sticker), --letter and
+ * --letter-edge (sticker lettering on the ground: fill and die-cut edge).
+ */
+[data-palette="stk-lilac"] {
+  --p-bg: #cdb8ff;
+  --p-surface: #ffffff;
+  --p-ink: #2a1f3d;
+  --p-muted: #514366;
+  --p-line: rgb(42 31 61 / 0.14);
+  --ray: transparent;
+  --outline: #ffffff;
+  --me: #ff8fc7;
+  --me-soft: #ffe0f0;
+  --partner: #6fd3ff;
+  --partner-soft: #d9f4ff;
+  --stamp: #ffe03a;
+  --on-stamp: #2a1f3d;
+  --both: #7a5800;
+  --both-soft: #fff4bf;
+  --accent: #6c3fd6;
+  --on-accent: #ffffff;
+  --accent-soft: #ece4ff;
+  --accent-muted: #ece4ff;
+  --accent-line: rgb(255 255 255 / 0.35);
+  --accent-both: #ffe03a;
+  --accent-head: #ffe03a;
+  --pop: #8ff0c4;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  --shade: rgb(42 31 61 / 0.4);
+  --hair: rgb(42 31 61 / 0.12);
+  --dots: rgb(255 255 255 / 0.4);
+  --tape: rgb(255 246 168 / 0.82);
+  --wash: #f4efff;
+  --tab-fill: 60%;
+  --sun: #ffe03a;
+  --letter: #2a1f3d;
+  --letter-edge: #ffffff;
+  color-scheme: light;
+}
+
+/*
+ * Midnight Glitter: for evenings. A deep night-violet page with a faint dot grid and glitter, the same white
+ * stickers (a touch softer), a lilac spotlight with ink writing, and white sticker lettering on the ground.
+ */
+[data-palette="stk-midnight"] {
+  --p-bg: #251c47;
+  --p-surface: #fdf8ff;
+  --p-ink: #2a1f3d;
+  --p-muted: #5a4c72;
+  --p-line: rgb(42 31 61 / 0.14);
+  --g-ink: #f6f0ff;
+  --g-muted: #c7bbec;
+  --ray: transparent;
+  --outline: #fdf8ff;
+  --me: #ff8fc7;
+  --me-soft: #ffe0f0;
+  --partner: #6fd3ff;
+  --partner-soft: #d9f4ff;
+  --stamp: #ffe03a;
+  --on-stamp: #2a1f3d;
+  --both: #7a5800;
+  --both-soft: #fff4bf;
+  --accent: #b69cff;
+  --on-accent: #2a1f3d;
+  --accent-soft: #efe8ff;
+  --accent-muted: #3d2c63;
+  --accent-line: rgb(42 31 61 / 0.3);
+  --accent-both: #4a3000;
+  --accent-head: #2a1f3d;
+  --pop: #8ff0c4;
+  --danger: #b0101f;
+  --danger-soft: #ffe1df;
+  --blush: #ff5c8a;
+  --shade: rgb(5 2 16 / 0.6);
+  --hair: rgb(5 2 16 / 0.25);
+  --dots: rgb(255 255 255 / 0.1);
+  --glitter: rgb(255 236 150 / 0.55);
+  --glitter-2: rgb(255 170 220 / 0.5);
+  --tape: rgb(255 236 150 / 0.72);
+  --wash: #f4eefc;
+  --tab-fill: 86%;
+  --sun: #ffe03a;
+  --letter: #fdf8ff;
+  --letter-edge: transparent;
+  color-scheme: light;
+}
+
+/* The scrapbook page: a white dot grid on the paper (Midnight Glitter adds a little glitter). */
+[data-skin="scrapbook"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(var(--dots) 1.5px, transparent 1.6px) 0 0 / 22px 22px;
+}
+
+[data-skin="scrapbook"][data-palette="stk-midnight"] body::before {
+  background:
+    radial-gradient(circle at 14% 22%, var(--glitter) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 71% 12%, var(--glitter-2) 0 2px, transparent 3px),
+    radial-gradient(circle at 43% 64%, var(--glitter) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 88% 58%, var(--glitter) 0 2px, transparent 3px),
+    radial-gradient(circle at 26% 86%, var(--glitter-2) 0 1.5px, transparent 2.5px),
+    radial-gradient(var(--dots) 1.5px, transparent 1.6px);
+  background-size: 360px 360px, 360px 360px, 360px 360px, 360px 360px, 360px 360px, 22px 22px;
+}
+
+/* A page peeling away is a sheet of the same dotted paper. */
+html[data-skin="scrapbook"][data-flight="peel"]::view-transition-old(.page-out) {
+  background:
+    radial-gradient(var(--dots) 1.5px, transparent 1.6px) 0 0 / 22px 22px,
+    var(--bg);
+  box-shadow: -16px 0 28px -12px var(--shade);
+}
+
+/* The sections a peel passes on the way (FlightDeck) are sheets of the same paper. */
+html[data-skin="scrapbook"][data-flight="peel"] [class*="flight=peel]:bg-bg"] {
+  background:
+    radial-gradient(var(--dots) 1.5px, transparent 1.6px) 0 0 / 22px 22px,
+    var(--bg);
+  box-shadow: -16px 0 28px -12px var(--shade);
+}
+
+html[data-skin="scrapbook"] {
+  scrollbar-color: color-mix(in srgb, var(--accent) 70%, transparent) transparent;
+}
+
+/* The couches keep their ink line on stickers (the skin's --outline is white). */
+[data-skin="scrapbook"] .couch g,
+[data-skin="scrapbook"] #intro-couches g[stroke] {
+  stroke: var(--p-ink);
+}
+
+[data-skin="scrapbook"] .couch-eye,
+[data-skin="scrapbook"] #intro-couches ellipse {
+  fill: var(--p-ink);
+}
+
+/* Settings → Look: the skin's preview tile is its own dotted paper (data-look-preview carries the skin and palette). */
+[data-look-preview][data-skin="scrapbook"] {
+  border-color: var(--outline);
+  background: radial-gradient(var(--dots) 1.5px, transparent 1.6px) 0 0 / 14px 14px, var(--p-bg);
+  box-shadow: var(--stk-hair);
+}
+
+/* Rating stars: a sunshine sticker with an ink line when filled, a faint ink outline when not. */
+[data-skin="scrapbook"] path[d^="m12 3.5"] {
+  stroke: var(--p-ink);
+}
+
+[data-skin="scrapbook"] path[d^="m12 3.5"][fill="var(--pop)"] {
+  fill: var(--sun);
+}
+
+/* The starburst becomes a puffy star sticker: sunshine with a white die-cut edge and a soft drop. */
+[data-skin="scrapbook"] .burst:has(> svg) {
+  filter: drop-shadow(0 4px 6px var(--shade));
+}
+
+[data-skin="scrapbook"] .burst:has(> svg) > svg {
+  visibility: hidden;
+}
+
+[data-skin="scrapbook"] .burst:has(> svg)::before,
+[data-skin="scrapbook"] .burst:has(> svg)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+[data-skin="scrapbook"] .burst:has(> svg)::before {
+  background: var(--outline);
+  clip-path: polygon(50% 2%, 68.2% 26.9%, 97.6% 36.5%, 79.5% 61.6%, 79.4% 92.5%, 50% 83%, 20.6% 92.5%, 20.5% 61.6%, 2.4% 36.5%, 31.8% 26.9%);
+}
+
+[data-skin="scrapbook"] .burst:has(> svg)::after {
+  background: var(--stamp);
+  clip-path: polygon(50% 9%, 65% 31.4%, 90.9% 38.7%, 74.3% 59.9%, 75.3% 86.8%, 50% 77.5%, 24.7% 86.8%, 25.7% 59.9%, 9.1% 38.7%, 35% 31.4%);
+}
+
+[data-skin="scrapbook"] .burst:has(> svg) > .display {
+  margin-top: 6%;
+  color: var(--on-stamp);
+  -webkit-text-stroke: 0 !important;
+}
+
+/* The logo is a sunshine sticker, as in the lab. */
+[data-skin="scrapbook"] header a[href="/"]:has([data-logo-couches]) {
+  margin: 6px 0 6px 6px;
+  padding: 2px 14px 2px 8px;
+  border-radius: 999px;
+  background: var(--sun);
+  box-shadow:
+    0 0 0 5px var(--outline),
+    0 10px 18px -8px var(--shade);
+}
+
+[data-skin="scrapbook"] header a[href="/"] .display {
+  color: var(--p-ink);
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+
+/*
+ * Home's clocks: each person's clock is a sticker in their colour, stuck on at an angle with a strip of washi
+ * tape, and the "h apart" badge stuck under them.
+ */
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 {
+  overflow: visible;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  gap: 18px;
+  padding: 14px 4px 26px;
+}
+
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 > :is(div, a) {
+  --muted: var(--p-ink);
+  position: relative;
+  align-self: stretch;
+  border: 4px solid var(--outline);
+  border-radius: var(--radius-panel);
+  padding: 20px 6px 14px;
+  color: var(--p-ink);
+  box-shadow: var(--stk-drop);
+}
+
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 > .col-start-1 {
+  background: var(--me);
+  rotate: -3deg;
+}
+
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 > .col-start-2 {
+  background: var(--partner);
+  rotate: 3deg;
+}
+
+/* Washi tape: a translucent strip over a sticker's top edge. */
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 > :is(div, a)::before,
+[data-skin="scrapbook"] .spotlight::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 78px;
+  height: 22px;
+  translate: -50% 0;
+  rotate: -4deg;
+  background: var(--tape);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  pointer-events: none;
+}
+
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 > .col-start-2::before {
+  rotate: 5deg;
+}
+
+[data-skin="scrapbook"] .spotlight {
+  overflow: visible;
+}
+
+[data-skin="scrapbook"] .spotlight::before {
+  left: auto;
+  right: 28px;
+  translate: none;
+  rotate: 8deg;
+}
+
+[data-skin="scrapbook"] aside > section.card.grid-cols-2 > span.absolute {
+  top: auto;
+  bottom: 0;
+}
+
+/* Watch-night tickets in each person's colour, as in the lab. */
+[data-skin="scrapbook"] dl > .paper:has(> dt > .bg-me) {
+  --muted: var(--p-ink);
+  background: var(--me);
+}
+
+[data-skin="scrapbook"] dl > .paper:has(> dt > .bg-partner) {
+  --muted: var(--p-ink);
+  background: var(--partner);
+}
+
+/* The opening animation: the cover in the accent, a sunshine burst with a white edge, sticker lettering. */
+[data-skin="scrapbook"] .intro-word {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--p-ink);
+  -webkit-text-stroke: 0.2em var(--p-surface);
+  text-shadow: 0 0.08em 0.16em var(--shade);
+}
+
+@layer components {
+  /* Panels are stickers: white with a white die-cut edge and a soft drop. */
+  [data-skin="scrapbook"] :is(.card, .spotlight) {
+    box-shadow: var(--stk-drop);
+  }
+
+  [data-skin="scrapbook"] .btn {
+    border-radius: 999px;
+    border-width: 4px;
+    padding: 0.6rem 1.25rem 0.55rem;
+    font-size: 1.1rem;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: var(--stk-drop-sm);
+    transition:
+      scale 0.25s var(--ease-spring),
+      rotate 0.25s var(--ease-spring),
+      translate 0.25s var(--ease-spring);
+  }
+
+  [data-skin="scrapbook"] .btn:hover {
+    translate: none;
+    rotate: -3deg;
+    scale: 1.08;
+    box-shadow: var(--stk-drop);
+  }
+
+  [data-skin="scrapbook"] .btn:active {
+    translate: 0 1px;
+    rotate: -1deg;
+    scale: 0.95;
+    box-shadow: var(--stk-drop-sm);
+  }
+
+  [data-skin="scrapbook"] .btn-quiet {
+    border-radius: 999px;
+    font-weight: 800;
+    box-shadow: var(--stk-drop-sm);
+  }
+
+  [data-skin="scrapbook"] .btn-quiet:hover {
+    translate: 0 -1px;
+    rotate: -2deg;
+    scale: 1.04;
+    box-shadow: var(--stk-drop-sm);
+  }
+
+  [data-skin="scrapbook"] .btn-quiet:active {
+    translate: none;
+    rotate: none;
+    scale: 0.96;
+  }
+
+  [data-skin="scrapbook"] .chip {
+    font-weight: 800;
+    box-shadow: var(--stk-drop-sm);
+  }
+
+  [data-skin="scrapbook"] .chip:hover {
+    scale: 1.06;
+  }
+
+  /*
+   * Fields are a lilac wash with a half-ink edge instead of a white one (over 3:1 on paper, so you can tell
+   * where to type); focus turns the edge to the accent with a soft accent ring.
+   */
+  :where([data-skin="scrapbook"]) .field {
+    border-width: 2px;
+    border-color: var(--field-line);
+    background-color: var(--wash);
+  }
+
+  [data-skin="scrapbook"] .field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  [data-skin="scrapbook"] .strand {
+    background-color: var(--wash);
+    font-weight: 700;
+  }
+
+  /* A page's views: sticker-lettered pills. The current one is the accent sticker, tipped and lifted. */
+  [data-skin="scrapbook"] .tab {
+    border-radius: 999px;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: var(--stk-hair);
+  }
+
+  :where([data-skin="scrapbook"]) .tab:not([aria-current="page"]) {
+    background-color: color-mix(in srgb, var(--p-surface) var(--tab-fill), transparent);
+  }
+
+  [data-skin="scrapbook"] .tab[aria-current="page"] {
+    box-shadow: var(--stk-drop);
+  }
+
+  /* List rows lean further, like stickers stuck on by hand. */
+  [data-skin="scrapbook"] .tilt-row {
+    --tilt: -1deg;
+  }
+
+  [data-skin="scrapbook"] .tilt-row:nth-child(2n) {
+    --tilt: 0.8deg;
+  }
+
+  [data-skin="scrapbook"] .tilt-row:nth-child(3n) {
+    --tilt: -0.4deg;
+  }
+
+  /* Who can watch it: a sticker label stuck over the poster's top edge. Both of you: a sunshine sticker. */
+  [data-skin="scrapbook"] .poster-tab {
+    rotate: -6deg;
+    border-width: 3px;
+    border-radius: 999px;
+    box-shadow: var(--stk-drop-sm);
+    padding: 3px 9px 2px;
+  }
+
+  [data-skin="scrapbook"] .poster-tab-paper {
+    padding: 3px 8px;
+    font-weight: 800;
+  }
+
+  [data-skin="scrapbook"] .poster-tab-word {
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1;
+    color: var(--on-stamp);
+    -webkit-text-stroke: 0;
+  }
+
+  /* The poster deck: a pile of polaroids (a white frame with a deeper bottom edge), dropped with a soft shadow. */
+  [data-skin="scrapbook"] .deck-card {
+    border-width: 0;
+    border-radius: 6px;
+    background: var(--p-surface);
+    box-shadow: var(--stk-drop);
+  }
+
+  /* The spotlight carries a strip of washi tape (positioned utilities still win: they're in a later layer). */
+  [data-skin="scrapbook"] .spotlight {
+    position: relative;
+  }
+
+  /*
+   * Posters in grids and rows are polaroids: a white frame with a deeper bottom edge, stuck on at a slight angle
+   * (alternating), that lift and turn when pointed at.
+   */
+  [data-skin="scrapbook"] .group\/card > .poster-frame :is(img, div) {
+    border-width: 6px 6px 20px;
+    border-radius: 4px;
+  }
+
+  [data-skin="scrapbook"] .group\/card > .poster-frame {
+    rotate: -1.5deg;
+  }
+
+  [data-skin="scrapbook"] .group\/card:nth-child(2n) > .poster-frame {
+    rotate: 1.5deg;
+  }
+
+  [data-skin="scrapbook"] .group\/card:hover > .poster-frame {
+    translate: 0 -8px;
+    rotate: -4deg;
+    scale: 1.04;
+  }
+
+  [data-skin="scrapbook"] .deck-card[data-top] {
+    box-shadow: var(--stk-drop-lg);
+  }
+
+  [data-skin="scrapbook"] .deck-card img {
+    inset: 7px 7px 24px;
+    width: calc(100% - 14px);
+    height: calc(100% - 31px);
+    border-radius: 3px;
+  }
+}
+
+@layer utilities {
+  /* A white edge on white paper: a faint ink line round it, as on the lab's dots (lowest specificity, so any drop wins). */
+  :where([data-skin="scrapbook"]) .border-outline {
+    box-shadow: var(--stk-hair);
+  }
+
+  /* Bagel's numerals are wider than Luckiest Guy's: the night tickets' times step down to fit. */
+  [data-skin="scrapbook"] .paper > dd.display-ink.text-2xl {
+    font-size: 1.3rem;
+  }
+
+  [data-skin="scrapbook"] .paper > dd.display-ink:not(.text-2xl) {
+    font-size: clamp(1.2rem, 1.9vw, 1.5rem);
+  }
+
+  /* Name tags on a person's own sticker turn white, so they don't vanish into it. */
+  [data-skin="scrapbook"] aside > section.card.grid-cols-2 > div > span:is(.bg-me, .bg-partner) {
+    background-color: var(--p-surface);
+  }
+
+  /* Titles on list stickers and polaroid captions in sticker lettering, as in the lab. */
+  [data-skin="scrapbook"] .tilt-row .card .text-xl.font-bold,
+  [data-skin="scrapbook"] .group\/card > a.font-bold {
+    font-family: var(--font-skin-display);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* Every hard ink shadow becomes a sticker's soft drop (in every state: stickers don't sink into a shadow). */
+  [data-skin="scrapbook"] [class*="_0_var(--outline)]"] {
+    box-shadow: var(--stk-drop-sm);
+  }
+
+  [data-skin="scrapbook"] :is([class*="shadow-[6px_6px_0_var(--outline)]"], [class*="shadow-[8px_8px_0_var(--outline)]"]) {
+    box-shadow: var(--stk-drop);
+  }
+
+  [data-skin="scrapbook"] :is(.outlined, .outlined-sm) {
+    box-shadow: var(--stk-drop-sm);
+  }
+
+  /* Faint ink tints that were drawn in the (now white) outline colour. */
+  [data-skin="scrapbook"] .bg-outline\/10 {
+    background-color: color-mix(in srgb, var(--p-ink) 9%, transparent);
+  }
+
+  [data-skin="scrapbook"] .bg-outline\/15 {
+    background-color: color-mix(in srgb, var(--p-ink) 12%, transparent);
+  }
+
+  [data-skin="scrapbook"] .bg-outline\/25 {
+    background-color: color-mix(in srgb, var(--ink) 22%, transparent);
+  }
+
+  /*
+   * Sticker lettering. On the ground: the palette's letter colour with a thick white die-cut edge and a soft
+   * drop. Bagel draws real lower case (with a dotted i), so nothing is uppercased.
+   */
+  [data-skin="scrapbook"] :is(.display, .display-pop) {
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.05;
+    color: var(--letter);
+    -webkit-text-stroke: 0.16em var(--letter-edge);
+    text-shadow: 0 0.06em 0.14em var(--shade);
+  }
+
+  /* The spotlight's head: plain sticker lettering in the spotlight's head colour. */
+  [data-skin="scrapbook"] .display-pop {
+    color: var(--accent-head);
+    -webkit-text-stroke: 0;
+    text-shadow: 0 0.05em 0.1em color-mix(in srgb, var(--shade) 60%, transparent);
+  }
+
+  [data-skin="scrapbook"] :is(.display-ink, .font-display) {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
