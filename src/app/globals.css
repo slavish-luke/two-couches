@@ -1216,6 +1216,13 @@ html[data-intro="playing"] .intro {
   [data-skin="candy"] :is(.spotlight, .card, .display, body > header a[href="/"]) {
     rotate: none;
   }
+  /*
+   * Pick's card sets its tilt inline (its deal lands on it), so only !important straightens it; the deal
+   * then slides and grows in without the spin. (An !important custom property is dropped by the build.)
+   */
+  [data-skin="candy"] .pick-deal {
+    rotate: none !important;
+  }
   /* Lettering: Dela Gothic One in mixed case, plain ink (no stroke, no hard shadow). */
   [data-skin="candy"] :is(.display, .display-pop, .display-ink) {
     text-transform: none;
