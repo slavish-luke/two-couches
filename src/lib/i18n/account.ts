@@ -61,7 +61,7 @@ const en = {
   },
   appearance: {
     heading: "Appearance",
-    intro: "How the app looks on this device. Each look keeps the same roles: a colour for you, one for your partner, and a starburst for what you can both watch.",
+    intro: "How the app looks on this device. Each look keeps the same roles: a colour for you, one for your partner, and a bright mark for what you can both watch.",
     look: "Look",
     colours: "Colours",
     skins: { saturday: "Saturday Morning", scrapbook: "Sticker Scrapbook", candy: "Candy Shop" } satisfies Record<Skin, string>,
@@ -207,7 +207,7 @@ const tr: typeof en = {
   },
   appearance: {
     heading: "Görünüm",
-    intro: "Uygulamanın bu cihazdaki görünümü. Her görünüm aynı rolleri korur: sana bir renk, partnerine bir renk, ikinizin de izleyebildikleri için bir yıldız patlaması.",
+    intro: "Uygulamanın bu cihazdaki görünümü. Her görünüm aynı rolleri korur: sana bir renk, partnerine bir renk, ikinizin de izleyebildikleri için parlak bir işaret.",
     look: "Tarz",
     colours: "Renkler",
     skins: { saturday: "Cumartesi Sabahı", scrapbook: "Çıkartma Defteri", candy: "Şekerci Dükkânı" },
