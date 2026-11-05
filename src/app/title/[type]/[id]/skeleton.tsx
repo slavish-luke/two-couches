@@ -1,6 +1,4 @@
-import { SkelButton, SkelParagraph, SkelPoster, Skeleton, SkelText } from "@/components/skeleton";
-
-const NBSP = " ";
+import { NBSP, SkelButton, SkelParagraph, SkelPoster, Skeleton, SkelText } from "@/components/skeleton";
 
 /** The title page while it loads: the poster (the deck's top card), the title column and where to watch. */
 export function TitleSkeleton() {
@@ -22,7 +20,8 @@ export function TitleSkeleton() {
               ))}
             </span>
           </div>
-          <SkelParagraph lines={5} smLines={4} className="max-w-[62ch] text-[1.05rem] font-medium leading-relaxed" />
+          <SkelText className="text-lg font-semibold" width="50%" />
+          <SkelParagraph lines={7} smLines={4} className="max-w-[62ch] text-[1.05rem] font-medium leading-relaxed" />
           <div className="flex flex-wrap gap-3 pt-1">
             <SkelButton width="11rem" />
             <SkelButton quiet width="7.5rem" icon="size-4" />

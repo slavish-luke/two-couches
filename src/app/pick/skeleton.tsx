@@ -1,7 +1,5 @@
-import { SkelButton, SkelChip, SkelField, SkelPageTitle, SkelParagraph, SkelPoster, Skeleton, SkelText } from "@/components/skeleton";
+import { NBSP, SkelButton, SkelChip, SkelField, SkelPageTitle, SkelParagraph, SkelPoster, Skeleton, SkelText } from "@/components/skeleton";
 import { QUICK_MINUTES } from "@/lib/pick-rules";
-
-const NBSP = " ";
 
 /** Pick while it loads: the heading and the time card (the pick itself needs a time, so it has its own). */
 export function PickSkeleton() {
@@ -9,7 +7,7 @@ export function PickSkeleton() {
     <Skeleton className="grid gap-8">
       <div className="grid gap-3">
         <SkelPageTitle width="15rem" />
-        <SkelParagraph lines={3} smLines={2} className="max-w-[60ch] text-lg font-medium" />
+        <SkelParagraph lines={2} smLines={1} className="max-w-[60ch] text-lg font-medium" />
       </div>
       <div aria-hidden className="card grid gap-4">
         <SkelText bar="ink" className="display-ink text-2xl" width="12rem" />

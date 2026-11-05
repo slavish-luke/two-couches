@@ -7,7 +7,8 @@ import type { CSSProperties, ReactNode } from "react";
  * in the skin's outlines and tokens; the bars pulse only with motion allowed.
  */
 
-const NBSP = " ";
+/** Content for a blank that must keep a line's height. */
+export const NBSP = " ";
 
 /** Fills for a bar inside a line of text, by what the line sits on. */
 const BAR = {
