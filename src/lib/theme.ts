@@ -10,6 +10,7 @@ export const SKINS = {
   saturday: ["sunburst", "pool", "lime", "grape", "tangerine", "bubblegum", "sky", "nightowl"],
   scrapbook: ["stk-lilac", "stk-midnight"],
   candy: ["cdy-strawberry", "cdy-mint", "cdy-midnight"],
+  comic: ["pow-newsprint", "pow-pulp", "pow-midnight"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type Skin = keyof typeof SKINS;
@@ -40,6 +41,9 @@ export const PALETTE_COLORS = {
   "cdy-strawberry": { ground: "#fff1f8", paper: "#ffffff", ink: "#2b124c", accent: "#6c3cef", both: "#c8f53b", me: "#ffb0d6", partner: "#9fe3ff" },
   "cdy-mint": { ground: "#e6fbf1", paper: "#ffffff", ink: "#2b124c", accent: "#5c3a26", both: "#ff4fa3", me: "#ffb36b", partner: "#b9a4ff" },
   "cdy-midnight": { ground: "#22103d", paper: "#fff8fc", ink: "#14072a", accent: "#ff5fae", both: "#c8f53b", me: "#ff9ccc", partner: "#7fdcff" },
+  "pow-newsprint": { ground: "#fffdf3", paper: "#ffffff", ink: "#111111", accent: "#00b2f0", both: "#ff2f8e", me: "#ff9f1c", partner: "#9d7cff" },
+  "pow-pulp": { ground: "#f1dfb6", paper: "#fff8e8", ink: "#2b1d14", accent: "#c8312b", both: "#ff3d8b", me: "#f28c28", partner: "#3fb0d9" },
+  "pow-midnight": { ground: "#151a3d", paper: "#fffdf3", ink: "#07081a", accent: "#ffe14d", both: "#ff2f8e", me: "#ff9f1c", partner: "#00b2f0" },
 } as const satisfies Record<Palette, Record<"ground" | "paper" | "ink" | "accent" | "both" | "me" | "partner", string>>;
 
 const GROUNDS = Object.fromEntries(Object.entries(PALETTE_COLORS).map(([palette, colors]) => [palette, colors.ground]));

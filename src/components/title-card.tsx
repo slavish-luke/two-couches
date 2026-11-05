@@ -43,7 +43,7 @@ export function TitleCard({
 }) {
   const href = titleHref(result);
   return (
-    <li className={`group/card grid content-start justify-items-start gap-1.5 ${className}`}>
+    <li data-title-card className={`group/card grid content-start justify-items-start gap-1.5 ${className}`}>
       <div className="poster-frame mb-1.5 w-full transition duration-200 ease-(--ease-spring) group-hover/card:-translate-y-1.5 group-hover/card:-rotate-2">
         {/* The title link below is the one for keyboards and screen readers. */}
         <Link href={href} tabIndex={-1} aria-hidden className="block">
@@ -70,7 +70,7 @@ export function TitleCard({
           </Suspense>
         )}
       </div>
-      <Link href={href} className="line-clamp-2 font-bold leading-snug hover:underline">
+      <Link href={href} data-item-title className="line-clamp-2 font-bold leading-snug hover:underline">
         {result.title}
       </Link>
       {details ?? (result.release_date && <span className="text-sm text-muted">{result.release_date.slice(0, 4)}</span>)}

@@ -45,7 +45,7 @@ export function VenueClock({
   const { full, clock, dayPeriod, day } = parts(new Date(now), timeZone, language);
 
   return (
-    <div className="grid justify-items-center gap-1">
+    <div data-clock className="grid justify-items-center gap-1">
       <time
         dateTime={new Date(now).toISOString()}
         className="display-ink block whitespace-nowrap text-[clamp(2rem,26cqi,3.5rem)] leading-none"

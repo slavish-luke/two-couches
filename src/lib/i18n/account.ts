@@ -64,11 +64,12 @@ const en = {
     intro: "How the app looks on this device. Each look keeps the same roles: a colour for you, one for your partner, and a bright mark for what you can both watch.",
     look: "Look",
     colours: "Colours",
-    skins: { saturday: "Saturday Morning", scrapbook: "Sticker Scrapbook", candy: "Candy Shop" } satisfies Record<Skin, string>,
+    skins: { saturday: "Saturday Morning", scrapbook: "Sticker Scrapbook", candy: "Candy Shop", comic: "POW! Comic Book" } satisfies Record<Skin, string>,
     skinNotes: {
       saturday: "Sunny cartoon panels, thick outlines and a starburst for what you can both watch.",
       scrapbook: "Puffy die-cut stickers, washi tape and polaroid posters, with a star sticker for what you can both watch.",
       candy: "A packed little sweet shop: rounded candy boxes, a hot-pink sign and a lime sticker for what you can both watch.",
+      comic: "Comic-book panels on newsprint, halftone dots, speech bubbles and a BOOM! for what you can both watch.",
     } satisfies Record<Skin, string>,
     palettes: {
       sunburst: "Sunburst",
@@ -84,6 +85,9 @@ const en = {
       "cdy-strawberry": "Strawberry Milk",
       "cdy-mint": "Mint Chip",
       "cdy-midnight": "Midnight Snack",
+      "pow-newsprint": "Newsprint",
+      "pow-pulp": "Pulp",
+      "pow-midnight": "Midnight",
     } satisfies Record<Palette, string>,
   },
   dataSaver: {
@@ -210,11 +214,12 @@ const tr: typeof en = {
     intro: "Uygulamanın bu cihazdaki görünümü. Her görünüm aynı rolleri korur: sana bir renk, partnerine bir renk, ikinizin de izleyebildikleri için parlak bir işaret.",
     look: "Tarz",
     colours: "Renkler",
-    skins: { saturday: "Cumartesi Sabahı", scrapbook: "Çıkartma Defteri", candy: "Şekerci Dükkânı" },
+    skins: { saturday: "Cumartesi Sabahı", scrapbook: "Çıkartma Defteri", candy: "Şekerci Dükkânı", comic: "POW! Çizgi Roman" },
     skinNotes: {
       saturday: "Güneşli çizgi film panelleri, kalın çizgiler ve ikinizin de izleyebildikleri için bir yıldız patlaması.",
       scrapbook: "Kabarık çıkartmalar, renkli bantlar ve polaroid afişler; ikinizin de izleyebildikleri için bir yıldız çıkartması.",
       candy: "Rengârenk şeker kutularıyla dolu küçük bir dükkân: pembe bir tabela ve ikinizin de izleyebildikleri için limon yeşili bir etiket.",
+      comic: "Gazete kâğıdında çizgi roman panelleri, raster noktaları, konuşma balonları ve ikinizin de izleyebildikleri için bir BUM!",
     },
     palettes: {
       sunburst: "Güneş Patlaması",
@@ -230,6 +235,9 @@ const tr: typeof en = {
       "cdy-strawberry": "Çilekli Süt",
       "cdy-mint": "Naneli Çikolata",
       "cdy-midnight": "Gece Atıştırması",
+      "pow-newsprint": "Gazete Kâğıdı",
+      "pow-pulp": "Sararmış Sayfa",
+      "pow-midnight": "Gece Yarısı",
     },
   },
   dataSaver: {

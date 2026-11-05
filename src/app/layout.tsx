@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Dela_Gothic_One, Fredoka, Luckiest_Guy, Nunito, Rubik } from "next/font/google";
+import { Bangers, Dela_Gothic_One, Fredoka, Luckiest_Guy, Nunito, Rubik, Shantell_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -45,6 +45,11 @@ const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin", "latin-ext
 const dela = Dela_Gothic_One({ variable: "--font-dela", weight: "400", subsets: ["latin", "latin-ext"], preload: false });
 const rubik = Rubik({ variable: "--font-rubik", subsets: ["latin", "latin-ext"], preload: false });
 
+// POW! Comic Book's faces: Bangers for comic lettering, Shantell Sans (handwriting with a bounce) for reading.
+// Both cover every Turkish letter (latin-ext). Not preloaded: they download only when the skin is chosen.
+const bangers = Bangers({ variable: "--font-bangers", weight: "400", subsets: ["latin", "latin-ext"], preload: false });
+const shantell = Shantell_Sans({ variable: "--font-shantell", subsets: ["latin", "latin-ext"], preload: false });
+
 const TMDB_IMAGES = "https://image.tmdb.org";
 
 export const metadata: Metadata = {
@@ -74,7 +79,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
       suppressHydrationWarning
-      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} ${bagel.variable} ${nunito.variable} ${dela.variable} ${rubik.variable} h-full antialiased`}
+      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} ${bagel.variable} ${nunito.variable} ${dela.variable} ${rubik.variable} ${bangers.variable} ${shantell.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />
