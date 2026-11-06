@@ -413,6 +413,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"subtitle_files": {
+                  Row: {
+                    "created_at": string,"file_id": number,"language": string,"release": string,"vtt": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"file_id": number,"language": string,"release"?: string,"vtt": string
+                  }
+                  Update: {
+                    "created_at"?: string,"file_id"?: number,"language"?: string,"release"?: string,"vtt"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"title_texts": {
                   Row: {
                     "genres": (string)[],"locale": string,"media_type": string,"overview": string,"poster_path": string | null,"refreshed_at": string,"tagline": string,"title": string,"tmdb_id": number,"trailer_key": string | null

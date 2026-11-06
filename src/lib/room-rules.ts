@@ -85,3 +85,23 @@ export function decodeSubtitles(bytes: ArrayBuffer) {
     return new TextDecoder("windows-1254").decode(bytes);
   }
 }
+
+/** The OpenSubtitles hash reads this many bytes from each end of the file. */
+export const HASH_CHUNK = 64 * 1024;
+
+/**
+ * The OpenSubtitles hash of a video file (16 hex digits), which finds subtitles timed for that exact
+ * release: the file's size plus every 64-bit little-endian word of its first and last 64 KB, modulo 2^64.
+ * Only these two slices are read, in the browser; the file itself is never sent. Null for files too
+ * small to hash.
+ */
+export function openSubtitlesHash(size: number, head: ArrayBuffer, tail: ArrayBuffer) {
+  if (size < HASH_CHUNK * 2 || head.byteLength !== HASH_CHUNK || tail.byteLength !== HASH_CHUNK) return null;
+  const mask = (BigInt(1) << BigInt(64)) - BigInt(1);
+  let hash = BigInt(size);
+  for (const chunk of [head, tail]) {
+    const view = new DataView(chunk);
+    for (let i = 0; i < HASH_CHUNK; i += 8) hash = (hash + view.getBigUint64(i, true)) & mask;
+  }
+  return hash.toString(16).padStart(16, "0");
+}

@@ -6,8 +6,20 @@ import { Couches } from "@/components/couch";
 import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import { compareLengths, formatLength } from "@/lib/ready-rules";
-import { clockOffset, correction, decodeSubtitles, roomTopic, targetPosition, toWebVtt, type RoomState } from "@/lib/room-rules";
+import type { Progress } from "@/lib/list-rules";
+import {
+  clockOffset,
+  correction,
+  decodeSubtitles,
+  HASH_CHUNK,
+  openSubtitlesHash,
+  roomTopic,
+  targetPosition,
+  toWebVtt,
+  type RoomState,
+} from "@/lib/room-rules";
 import { createClient } from "@/lib/supabase/client";
+import { SubtitleFinder } from "./subtitle-finder";
 
 type Person = { id: string; name: string };
 type Problem = "unplayable" | "noPicture" | "noSound";
@@ -34,7 +46,20 @@ const SUBTITLE_TYPES = ".srt,.vtt";
  * (roomTopic()), and whoever acted last sends a tick every few seconds so the other player can nudge its
  * speed or jump to stay in step. Presence shows who's in the room and each file's length.
  */
-export function WatchRoom({ nightId, me, partner, language }: { nightId: string; me: Person; partner: Person | null; language: string }) {
+export function WatchRoom({
+  nightId,
+  me,
+  partner,
+  language,
+  finder,
+}: {
+  nightId: string;
+  me: Person;
+  partner: Person | null;
+  language: string;
+  /** Finding subtitles online: off until OpenSubtitles is set up; for a series, the episode to start from. */
+  finder: { enabled: boolean; episode: Progress | null };
+}) {
   const t = getMessages(language).nights;
   const text = t.room;
   const partnerId = partner?.id ?? null;
@@ -50,6 +75,9 @@ export function WatchRoom({ nightId, me, partner, language }: { nightId: string;
   const [notice, setNotice] = useState<Notice | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [finding, setFinding] = useState(false);
+  /** Your file's OpenSubtitles hash, for subtitles timed to it. Worked out from its two ends, in the browser. */
+  const [hash, setHash] = useState<string | null>(null);
 
   // Sync bookkeeping changes many times a minute and draws nothing, so it lives in refs.
   /** Who acted last: they send the ticks, and only their ticks are followed. */
@@ -232,6 +260,16 @@ export function WatchRoom({ nightId, me, partner, language }: { nightId: string;
     setBlocked(false);
     audioChecked.current = false;
     setFile({ url: hold(f), name: f.name });
+    setHash(null);
+    void Promise.all([f.slice(0, HASH_CHUNK).arrayBuffer(), f.slice(Math.max(0, f.size - HASH_CHUNK)).arrayBuffer()]).then(
+      ([head, tail]) => setHash(openSubtitlesHash(f.size, head, tail)),
+      () => setHash(null),
+    );
+  }
+
+  function showSubtitles(vtt: string, name: string) {
+    release(subtitles?.url);
+    setSubtitles({ url: hold(new Blob([vtt], { type: "text/vtt" })), name });
   }
 
   async function openSubtitles(f: File) {
@@ -239,8 +277,7 @@ export function WatchRoom({ nightId, me, partner, language }: { nightId: string;
     try {
       const vtt = toWebVtt(decodeSubtitles(await f.arrayBuffer()));
       if (!vtt.includes("-->")) throw new Error("No cues");
-      release(subtitles?.url);
-      setSubtitles({ url: hold(new Blob([vtt], { type: "text/vtt" })), name: f.name });
+      showSubtitles(vtt, f.name);
     } catch {
       setSubtitleError(true);
     }
@@ -372,6 +409,11 @@ export function WatchRoom({ nightId, me, partner, language }: { nightId: string;
               <FilePick accept={VIDEO_TYPES} onFile={openFile} className="btn-quiet">
                 {text.change}
               </FilePick>
+              {finder.enabled && (
+                <button type="button" onClick={() => setFinding((open) => !open)} aria-expanded={finding} className="btn-quiet">
+                  {text.find.open}
+                </button>
+              )}
               <FilePick accept={SUBTITLE_TYPES} onFile={(f) => void openSubtitles(f)} className="btn-quiet">
                 {text.subtitles}
               </FilePick>
@@ -387,6 +429,20 @@ export function WatchRoom({ nightId, me, partner, language }: { nightId: string;
               <p role="alert" className="text-sm font-semibold text-danger">
                 {text.subtitlesFailed}
               </p>
+            )}
+            {finder.enabled && finding && (
+              <SubtitleFinder
+                nightId={nightId}
+                language={language}
+                hash={hash}
+                query={file.name.replace(/\.[^.]+$/, "").replace(/[._]+/g, " ")}
+                episode={finder.episode}
+                onLoad={(vtt, label) => {
+                  showSubtitles(vtt, label);
+                  setFinding(false);
+                }}
+                onClose={() => setFinding(false)}
+              />
             )}
           </>
         ) : (

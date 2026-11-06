@@ -3,10 +3,14 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BackIcon } from "@/components/icons";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
+import { getListItem } from "@/lib/list";
+import { episodeAfter, type Progress } from "@/lib/list-rules";
 import { formatDay, formatTime } from "@/lib/night-rules";
 import { getWatchNight } from "@/lib/nights";
+import { subtitlesConfigured } from "@/lib/opensubtitles";
 import { isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 import { tmdbLocale } from "@/lib/tmdb";
 import { WatchRoomSkeleton } from "./skeleton";
 import { WatchRoom } from "./watch-room";
@@ -44,6 +48,18 @@ async function Room({ params }: Pick<PageProps<"/watch-nights/[id]/watch">, "par
   const start = new Date(night.starts_at);
   const text = t.nights.room;
 
+  // A series night looks for subtitles for the next episode on your list (season 1, episode 1 if none).
+  let episode: Progress | null = null;
+  if (night.title?.media_type === "tv") {
+    const supabase = await createClient();
+    const [item, counts] = await Promise.all([
+      getListItem(profile.couple_id, night.title),
+      supabase.from("titles").select("season_episodes").eq("media_type", "tv").eq("tmdb_id", night.title.tmdb_id).maybeSingle(),
+    ]);
+    const progress = item?.season && item.episode ? { season: item.season, episode: item.episode } : null;
+    episode = episodeAfter(progress, counts.data?.season_episodes ?? null) ?? progress ?? { season: 1, episode: 1 };
+  }
+
   return (
     <div data-wide className="grid gap-6">
       <div className="grid gap-3">
@@ -62,6 +78,7 @@ async function Room({ params }: Pick<PageProps<"/watch-nights/[id]/watch">, "par
         me={{ id: profile.id, name: t.common.you }}
         partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
         language={language}
+        finder={{ enabled: subtitlesConfigured(), episode }}
       />
     </div>
   );
