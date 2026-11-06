@@ -34,8 +34,11 @@ export function SubtitleFinder(props: {
   const [loading, setLoading] = useState<number | null>(null);
   const panel = useRef<HTMLElement>(null);
 
-  // It opens below the video: bring it into view, once.
-  useEffect(() => panel.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }), []);
+  // It opens below the video: bring it into view, once. In braces: newer browsers return a Promise from
+  // scrollIntoView(), and an effect must return nothing or a cleanup function (React calls it on unmount).
+  useEffect(() => {
+    panel.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, []);
 
   function search(lang = language, ep = episode) {
     startSearch(async () => {

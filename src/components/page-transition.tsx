@@ -13,7 +13,9 @@ import { flightIn, flightOut, notePath, type TransitionInstance } from "@/lib/fl
 export function PageTransition({ children, nested = false }: { children: ReactNode; nested?: boolean }) {
   // The URL is already the new one when a page mounts (or comes back from Next's hidden cache). Not
   // usePathname(): that would keep every page from prerendering.
-  useLayoutEffect(() => notePath(location.pathname), []);
+  useLayoutEffect(() => {
+    notePath(location.pathname);
+  }, []);
 
   return (
     <ViewTransition
