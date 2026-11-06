@@ -7,6 +7,7 @@ import type { WatchNight } from "@/lib/nights";
 import { titleHref } from "@/lib/watch";
 import { ExternalIcon } from "@/components/icons";
 import { Sfx } from "@/components/sfx";
+import { usesOwnFiles } from "@/lib/ready-rules";
 import { ReadyCheck } from "./ready-check";
 
 type Person = { id: string; name: string; timeZone: string };
@@ -101,6 +102,11 @@ export function NightCard(props: {
         </dl>
 
         <HowLine night={night} t={t} />
+        {actions && night.method === "here" && (
+          <Link href={`/watch-nights/${night.id}/watch`} className="btn justify-self-start px-3.5 pb-1.5 pt-2 text-base">
+            {t.nights.room.open}
+          </Link>
+        )}
         {night.notes && <p className="whitespace-pre-line text-sm">{night.notes}</p>}
 
         {actions && (
@@ -126,6 +132,12 @@ export function NightCard(props: {
               <a href={`/watch-nights/${night.id}/ics`} className="tap-area font-bold text-ink underline underline-offset-4">
                 {t.nights.addToCalendar}
               </a>
+              {/* Playing your own copies another way? The app's room is there too. */}
+              {night.method !== "here" && usesOwnFiles(night.method) && (
+                <Link href={`/watch-nights/${night.id}/watch`} className="tap-area font-bold text-ink underline underline-offset-4">
+                  {t.nights.room.openShort}
+                </Link>
+              )}
             </>
           )}
         </p>

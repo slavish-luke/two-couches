@@ -2,7 +2,8 @@
 
 import { dateLocale } from "./places";
 
-export const NIGHT_METHODS = ["teleparty", "syncplay", "other"] as const;
+/** "here" is the app's own watch room (/watch-nights/[id]/watch): each person plays their own copy in the browser. */
+export const NIGHT_METHODS = ["here", "teleparty", "syncplay", "other"] as const;
 
 export type NightMethod = (typeof NIGHT_METHODS)[number];
 

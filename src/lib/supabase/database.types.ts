@@ -491,6 +491,9 @@ isOneToOne: false
 "has_reviewed":
 { Args: { "p_list_item_id": string }; Returns: boolean
                            },
+"is_my_night_room":
+{ Args: { "topic": string }; Returns: boolean
+                           },
 "is_time_zone":
 { Args: { "tz": string }; Returns: boolean
                            },

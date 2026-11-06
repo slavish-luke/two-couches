@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ViewTransition } from "react";
+import { ViewTransition, type CSSProperties } from "react";
 import { getMessages } from "@/lib/i18n";
 import { tmdbImage, type TitleRef } from "@/lib/watch";
 
@@ -50,9 +50,11 @@ export function Poster({
   const height = Math.round(width * 1.5);
   const fluid = size === "fluid" ? "aspect-[2/3] h-auto w-full" : "";
   const poster = !path ? (
+    // The size is a class, not an inline style, so a width in `className` (e.g. phones' `max-sm:w-16`) wins
+    // as it does for an image.
     <div
-      style={fluid ? undefined : { width, height }}
-      className={`shrink-0 rounded-poster border-[3px] border-outline bg-surface ${fluid} ${className}`}
+      style={fluid ? undefined : ({ "--poster-w": `${width}px` } as CSSProperties)}
+      className={`shrink-0 rounded-poster border-[3px] border-outline bg-surface ${fluid || "aspect-[2/3] w-(--poster-w)"} ${className}`}
       aria-hidden
     />
   ) : (
