@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNod
 import { Couches } from "@/components/couch";
 import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
+import { dateLocale } from "@/lib/places";
 import { compareLengths, formatLength } from "@/lib/ready-rules";
 import type { Progress } from "@/lib/list-rules";
 import {
@@ -12,9 +13,12 @@ import {
   correction,
   decodeSubtitles,
   HASH_CHUNK,
+  NUDGE_AT_S,
   openSubtitlesHash,
+  rejoinDelay,
   roomTopic,
   targetPosition,
+  tickUsable,
   toWebVtt,
   type RoomState,
 } from "@/lib/room-rules";
@@ -27,16 +31,19 @@ type Problem = "unplayable" | "noPicture" | "noSound";
 type Presence = { seconds: number | null };
 type Notice = { kind: "played" | "paused" | "jumped"; at: number };
 
-/** How often whoever acted last sends where they are, while playing. */
+/**
+ * How often whoever acted last sends where they are (about 150 bytes each), paused too, so a pause that
+ * got lost on a bad connection still reaches the other screen.
+ */
 const TICK_MS = 3000;
-/** How often to re-measure the other device's clock. */
+/** How often to re-measure the other device's clock, after a quick burst of PING_BURST pings on joining. */
 const PING_MS = 20_000;
+const PING_BURST = 5;
+const PING_BURST_MS = 1500;
 /** How long an event we caused ourselves (play, pause, seeked) is waited for, so it isn't sent back. */
 const QUIET_MS = 2000;
 /** Realtime limits how often one client may update its presence, so a new file length waits this long. */
 const PRESENCE_DELAY_MS = 1000;
-/** Ticks this soon after your own play, pause or seek are stale (they crossed yours on the way). */
-const AFTER_ACTION_MS = 1500;
 const VIDEO_TYPES = "video/*,.mkv,.mp4,.m4v,.webm,.mov";
 const SUBTITLE_TYPES = ".srt,.vtt";
 
@@ -78,6 +85,8 @@ export function WatchRoom({
   const [finding, setFinding] = useState(false);
   /** Your file's OpenSubtitles hash, for subtitles timed to it. Worked out from its two ends, in the browser. */
   const [hash, setHash] = useState<string | null>(null);
+  /** The latest round trip to the partner's screen (ms), shown so a slow connection is visible. */
+  const [delay, setDelay] = useState<number | null>(null);
 
   // Sync bookkeeping changes many times a minute and draws nothing, so it lives in refs.
   /** Who acted last: they send the ticks, and only their ticks are followed. */
@@ -87,6 +96,8 @@ export function WatchRoom({
   /** How far the partner's clock is ahead of ours, from the quickest ping so far. */
   const offset = useRef({ ms: 0, roundTrip: Infinity });
   const lastAction = useRef(0);
+  /** Whether the last tick found us more than SEEK_AT_S apart: a jump needs two in a row. */
+  const far = useRef(false);
   const audioChecked = useRef(false);
   /** The file length last shared in presence. */
   const tracked = useRef<number | null>(null);
@@ -113,9 +124,22 @@ export function WatchRoom({
       const v = video.current;
       if (!v || !v.currentSrc || v.readyState < HTMLMediaElement.HAVE_METADATA) return;
       if (state.kind === "tick") {
-        if (state.by !== leader.current || Date.now() - lastAction.current < AFTER_ACTION_MS) return;
+        // Only the leader's, only once the clocks are compared, and not late or older than our own action.
+        if (state.by !== leader.current || offset.current.roundTrip === Infinity) return;
+        if (!tickUsable(state, Date.now(), offset.current.ms, lastAction.current)) return;
+      } else if (
+        state.kind === "sync" &&
+        leader.current === me.id &&
+        lastAction.current > 0 &&
+        lastAction.current > (state.actedAt ?? 0) - offset.current.ms
+      ) {
+        // Back from a disconnection, both of us think we're in charge: we acted last, so they follow us.
+        const mine = stateNow("sync");
+        if (mine) send("state", { ...mine, actedAt: lastAction.current });
+        return;
       } else {
         leader.current = state.by;
+        far.current = false;
       }
       if (state.kind === "play" || state.kind === "pause" || state.kind === "seek") {
         setNotice({ kind: state.kind === "play" ? "played" : state.kind === "pause" ? "paused" : "jumped", at: state.position });
@@ -129,11 +153,17 @@ export function WatchRoom({
         v.currentTime = target;
       };
       if (state.kind === "tick" && state.playing && !v.paused) {
-        const fix = correction(drift, TICK_MS / 1000);
-        if ("seek" in fix) seek();
-        else v.playbackRate = fix.rate;
+        const fix = correction(drift, TICK_MS / 1000, far.current);
+        if ("seek" in fix) {
+          far.current = false;
+          seek();
+        } else {
+          far.current = fix.far;
+          v.playbackRate = fix.rate;
+        }
       } else {
-        if (Math.abs(drift) > 0.25) seek();
+        far.current = false;
+        if (Math.abs(drift) > NUDGE_AT_S) seek();
         v.playbackRate = 1;
       }
 
@@ -152,69 +182,155 @@ export function WatchRoom({
         v.pause();
       }
     },
-    [],
+    [me.id, send, stateNow],
   );
 
-  // Join the room.
+  // Join the room, and join again whenever the channel closes. The client rejoins by itself after errors
+  // and timeouts, but not when the server closes the channel because its access token ran out (the token's
+  // renewal never got through on a bad connection, and an hour later the room went dead). So each attempt
+  // starts with a fresh session: getSession() renews an expired token.
   useEffect(() => {
     const supabase = createClient();
-    const ch = supabase.channel(roomTopic(nightId), {
-      config: { private: true, broadcast: { self: false }, presence: { key: me.id, enabled: true } },
-    });
-    ch.on("broadcast", { event: "state" }, ({ payload }) => apply(payload as RoomState));
-    // Someone came in or opened their file: tell them where we are.
-    ch.on("broadcast", { event: "hello" }, () => {
-      const state = stateNow("sync");
-      if (!state) return;
-      if (state.playing && !leader.current) leader.current = me.id;
-      send("state", state);
-    });
-    ch.on("broadcast", { event: "ping" }, ({ payload }) => {
-      send("pong", { sentAt: payload.sentAt, theirs: Date.now(), to: payload.from });
-    });
-    ch.on("broadcast", { event: "pong" }, ({ payload }) => {
-      if (payload.to !== me.id) return;
-      const sample = clockOffset(payload.sentAt, payload.theirs, Date.now());
-      if (sample.roundTrip <= offset.current.roundTrip) offset.current = { ms: sample.offset, roundTrip: sample.roundTrip };
-    });
-    ch.on("presence", { event: "sync" }, () => {
-      const entry = partnerId ? ch.presenceState<Presence>()[partnerId]?.[0] : undefined;
-      setTheirs(entry ? { seconds: entry.seconds ?? null } : null);
-    });
-    channel.current = ch;
-
     let cancelled = false;
-    // Private channels check the token against the room's policies, so join as the signed-in user.
-    supabase.auth.getSession().then(async ({ data }) => {
+    let current: RealtimeChannel | null = null;
+    let busy = false;
+    let attempt = 0;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let pingsLeft = 0;
+    let lastPing = 0;
+
+    const ping = () => {
+      lastPing = Date.now();
+      send("ping", { sentAt: lastPing, from: me.id });
+    };
+
+    // Just (re)joined: measure the clocks quickly, and whoever's in charge says where they are; anyone
+    // else asks. (Asking made the one in charge follow a screen that had missed their pause.)
+    const greet = () => {
+      ping();
+      pingsLeft = PING_BURST - 1;
+      const mine = leader.current === me.id ? stateNow("sync") : null;
+      if (mine) send("state", { ...mine, actedAt: lastAction.current });
+      else send("hello", {});
+    };
+
+    const later = () => {
+      if (cancelled || retry !== undefined) return;
+      retry = setTimeout(() => {
+        retry = undefined;
+        attempt += 1;
+        void reopen();
+      }, rejoinDelay(attempt));
+    };
+
+    const open = async () => {
+      const { data } = await supabase.auth.getSession();
       if (cancelled) return;
+      // Private channels check the token against the room's policies, so join as the signed-in user.
       await supabase.realtime.setAuth(data.session?.access_token ?? null);
       if (cancelled) return;
-      ch.subscribe(async (state) => {
-        if (state === "SUBSCRIBED") {
-          setStatus("live");
-          await ch.track({ seconds: tracked.current });
-          send("ping", { sentAt: Date.now(), from: me.id });
-          send("hello", {});
-        } else if (!cancelled) {
-          // CHANNEL_ERROR, TIMED_OUT or CLOSED: the client keeps retrying, and SUBSCRIBED sets it back.
-          setStatus("failed");
-        }
-      });
-    });
 
-    const ping = setInterval(() => send("ping", { sentAt: Date.now(), from: me.id }), PING_MS);
+      const ch = supabase.channel(roomTopic(nightId), {
+        config: { private: true, broadcast: { self: false }, presence: { key: me.id, enabled: true } },
+      });
+      ch.on("broadcast", { event: "state" }, ({ payload }) => apply(payload as RoomState));
+      // Someone came in, came back or opened their file: tell them where we are. They'll follow us.
+      ch.on("broadcast", { event: "hello" }, () => {
+        const state = stateNow("sync");
+        if (!state) return;
+        leader.current = me.id;
+        send("state", { ...state, actedAt: lastAction.current });
+      });
+      ch.on("broadcast", { event: "ping" }, ({ payload }) => {
+        send("pong", { sentAt: payload.sentAt, theirs: Date.now(), to: payload.from });
+      });
+      ch.on("broadcast", { event: "pong" }, ({ payload }) => {
+        if (payload.to !== me.id) return;
+        const sample = clockOffset(payload.sentAt, payload.theirs, Date.now());
+        setDelay(sample.roundTrip);
+        if (sample.roundTrip <= offset.current.roundTrip) offset.current = { ms: sample.offset, roundTrip: sample.roundTrip };
+      });
+      ch.on("presence", { event: "sync" }, () => {
+        const entry = partnerId ? ch.presenceState<Presence>()[partnerId]?.[0] : undefined;
+        setTheirs(entry ? { seconds: entry.seconds ?? null } : null);
+      });
+      current = ch;
+      channel.current = ch;
+
+      try {
+        ch.subscribe(async (state) => {
+          if (cancelled || current !== ch) return;
+          if (state === "SUBSCRIBED") {
+            attempt = 0;
+            clearTimeout(retry);
+            retry = undefined;
+            setStatus("live");
+            await ch.track({ seconds: tracked.current });
+            greet();
+          } else {
+            // CHANNEL_ERROR, TIMED_OUT or CLOSED. If the client hasn't got back in by itself when this
+            // fires, start afresh with a fresh token.
+            setStatus("failed");
+            later();
+          }
+        });
+      } catch {
+        later();
+      }
+    };
+
+    async function reopen() {
+      if (busy || cancelled) return;
+      busy = true;
+      try {
+        const old = current;
+        current = null;
+        channel.current = null;
+        // Leaving closes the channel even when the server doesn't answer, so the topic is free again.
+        if (old) await supabase.removeChannel(old);
+        if (!cancelled) await open();
+      } catch {
+        later();
+      } finally {
+        busy = false;
+      }
+    }
+
+    // Back online, or back to this tab: if the room isn't joined or joining, rejoin now.
+    const check = () => {
+      if (cancelled || busy || document.visibilityState !== "visible") return;
+      if (current && current.state !== "closed" && current.state !== "errored") return;
+      clearTimeout(retry);
+      retry = undefined;
+      attempt = 0;
+      void reopen();
+    };
+    window.addEventListener("online", check);
+    document.addEventListener("visibilitychange", check);
+    void reopen();
+
+    const pinger = setInterval(() => {
+      if (pingsLeft > 0) {
+        pingsLeft -= 1;
+        ping();
+      } else if (Date.now() - lastPing >= PING_MS) ping();
+    }, PING_BURST_MS);
+    // Paused too, so a pause that got lost on the way still reaches the other screen.
     const tick = setInterval(() => {
-      if (leader.current !== me.id || video.current?.paused !== false) return;
+      if (leader.current !== me.id) return;
       const state = stateNow("tick");
       if (state) send("state", state);
     }, TICK_MS);
 
     return () => {
       cancelled = true;
-      clearInterval(ping);
+      clearTimeout(retry);
+      clearInterval(pinger);
       clearInterval(tick);
+      window.removeEventListener("online", check);
+      document.removeEventListener("visibilitychange", check);
       channel.current = null;
-      void supabase.removeChannel(ch);
+      if (current) void supabase.removeChannel(current);
     };
   }, [nightId, me.id, partnerId, apply, send, stateNow]);
 
@@ -304,6 +420,7 @@ export function WatchRoom({
     if (!state) return;
     leader.current = me.id;
     lastAction.current = Date.now();
+    far.current = false;
     if (video.current) video.current.playbackRate = 1;
     if (type === "play") setBlocked(false);
     send("state", state);
@@ -481,6 +598,14 @@ export function WatchRoom({
           ) : (
             <p className="font-semibold text-danger">{t.ready.lengthsDiffer(formatLength(lengths.difference))}</p>
           ))}
+        {partner && theirs && delay !== null && status === "live" && (
+          <p className="text-muted tabular-nums">
+            {text.delay(
+              partner.name,
+              new Intl.NumberFormat(dateLocale(language), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(delay / 1000),
+            )}
+          </p>
+        )}
         {status === "failed" && (
           <p role="alert" className="font-semibold text-danger">
             {text.failed}

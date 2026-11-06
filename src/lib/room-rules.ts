@@ -20,6 +20,9 @@ export type RoomState = {
   at: number;
   /** Who sent it (profile ID). */
   by: string;
+  /** On sync: when the sender last played, paused or jumped (their clock; 0 if never), so that after a
+   * disconnection the one who acted last stays in charge. */
+  actedAt?: number;
 };
 
 /** Messages older than this (after allowing for clock offset) are treated as this old: clocks can be off. */
@@ -35,22 +38,44 @@ export function targetPosition(state: RoomState, now: number, offsetMs = 0) {
   return state.position + travelled / 1000;
 }
 
-/** More than this apart (seconds), jump straight to the other player's position. */
-export const SEEK_AT_S = 1;
-/** Between this and SEEK_AT_S, run slightly fast or slow until back in step. */
-export const NUDGE_AT_S = 0.2;
-/** The most a player runs faster or slower while catching up (browsers keep the pitch). */
-export const MAX_NUDGE = 0.1;
+/**
+ * A tick that took longer than this to arrive is skipped: the next one is on its way. On a poor connection
+ * messages arrive late and in bunches, and following each of them made the picture jump about.
+ */
+export const STALE_TICK_MS = 2500;
 
 /**
- * What to do about being `drift` seconds ahead (positive) or behind (negative) the other player:
- * jump, or run at a speed that closes the gap over `overSeconds` (until the next tick), or play normally.
+ * Whether a tick is worth following: it was sent after our own last play, pause or jump (an older one
+ * crossed ours on the way and would pull us back), and it didn't take too long to arrive.
  */
-export function correction(drift: number, overSeconds = 3): { seek: true } | { rate: number } {
+export function tickUsable(state: RoomState, now: number, offsetMs: number, lastActionAt: number) {
+  const sentAt = state.at - offsetMs;
+  return sentAt > lastActionAt && now - sentAt <= STALE_TICK_MS;
+}
+
+/** More than this apart (seconds), on two ticks in a row, jump straight to the other player's position. */
+export const SEEK_AT_S = 1.5;
+/** Between this and SEEK_AT_S, run slightly fast or slow until back in step. Under it, leave well alone. */
+export const NUDGE_AT_S = 0.3;
+/** The most a player runs faster or slower while catching up (browsers keep the pitch; 10% was audible). */
+export const MAX_NUDGE = 0.05;
+
+/**
+ * What to do about being `drift` seconds ahead (positive) or behind (negative) the other player: run at a
+ * speed that closes the gap over `overSeconds` (until the next tick), play normally, or jump. A jump needs
+ * the previous tick to have been far apart too (`farBefore`), so one late or odd message never causes one.
+ */
+export function correction(drift: number, overSeconds = 3, farBefore = false): { seek: true } | { rate: number; far: boolean } {
   const size = Math.abs(drift);
-  if (size > SEEK_AT_S) return { seek: true };
-  if (size > NUDGE_AT_S) return { rate: 1 - Math.max(-MAX_NUDGE, Math.min(MAX_NUDGE, drift / overSeconds)) };
-  return { rate: 1 };
+  const far = size > SEEK_AT_S;
+  if (far && farBefore) return { seek: true };
+  if (size > NUDGE_AT_S) return { rate: 1 - Math.max(-MAX_NUDGE, Math.min(MAX_NUDGE, drift / overSeconds)), far };
+  return { rate: 1, far: false };
+}
+
+/** How long to wait before rejoining the room after the connection closed: 1 s, 2 s, 4 s… up to 30 s. */
+export function rejoinDelay(attempt: number) {
+  return Math.min(30_000, 1000 * 2 ** Math.max(0, attempt));
 }
 
 /**
