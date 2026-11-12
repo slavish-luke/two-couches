@@ -132,7 +132,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
               )}
               {value}
               {(key === "films" || key === "series") && stats.rewatches[key] > 0 && (
-                <span className="mt-1 block font-sans text-sm font-semibold normal-case text-muted">
+                <span className="mt-1 block font-sans text-sm font-semibold normal-case tracking-normal text-muted">
                   {t.diary.stats.including(stats.rewatches[key])}
                 </span>
               )}

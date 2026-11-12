@@ -95,6 +95,8 @@ export function WatchHistory(props: {
   partner: Person | null;
   language: string;
   timeZone: string;
+  /** While "Guess first?" veils your partner's rating of the title, their ratings of each watch stay hidden too. */
+  veiled?: boolean;
 }) {
   const { item, me, partner, language } = props;
   const t = getMessages(language);
@@ -103,14 +105,17 @@ export function WatchHistory(props: {
   const [logging, setLogging] = useState(false);
   const today = localDate(props.timeZone);
   const history = watchHistory(item.watched_on, props.rewatches);
-  const dates = new Intl.ListFormat(language, { type: "unit" }).format(history.map((w) => formatDate(w.date, language)));
+  const dates = history.map((w) => formatDate(w.date, language)).join(", ");
+  // Watched, but without a date for the first time: it still counts, before the rewatches.
+  const undated = item.status === "watched" && !item.watched_on ? 1 : 0;
+  const times = history.length + undated;
 
   return (
     <div data-watch-history className="grid gap-3" aria-busy={pending}>
       <h3 className="text-lg font-bold">{d.heading}</h3>
-      {history.length > 1 && (
+      {times > 1 && (
         <p className="font-medium">
-          <span className="font-bold">{d.times(history.length)}</span> {dates}
+          <span className="font-bold">{d.times(times)}</span> {dates}
         </p>
       )}
       {props.rewatches.length > 0 && (
@@ -120,9 +125,10 @@ export function WatchHistory(props: {
               <RewatchRow
                 key={watch.rewatch.id}
                 rewatch={watch.rewatch}
-                nth={i + 1}
+                nth={i + 1 + undated}
                 me={me}
                 partner={partner}
+                veiled={props.veiled ?? false}
                 today={today}
                 language={language}
                 run={run}
@@ -156,6 +162,7 @@ function RewatchRow(props: {
   nth: number;
   me: Person;
   partner: Person | null;
+  veiled: boolean;
   today: string;
   language: string;
   pending: boolean;
@@ -211,7 +218,15 @@ function RewatchRow(props: {
             t={t}
           />
         </span>
-        {partner && <TheirStars partner={partner} rating={rewatch.ratings[partner.id]} language={language} t={t} />}
+        {partner &&
+          (props.veiled && rewatch.ratings[partner.id] ? (
+            <span className="flex flex-wrap items-center gap-2">
+              <NameTag name={partner.name} who="partner" />
+              <span className="text-sm font-semibold text-muted">{d.veiled}</span>
+            </span>
+          ) : (
+            <TheirStars partner={partner} rating={rewatch.ratings[partner.id]} language={language} t={t} />
+          ))}
       </div>
     </li>
   );

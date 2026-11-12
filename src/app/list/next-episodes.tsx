@@ -47,7 +47,7 @@ async function WatchingSeries() {
 
 /** The scroller: room below for the cards' shadows and hover lift, which it would otherwise clip. */
 const ROW = "-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 pt-2";
-const CARD = "w-[15.5rem] shrink-0 snap-start";
+const CARD = "w-[16.5rem] shrink-0 snap-start";
 
 async function Row(props: {
   series: Awaited<ReturnType<typeof getWatchingSeries>>;

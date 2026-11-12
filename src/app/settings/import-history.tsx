@@ -189,7 +189,7 @@ function Preview({
   return (
     <div data-import-preview className="grid gap-4">
       <div className="grid gap-1">
-        <p className="display-ink text-2xl">{t.ready(items.length)}</p>
+        {items.length > 0 ? <p className="display-ink text-2xl">{t.ready(items.length)}</p> : <p className="font-semibold">{t.nothingNew}</p>}
         {items.length > 0 && (
           <p className="font-semibold">
             {[t.toUpNext(items.length - watched), t.toWatched(watched)].join(" · ")}

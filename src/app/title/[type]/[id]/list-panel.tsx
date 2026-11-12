@@ -165,9 +165,6 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
           />
         </label>
       )}
-      {props.diary && (item.status === "watched" || props.diary.rewatches.length > 0) && (
-        <WatchHistory item={item} rewatches={props.diary.rewatches} me={me} partner={partner} language={language} timeZone={props.timeZone} />
-      )}
 
       {predictions && (predictions.me || predictions.partner) && (
         <Predictions predictions={predictions} partnerName={partner?.name ?? null} language={language} t={t} />
@@ -204,6 +201,17 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
       )}
       {props.diary && titleRef.media_type === "tv" && (
         <SeasonRatingsPanel item={item} seasons={seasons} rated={props.diary.seasons} me={me} partner={partner} language={language} />
+      )}
+      {props.diary && (item.status === "watched" || props.diary.rewatches.length > 0) && (
+        <WatchHistory
+          item={item}
+          rewatches={props.diary.rewatches}
+          me={me}
+          partner={partner}
+          language={language}
+          timeZone={props.timeZone}
+          veiled={partner ? shouldAskGuess(item, partner.id, myGuess) : false}
+        />
       )}
 
       <Categories item={item} all={categories} pending={pending} update={update} t={t} />

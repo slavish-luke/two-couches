@@ -27,7 +27,9 @@ const URLS =/\bhttps?:\/\/\S+/gi;
 function cleanTitle(text: string): { query: string; year: number | null } {
   const withoutLinks = text.replace(URLS, " ");
   const bracketYear = withoutLinks.match(/\((?:[^)]*?\s)?((?:18|19|20)\d{2})\)/);
-  const query = withoutLinks
+  // A title in quotes is the title: 'Watch "Dune: Part Two" on Netflix'.
+  const quoted = withoutLinks.match(/["“«]([^"”»]{2,})["”»]/);
+  const query = (quoted ? quoted[1] : withoutLinks)
     .replace(/\([^)]*\)/g, " ")
     // "… - IMDb", "… | Netflix", "… on Letterboxd": keep what comes first.
     .split(/\s[-–—|•·]\s|\s+on\s+(?:Letterboxd|IMDb|JustWatch|Netflix|TMDB)\b/i)[0]

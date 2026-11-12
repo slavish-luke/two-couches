@@ -2881,3 +2881,22 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
       surprise-fade 0.25s ease-in calc(0.45s + var(--n) * 0.12s) forwards;
   }
 }
+
+/* ==========================================================================================================
+ * Sprint 18: list and diary. Home's next episodes row, the watch history and season ratings on the title
+ * page's list panel, and Settings' import and export. Built from shared pieces (.card, .paper, .chip, the
+ * star buttons), so every skin dresses them already; only motion needs a note.
+ * ======================================================================================================== */
+
+/* A next-episode card lifts on the spring clock when pointed at; with reduced motion it just takes its shadow. */
+@media (prefers-reduced-motion: reduce) {
+  [data-next-episodes] a {
+    transition: none;
+    translate: none;
+  }
+}
+
+/* POW!'s panels sit flat in their gutters, so the next-episode cards don't lift either. */
+[data-skin="comic"] [data-next-episodes] a:hover {
+  translate: none;
+}

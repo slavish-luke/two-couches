@@ -1,5 +1,6 @@
 import "server-only";
 import { batchPages, discoverTitles, getGenres, popularIn, trendingTitles } from "./browse";
+import { getEpisodeGuides } from "./diary";
 import { localDate } from "./list-rules";
 import { isCountry } from "./places";
 import { getPosterDeck } from "./poster-deck";
@@ -90,6 +91,8 @@ export async function warmCaches(profile: Profile, partner: Partner) {
     await Promise.all([
       settleLimited(refs, 4, (ref) => warmTitlePage(ref, { profile, locale })),
       getAvailability(refs, countries),
+      // Home's next episodes row and its list cards' "new episode" chips (Sprint 18).
+      getEpisodeGuides(data.filter((row) => row.status === "watching" && row.media_type === "tv").map((row) => row.tmdb_id)),
     ]);
   };
 

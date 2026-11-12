@@ -16,6 +16,8 @@ const en = {
     remove: "Remove",
     removeConfirm: "Remove this watch?",
     removeYes: "Remove",
+    /** A partner's rating of a watch, while their rating of the title waits for your guess. */
+    veiled: "rated (guess first, above)",
   },
   seasons: {
     heading: "Seasons",
@@ -136,6 +138,7 @@ const tr: typeof en = {
     remove: "Kaldır",
     removeConfirm: "Bu izleme kaldırılsın mı?",
     removeYes: "Kaldır",
+    veiled: "puanladı (önce yukarıda tahmin et)",
   },
   seasons: {
     heading: "Sezonlar",

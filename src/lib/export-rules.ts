@@ -97,7 +97,7 @@ export function exportCsv(kind: CsvKind, data: ExportData, headings: CsvHeadings
           name(i.added_by),
           i.created_at.slice(0, 10),
           i.watched_on,
-          i.watched_on ? 1 + rewatchCount(i.id) : rewatchCount(i.id) || null,
+          i.status === "watched" || i.watched_on ? 1 + rewatchCount(i.id) : rewatchCount(i.id) || null,
           i.season && i.episode ? `S${i.season} E${i.episode}` : null,
           i.categories.join("; "),
           i.notes,

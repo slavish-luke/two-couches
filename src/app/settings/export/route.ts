@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     rewatches,
     seasons,
     nights: nights.data.map((n) => ({
-      starts_at: n.starts_at,
+      starts_at: new Date(n.starts_at).toISOString(),
       media_type: n.media_type,
       tmdb_id: n.tmdb_id,
       title: n.titles ? pickText(n.titles.title_texts, locales, n.titles).title : null,
