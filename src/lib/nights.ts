@@ -51,7 +51,7 @@ type TitleJoin = {
 
 const TITLE_SELECT = "titles(original_title, poster_path, runtime, title_texts(locale, title, poster_path))";
 
-const SELECT = `*, ${TITLE_SELECT}, ready_checks(profile_id, ready_at, file_label, file_seconds), night_prep_items(id, label, done_at, done_by, added_by, created_at), ${COMMENTS_SELECT}, ${PHOTOS_SELECT}`;
+const SELECT = `*, ${TITLE_SELECT}, ready_checks(profile_id, ready_at, file_label, file_seconds, file_name, file_size), night_prep_items(id, label, done_at, done_by, added_by, created_at), ${COMMENTS_SELECT}, ${PHOTOS_SELECT}`;
 
 function toTitle(row: { media_type: string | null; tmdb_id: number | null; titles: TitleJoin }, locales: string[]) {
   return row.titles && row.media_type && row.tmdb_id

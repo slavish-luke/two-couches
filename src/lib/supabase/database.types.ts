@@ -697,14 +697,14 @@ isOneToOne: false
                   ]
                 },"ready_checks": {
                   Row: {
-                    "couple_id": string,"created_at": string,"file_label": string,"file_seconds": number | null,"profile_id": string,"ready_at": string | null,"updated_at": string,"watch_night_id": string
+                    "couple_id": string,"created_at": string,"file_label": string,"file_name": string | null,"file_seconds": number | null,"file_size": number | null,"profile_id": string,"ready_at": string | null,"updated_at": string,"watch_night_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "couple_id": string,"created_at"?: string,"file_label"?: string,"file_seconds"?: number | null,"profile_id": string,"ready_at"?: string | null,"updated_at"?: string,"watch_night_id": string
+                    "couple_id": string,"created_at"?: string,"file_label"?: string,"file_name"?: string | null,"file_seconds"?: number | null,"file_size"?: number | null,"profile_id": string,"ready_at"?: string | null,"updated_at"?: string,"watch_night_id": string
                   }
                   Update: {
-                    "couple_id"?: string,"created_at"?: string,"file_label"?: string,"file_seconds"?: number | null,"profile_id"?: string,"ready_at"?: string | null,"updated_at"?: string,"watch_night_id"?: string
+                    "couple_id"?: string,"created_at"?: string,"file_label"?: string,"file_name"?: string | null,"file_seconds"?: number | null,"file_size"?: number | null,"profile_id"?: string,"ready_at"?: string | null,"updated_at"?: string,"watch_night_id"?: string
                   }
                   Relationships: [
                     {

@@ -3,13 +3,16 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type DragEvent, type ReactNode } from "react";
 import { Couches } from "@/components/couch";
+import { FilePick, VIDEO_TYPES } from "@/components/file-pick";
 import { ChatIcon, CheckIcon, FullscreenIcon, ReactionSticker } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
+import { problemOnLoad, silentWhilePlaying, SOUND_CHECK_AFTER_S, type MediaProblem } from "@/lib/media-check";
 import { dateLocale } from "@/lib/places";
 import { compareLengths, formatLength } from "@/lib/ready-rules";
-import type { Progress } from "@/lib/list-rules";
+import { episodeAfter, type Progress } from "@/lib/list-rules";
 import {
   allowSend,
+  atEnd,
   BUFFERING_AFTER_MS,
   BUFFERING_TTL_MS,
   CHAT_KEPT,
@@ -19,8 +22,10 @@ import {
   compareFiles,
   correction,
   decodeSubtitles,
+  EPISODE_LIMIT,
   formatSize,
   HASH_CHUNK,
+  isLaterEpisode,
   isReaction,
   MAX_FLOATING,
   NO_FILE,
@@ -30,9 +35,11 @@ import {
   partnerBuffering,
   REACTION_LIMIT,
   REACTIONS,
+  readEpisodeEvent,
   readFileInfo,
   rejoinDelay,
   roomTopic,
+  sameEpisode,
   sameFileInfo,
   targetPosition,
   tickUsable,
@@ -40,6 +47,7 @@ import {
   waitAfterAction,
   waitReason,
   waitStep,
+  type EpisodeEvent,
   type FileInfo,
   type Reaction,
   type RoomState,
@@ -47,14 +55,20 @@ import {
   type WaitReason,
 } from "@/lib/room-rules";
 import { createClient } from "@/lib/supabase/client";
+import { finishEpisode } from "./actions";
 import { RoomChat, type ChatMessage } from "./room-chat";
+import { RoomNext } from "./room-next";
 import { RoomOverlay, type Burst } from "./room-overlay";
 import { SubtitleFinder } from "./subtitle-finder";
 
 type Person = { id: string; name: string };
-type Problem = "unplayable" | "noPicture" | "noSound";
+type Problem = MediaProblem;
 /** A short message over the video about something your partner did (or said, while the chat is hidden). */
-type ToastItem = { kind: "played" | "paused" | "joined" | "left" } | { kind: "jumped"; at: number } | { kind: "said"; message: string };
+type ToastItem =
+  | { kind: "played" | "paused" | "joined" | "left" }
+  | { kind: "jumped"; at: number }
+  | { kind: "said"; message: string }
+  | { kind: "movedOn"; episode: Progress | null };
 type Toast = ToastItem & { id: number };
 
 /**
@@ -77,7 +91,6 @@ const SAID_MS = 6000;
 const LEFT_AFTER_MS = 4000;
 /** Reactions coming in faster than this are dropped, whatever the other screen sends. */
 const INCOMING_REACTIONS = { max: 12, windowMs: 3000 };
-const VIDEO_TYPES = "video/*,.mkv,.mp4,.m4v,.webm,.mov";
 const SUBTITLE_TYPES = ".srt,.vtt";
 
 function subscribeFullscreen(onChange: () => void) {
@@ -100,6 +113,7 @@ export function WatchRoom({
   partner,
   language,
   finder,
+  series,
 }: {
   nightId: string;
   me: Person;
@@ -107,6 +121,11 @@ export function WatchRoom({
   language: string;
   /** Finding subtitles online: off until OpenSubtitles is set up; for a series, the episode to start from. */
   finder: { enabled: boolean; episode: Progress | null };
+  /**
+   * A series night whose series is on the list (Sprint 23): the episode up next on the list, played first,
+   * and TMDB's episodes per season, to roll over into the next season. Null for films and anything else.
+   */
+  series: { playing: Progress; seasonEpisodes: number[] | null } | null;
 }) {
   const t = getMessages(language).nights;
   const text = t.room;
@@ -180,6 +199,22 @@ export function WatchRoom({
   const nextId = useRef(0);
   /** Whether the chat is on screen now, for counting unread messages. */
   const chatShown = useRef(true);
+
+  // The next episode (Sprint 23): which one is playing, the offer once it ends, and moving on together.
+  const [episode, setEpisode] = useState<Progress | null>(series?.playing ?? null);
+  const [offer, setOffer] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [nextError, setNextError] = useState<string>();
+  /** Moved on in this visit (the drop-in card then names the episode), or past the last one. */
+  const [movedOn, setMovedOn] = useState(false);
+  const [allDone, setAllDone] = useState(false);
+  const episodeNow = useRef(episode);
+  /** The last move on we made or followed, said again to a partner who (re)joins in case they missed it. */
+  const lastMove = useRef<EpisodeEvent | null>(null);
+  const sentMoves = useRef<number[]>([]);
+  const gotMoves = useRef<number[]>([]);
+  /** The latest `episode` handler, for the channel (which is set up once per join). */
+  const onEpisode = useRef<(payload: unknown) => void>(() => {});
 
   const send = useCallback((event: string, payload: Record<string, unknown>) => {
     // Only over the joined socket: while (re)joining, a message is out of date by the time it would land.
@@ -391,6 +426,7 @@ export function WatchRoom({
     const greet = () => {
       ping();
       pingsLeft = PING_BURST - 1;
+      if (lastMove.current) send("episode", { ...lastMove.current, by: me.id });
       const mine = leader.current === me.id ? stateNow("sync") : null;
       if (mine) send("state", { ...mine, actedAt: lastAction.current });
       else send("hello", {});
@@ -419,6 +455,8 @@ export function WatchRoom({
       ch.on("broadcast", { event: "state" }, ({ payload }) => apply(payload as RoomState));
       // Someone came in, came back or opened their file: tell them where we are. They'll follow us.
       ch.on("broadcast", { event: "hello" }, () => {
+        // Which episode we're on first, in case they missed us moving on (it only ever moves forward).
+        if (lastMove.current) send("episode", { ...lastMove.current, by: me.id });
         const state = stateNow("sync");
         if (!state) return;
         leader.current = me.id;
@@ -450,6 +488,8 @@ export function WatchRoom({
           toast({ kind: "said", message });
         }
       });
+      // The partner moved on to the next episode (Sprint 23).
+      ch.on("broadcast", { event: "episode" }, ({ payload }) => onEpisode.current(payload));
       ch.on("broadcast", { event: "react" }, ({ payload }) => {
         if (!partnerId || payload.by !== partnerId || !isReaction(payload.kind)) return;
         const allowed = allowSend(gotReactions.current, Date.now(), INCOMING_REACTIONS);
@@ -677,6 +717,84 @@ export function WatchRoom({
     else openFile(f);
   }
 
+  /**
+   * On to `next` (null: that was the last episode), on this screen: each of you opens the next file, so the
+   * old one and its subtitles go, and the room starts again from the beginning: nobody in charge, nothing
+   * waited for. Presence follows by itself (no file yet).
+   */
+  function startEpisode(next: Progress | null) {
+    setOffer(false);
+    setMoving(false);
+    setNextError(undefined);
+    if (!next) {
+      setAllDone(true);
+      return;
+    }
+    episodeNow.current = next;
+    setEpisode(next);
+    setMovedOn(true);
+    setFinding(false);
+    release(file?.url);
+    setFile(null);
+    removeSubtitles();
+    setSubtitleError(false);
+    setProblem(null);
+    setSeconds(null);
+    setHash(null);
+    setBlocked(false);
+    audioChecked.current = false;
+    leader.current = null;
+    lastAction.current = 0;
+    far.current = false;
+    quiet.current = {};
+    wait.current = NOT_WAITING;
+    waitWhy.current = null;
+    setWaitView({ reason: null, holding: false });
+    setHeldBy(null);
+    clearTimeout(bufferTimer.current);
+    bufferTimer.current = undefined;
+    if (buffering.current) reportBuffering(false);
+  }
+
+  /** "On to S2 E6": the list moves on (once for both of you), then both screens start the next episode. */
+  async function moveOn() {
+    const watched = episodeNow.current;
+    if (!series || !watched || moving) return;
+    const allowed = allowSend(sentMoves.current, Date.now(), EPISODE_LIMIT);
+    sentMoves.current = allowed.sent;
+    if (!allowed.ok) return;
+    setMoving(true);
+    setNextError(undefined);
+    const result = await finishEpisode(nightId, watched);
+    // The partner moved us on while we waited: we're there already.
+    if (!sameEpisode(episodeNow.current, watched)) return;
+    if ("error" in result) {
+      setMoving(false);
+      setNextError(result.error);
+      return;
+    }
+    const move: EpisodeEvent = { by: me.id, watched: result.progress, next: episodeAfter(result.progress, series.seasonEpisodes) };
+    lastMove.current = move;
+    send("episode", move);
+    startEpisode(move.next);
+  }
+
+  // The partner moved on: follow, if it's further on than where we are (an old or repeated message isn't).
+  useEffect(() => {
+    onEpisode.current = (payload) => {
+      const move = readEpisodeEvent(payload, partnerId);
+      if (!move || !series) return;
+      const allowed = allowSend(gotMoves.current, Date.now(), EPISODE_LIMIT);
+      gotMoves.current = allowed.sent;
+      if (!allowed.ok) return;
+      const now = episodeNow.current;
+      if (move.next ? !isLaterEpisode(move.next, now) : allDone || (now !== null && isLaterEpisode(now, move.watched))) return;
+      lastMove.current = move;
+      toast({ kind: "movedOn", episode: move.next });
+      startEpisode(move.next);
+    };
+  });
+
   /** Your own play, pause or seek: tell your partner, unless it was us following theirs. */
   function onLocal(type: "play" | "pause" | "seeked") {
     const until = quiet.current[type];
@@ -714,22 +832,20 @@ export function WatchRoom({
     const v = video.current;
     if (!v) return;
     if (Number.isFinite(v.duration)) setSeconds(Math.round(v.duration));
-    // Sound with no picture: the browser can't decode this file's video (e.g. HEVC without hardware support).
-    if (v.videoWidth === 0) setProblem("noPicture");
-    // Safari lists the audio tracks it can play.
-    const audio = (v as HTMLVideoElement & { audioTracks?: { length: number } }).audioTracks;
-    if (audio && audio.length === 0) setProblem((p) => p ?? "noSound");
+    // No picture (e.g. HEVC without hardware support), or Safari can play none of the sound tracks.
+    const found = problemOnLoad(v);
+    if (found) setProblem((p) => p ?? found);
     // Ask where your partner is, now that there's something to follow with.
     send("hello", {});
     evaluate();
   }
 
   function onTimeUpdate() {
-    const v = video.current as (HTMLVideoElement & { webkitAudioDecodedByteCount?: number; mozHasAudio?: boolean }) | null;
-    if (!v || audioChecked.current || v.currentTime < 2) return;
+    const v = video.current;
+    if (!v || audioChecked.current || v.currentTime < SOUND_CHECK_AFTER_S) return;
     audioChecked.current = true;
     // Chrome and Edge play a file whose sound they can't decode (AC3, DTS) silently; say so.
-    if (v.webkitAudioDecodedByteCount === 0 || v.mozHasAudio === false) setProblem((p) => p ?? "noSound");
+    if (silentWhilePlaying(v)) setProblem((p) => p ?? "noSound");
   }
 
   /** The player ran out of data: if it stays stuck for a moment, the partner waits for us. */
@@ -810,8 +926,12 @@ export function WatchRoom({
         return text.left(partnerName);
       case "said":
         return text.said(partnerName, item.message);
+      case "movedOn":
+        return item.episode ? text.next.movedOn(partnerName, episodeLabel(item.episode)) : text.next.allDone;
     }
   };
+  const episodeLabel = (e: Progress) => getMessages(language).common.progress(e.season, e.episode);
+  const upNext = series && episode ? episodeAfter(episode, series.seasonEpisodes) : null;
   const waiting =
     file && waitView.holding && waitView.reason
       ? {
@@ -890,12 +1010,19 @@ export function WatchRoom({
                 onError={() => setProblem("unplayable")}
                 onTimeUpdate={onTimeUpdate}
                 onPlay={() => onLocal("play")}
-                onPause={() => onLocal("pause")}
+                onPause={(e) => {
+                  onLocal("pause");
+                  // Stopped at the end (ours, or the partner's file ending first): offer the next episode.
+                  if (series && episode && !allDone && atEnd(e.currentTarget.currentTime, e.currentTarget.duration)) setOffer(true);
+                }}
                 onSeeked={() => onLocal("seeked")}
                 onWaiting={onStuck}
                 onStalled={onStuck}
                 onPlaying={onUnstuck}
                 onCanPlay={onUnstuck}
+                onEnded={() => {
+                  if (series && episode && !allDone) setOffer(true);
+                }}
                 onDoubleClick={(e) => {
                   if (!canFullscreen) return;
                   e.preventDefault();
@@ -922,6 +1049,12 @@ export function WatchRoom({
                 className={`card grid min-h-72 content-center justify-items-center gap-3 p-6 text-center sm:aspect-video ${dragging ? "bg-accent-soft" : ""}`}
               >
                 <Couches size={56} />
+                {movedOn && episode && (
+                  <div data-room-next-up className="grid max-w-[30rem] gap-1">
+                    <p className="display-ink text-2xl">{text.next.heading(episodeLabel(episode))}</p>
+                    <p className="font-bold">{text.next.dropIn}</p>
+                  </div>
+                )}
                 {heldBy && <p className="max-w-[30rem] font-bold">{text.waitingForYou[heldBy.reason](partnerName)}</p>}
                 <p className="max-w-[30rem] font-medium">{text.intro}</p>
                 <FilePick accept={VIDEO_TYPES} onFile={openFile} className="btn">
@@ -939,6 +1072,21 @@ export function WatchRoom({
               waiting={waiting}
             />
           </div>
+
+          {file && offer && series && episode && (
+            <RoomNext
+              language={language}
+              ended={episodeLabel(episode)}
+              next={upNext && episodeLabel(upNext)}
+              moving={moving}
+              error={nextError}
+              onMoveOn={() => void moveOn()}
+              onClose={() => {
+                setOffer(false);
+                setNextError(undefined);
+              }}
+            />
+          )}
 
           {file && (
             <div data-room-bar className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -1016,6 +1164,11 @@ export function WatchRoom({
               <FilePick accept={VIDEO_TYPES} onFile={openFile} className="btn-quiet">
                 {text.change}
               </FilePick>
+              {series && episode && !allDone && !offer && (
+                <button type="button" onClick={() => setOffer(true)} className="btn-quiet">
+                  {text.next.open}
+                </button>
+              )}
               {finder.enabled && (
                 <button type="button" onClick={() => setFinding((open) => !open)} aria-expanded={finding} className="btn-quiet">
                   {text.find.open}
@@ -1039,11 +1192,13 @@ export function WatchRoom({
             )}
             {finder.enabled && finding && (
               <SubtitleFinder
+                // A new episode searches afresh, for that episode.
+                key={episode ? episodeLabel(episode) : "film"}
                 nightId={nightId}
                 language={language}
                 hash={hash}
                 query={file.name.replace(/\.[^.]+$/, "").replace(/[._]+/g, " ")}
-                episode={finder.episode}
+                episode={episode ?? finder.episode}
                 onLoad={(vtt, label) => {
                   showSubtitles(vtt, label);
                   setFinding(false);
@@ -1061,6 +1216,11 @@ export function WatchRoom({
             <h2 className="text-base font-bold">{text.people}</h2>
             {status === "connecting" && <span className="font-semibold text-muted">{text.connecting}</span>}
           </div>
+          {series && episode && (
+            <p data-room-episode className="font-semibold">
+              {allDone ? text.next.allDone : text.next.playing(episodeLabel(episode))}
+            </p>
+          )}
           <ul className="grid gap-2">
             <PersonRow person={me} fill="bg-me" here file={mine} language={language} />
             {partner && <PersonRow person={partner} fill="bg-partner" here={theirs !== null} file={theirs ?? NO_FILE} language={language} />}
@@ -1119,25 +1279,5 @@ function PersonRow(props: { person: Person; fill: string; here: boolean; file: F
         </span>
       )}
     </li>
-  );
-}
-
-/** A button-styled label around a hidden file input. Picking a file never uploads it. */
-function FilePick(props: { accept: string; onFile: (file: File) => void; className: string; children: ReactNode }) {
-  return (
-    <label className={`${props.className} cursor-pointer has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-outline`}>
-      <input
-        type="file"
-        accept={props.accept}
-        className="sr-only"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) props.onFile(f);
-          // Picking the same file again should still count.
-          e.target.value = "";
-        }}
-      />
-      {props.children}
-    </label>
   );
 }

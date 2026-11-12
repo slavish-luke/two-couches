@@ -1,19 +1,26 @@
 "use client";
 
-import { useState, useTransition, type CSSProperties, type ReactNode } from "react";
+import { useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
 import { Couches } from "@/components/couch";
+import { FilePick, VIDEO_TYPES } from "@/components/file-pick";
 import { CheckIcon } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
+import { probeFile, type MediaProblem } from "@/lib/media-check";
 import type { NightMethod } from "@/lib/night-rules";
+import { dateLocale } from "@/lib/places";
 import {
   bothReady,
+  cleanFileName,
   compareLengths,
   formatLength,
+  labelFromFileName,
+  lengthForInput,
   MAX_FILE_LABEL_LENGTH,
   usesOwnFiles,
   type ReadyCheck as Check,
 } from "@/lib/ready-rules";
-import { saveFile, setReady, type NightResult } from "./actions";
+import { compareFiles, formatSize } from "@/lib/room-rules";
+import { saveFile, setReady, type FileInput, type NightResult } from "./actions";
 
 type Person = { id: string; name: string };
 
@@ -42,6 +49,15 @@ export function ReadyCheck(props: {
   const files = usesOwnFiles(props.method);
   const both = bothReady(checks, me.id, partner?.id ?? null);
   const lengths = files ? compareLengths(mine?.file_seconds ?? null, theirs?.file_seconds ?? null) : null;
+  // Chosen files (Sprint 23) also compare by name and size, as in the watch room.
+  const sameFile =
+    files && mine && theirs
+      ? compareFiles(
+          { seconds: mine.file_seconds, name: mine.file_name, size: mine.file_size },
+          { seconds: theirs.file_seconds, name: theirs.file_name, size: theirs.file_size },
+        )
+      : null;
+  const room = getMessages(language).nights.room;
 
   function run(action: () => Promise<NightResult>, after?: () => void) {
     setError(undefined);
@@ -126,11 +142,18 @@ export function ReadyCheck(props: {
         ) : (
           <p className="font-semibold text-danger">{t.lengthsDiffer(formatLength(lengths.difference))}</p>
         ))}
+      {sameFile === "same" && <p className="font-semibold">{room.file.same}</p>}
+      {sameFile === "differentName" && <p className="font-semibold">{room.file.differentName}</p>}
+      {sameFile === "differentSize" && (
+        <p className="font-semibold text-danger">
+          {room.file.differentSize(formatSize(mine!.file_size!, dateLocale(language)), formatSize(theirs!.file_size!, dateLocale(language)))}
+        </p>
+      )}
 
       {editing && (
         <FileForm
           // Start from what's saved, including a change that arrived from another screen.
-          key={`${mine?.file_label}:${mine?.file_seconds}`}
+          key={`${mine?.file_label}:${mine?.file_seconds}:${mine?.file_name}:${mine?.file_size}`}
           check={mine}
           runtime={props.runtime}
           pending={pending}
@@ -165,6 +188,9 @@ function Row(props: {
   const { check } = props;
   const t = getMessages(props.language).nights.ready;
   const file = [check?.file_label, check?.file_seconds ? formatLength(check.file_seconds) : null].filter(Boolean).join(" · ");
+  const chosen = check?.file_name
+    ? [check.file_name, check.file_size ? formatSize(check.file_size, dateLocale(props.language)) : null].filter(Boolean).join(" · ")
+    : null;
   return (
     <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
       <span
@@ -181,31 +207,106 @@ function Row(props: {
         <span className="font-semibold text-muted">{t.notYet}</span>
       )}
       {props.files && <span className="text-muted [overflow-wrap:anywhere]">{file || t.noFile}</span>}
+      {props.files && chosen && (
+        <span className="w-full truncate text-muted" title={chosen}>
+          {chosen}
+        </span>
+      )}
       {props.children}
     </li>
   );
 }
 
-/** Your file's version and length. */
+/** The file you chose, as read in this browser: its name and size, and anything that stops it playing here. */
+type Chosen = { name: string | null; size: number | null; problem: MediaProblem | null; checked: boolean };
+
+/**
+ * Your file's version and length: typed, or read from the file itself ("Choose your file": its length,
+ * name and size, and whether this browser can play it, all worked out on this device).
+ */
 function FileForm(props: {
   check: Check | undefined;
   runtime: number | null;
   pending: boolean;
   language: string;
   onCancel: () => void;
-  onSave: (input: { label: string; length: string }) => void;
+  onSave: (input: FileInput) => void;
 }) {
-  const t = getMessages(props.language).nights.ready;
+  const messages = getMessages(props.language).nights;
+  const t = messages.ready;
   const [label, setLabel] = useState(props.check?.file_label ?? "");
-  const [length, setLength] = useState(props.check?.file_seconds ? formatLength(props.check.file_seconds) : "");
+  const [length, setLength] = useState(props.check?.file_seconds ? lengthForInput(props.check.file_seconds) : "");
+  const [chosen, setChosen] = useState<Chosen | null>(
+    props.check?.file_name || props.check?.file_size
+      ? { name: props.check.file_name, size: props.check.file_size, problem: null, checked: false }
+      : null,
+  );
+  /** The label last filled in from a file's name: replaced by the next file's, unless you've changed it. */
+  const [autoLabel, setAutoLabel] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const [noLength, setNoLength] = useState(false);
+  /** Which file is being read, so a slow one picked first can't overwrite a quicker second pick. */
+  const reads = useRef(0);
+
+  async function read(file: File) {
+    const id = (reads.current += 1);
+    setReading(true);
+    setNoLength(false);
+    const result = await probeFile(file);
+    if (id !== reads.current) return;
+    setReading(false);
+    setChosen({ name: cleanFileName(file.name), size: file.size, problem: result.problem, checked: true });
+    if (result.seconds) setLength(lengthForInput(result.seconds));
+    else setNoLength(true);
+    // Start the version from the file's name, unless you've written one of your own.
+    const fromName = labelFromFileName(file.name);
+    if (!label.trim() || label === autoLabel) {
+      setLabel(fromName);
+      setAutoLabel(fromName);
+    }
+  }
+
   return (
     <form
       className="grid gap-3 border-t-2 border-outline/15 pt-3"
       onSubmit={(e) => {
         e.preventDefault();
-        props.onSave({ label, length });
+        props.onSave({ label, length, name: chosen?.name ?? null, size: chosen?.size ?? null });
       }}
     >
+      <div data-file-read className="grid justify-items-start gap-1.5">
+        <FilePick accept={VIDEO_TYPES} onFile={(f) => void read(f)} disabled={reading || props.pending} className="btn-quiet">
+          {reading ? t.reading : t.chooseFile}
+        </FilePick>
+        <p className="text-muted">{t.chooseNote}</p>
+        {chosen && (chosen.name || chosen.size) && (
+          <p className="flex max-w-full flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="min-w-0 max-w-full truncate font-semibold" title={chosen.name ?? undefined}>
+              {[chosen.name, chosen.size ? formatSize(chosen.size, dateLocale(props.language)) : null].filter(Boolean).join(" · ")}
+            </span>
+            <button type="button" onClick={() => setChosen(null)} className="tap-area text-sm font-bold underline underline-offset-4">
+              {t.forgetFile}
+            </button>
+          </p>
+        )}
+        {chosen?.checked &&
+          (chosen.problem ? (
+            <p role="alert" className="font-semibold text-danger">
+              {messages.room.problems[chosen.problem]}
+            </p>
+          ) : (
+            <p className="flex items-start gap-2 font-semibold">
+              <span
+                aria-hidden
+                className="mt-px grid size-5 shrink-0 place-items-center rounded-full border-2 border-outline bg-accent text-on-accent"
+              >
+                <CheckIcon className="size-3 [stroke-width:3.5]" />
+              </span>
+              {t.playsHere}
+            </p>
+          ))}
+        {noLength && <p className="font-semibold">{t.noLength}</p>}
+      </div>
       <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
         <label className="grid gap-1">
           <span className="text-sm font-semibold">{t.fileLabel}</span>
@@ -232,7 +333,7 @@ function FileForm(props: {
         {props.runtime ? ` ${t.runtime(props.runtime)}` : ""}
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn px-3.5 pb-1.5 pt-2 text-base" disabled={props.pending}>
+        <button className="btn px-3.5 pb-1.5 pt-2 text-base" disabled={props.pending || reading}>
           {props.pending ? t.saving : t.save}
         </button>
         <button type="button" onClick={props.onCancel} className="tap-area text-sm font-bold underline underline-offset-4">

@@ -3068,3 +3068,29 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     animation: reaction-still 1.6s forwards;
   }
 }
+
+/*
+ * Sprint 23: title page and the room. Critic score tiles sit a little askew like stickers (straight in the
+ * skins whose panels never tip), and the watch room's next-episode card pops in when an episode ends.
+ */
+[data-critic-scores] li:nth-child(odd) > * {
+  rotate: -1.5deg;
+}
+[data-critic-scores] li:nth-child(even) > * {
+  rotate: 1deg;
+}
+:is([data-skin="comic"], [data-skin="candy"]) [data-critic-scores] li > * {
+  rotate: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-room-next] {
+    animation: room-next-in 0.5s var(--ease-spring);
+  }
+}
+@keyframes room-next-in {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+    scale: 0.96;
+  }
+}

@@ -1,3 +1,5 @@
+import { isProgress, type Progress } from "./list-rules";
+
 /**
  * Watch room rules: keeping two copies of the same file in step over Realtime. Pure functions, safe in
  * server and client code. The files never leave each person's device; only play, pause and positions are
@@ -270,4 +272,62 @@ export function formatSize(bytes: number, locale: string) {
   if (gb >= 1) return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(gb)} GB`;
   const mb = bytes / 1024 ** 2;
   return `${new Intl.NumberFormat(locale, { maximumFractionDigits: mb < 10 ? 1 : 0 }).format(mb)} MB`;
+}
+
+/*
+ * The next episode (Sprint 23): on a series night, when an episode ends, either of you moves the list's
+ * progress on (once for the couple: the list keeps it) and both screens start the next episode from the
+ * beginning, each of you dropping in your own file. Only that change travels over the room's channel.
+ */
+
+/** An episode as it travels over the channel, checked: whole numbers from 1. */
+export function readEpisode(value: unknown): Progress | null {
+  return isProgress(value) && value.season <= 9999 && value.episode <= 99999 ? { season: value.season, episode: value.episode } : null;
+}
+
+export function sameEpisode(a: Progress | null, b: Progress | null) {
+  return a === b || (!!a && !!b && a.season === b.season && a.episode === b.episode);
+}
+
+/** Whether `a` comes after `b` in a series. Anything comes after null (nothing watched yet). */
+export function isLaterEpisode(a: Progress, b: Progress | null) {
+  return !b || a.season > b.season || (a.season === b.season && a.episode > b.episode);
+}
+
+/**
+ * What the list's progress becomes when `watched` has just ended: `watched`, unless the list is already at
+ * it or past it (your partner moved it on first, or it was saved elsewhere), when it stays where it is.
+ * Moving on twice for one ending is how an episode would get skipped, so this never moves backwards or
+ * twice.
+ */
+export function progressAfterWatching(current: Progress | null, watched: Progress): Progress {
+  return isLaterEpisode(watched, current) ? watched : current!;
+}
+
+/** One of you moved on: the episode just watched, and the one to play now (null after the last episode). */
+export type EpisodeEvent = { by: string; watched: Progress; next: Progress | null };
+
+/** The partner's `episode` event, checked: from them, well formed, and moving forward. Null otherwise. */
+export function readEpisodeEvent(payload: unknown, partnerId: string | null): EpisodeEvent | null {
+  const p = (payload ?? {}) as Record<string, unknown>;
+  if (!partnerId || p.by !== partnerId) return null;
+  const watched = readEpisode(p.watched);
+  const next = p.next === null ? null : readEpisode(p.next);
+  if (!watched || (p.next !== null && !next) || (next && !isLaterEpisode(next, watched))) return null;
+  return { by: partnerId, watched, next };
+}
+
+/** Moving on is one tap per episode: a few at most in a while, so a stuck button can't skip a season. */
+export const EPISODE_LIMIT = { max: 3, windowMs: 10_000, gapMs: 1000 };
+
+
+/**
+ * Within this many seconds of the end counts as the end. Whoever's file ends first pauses, and the other
+ * screen follows that pause a moment before its own file ends, so it never sees `ended`.
+ */
+export const NEAR_END_S = 2;
+
+/** Whether a stopped player is at (or within NEAR_END_S of) the end of its file: time for the next episode. */
+export function atEnd(position: number, duration: number) {
+  return Number.isFinite(duration) && duration > 0 && duration - position <= NEAR_END_S;
 }

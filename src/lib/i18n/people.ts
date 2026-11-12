@@ -1,0 +1,126 @@
+/** Sprint 23: cast and crew on the title page, a page per person, and critic scores from OMDb. */
+import type { Department } from "../people-rules";
+
+const en = {
+  cast: {
+    heading: "Cast and crew",
+    directedBy: (count: number): string => (count === 1 ? "Director" : "Directors"),
+    createdBy: (count: number): string => (count === 1 ? "Creator" : "Creators"),
+    none: "TMDB doesn't list the cast yet.",
+    failed: "Couldn't load the cast from TMDB.",
+    /** A cast member's part, under their name. */
+    as: (character: string) => `as ${character}`,
+    open: (name: string) => `${name}: films and series`,
+  },
+  person: {
+    knownFor: {
+      Acting: "Actor",
+      Directing: "Director",
+      Writing: "Writer",
+      Production: "Producer",
+      Camera: "Cinematographer",
+      Editing: "Editor",
+      Sound: "Composer",
+      Creator: "Creator",
+      Crew: "Crew",
+    } satisfies Record<Department | "Acting", string>,
+    born: (date: string) => `Born ${date}`,
+    bornIn: (date: string, place: string) => `Born ${date} in ${place}`,
+    bornPlace: (place: string) => `Born in ${place}`,
+    died: (date: string) => `Died ${date}`,
+    inEnglish: "TMDB has no biography in your language yet, so here it is in English.",
+    noBiography: "TMDB has no biography for them yet.",
+    readMore: "Read more",
+    readLess: "Show less",
+    titles: "Films and series",
+    titlesNote: "Best known first, with who of you can watch each.",
+    noTitles: "TMDB lists no films or series for them.",
+    /** What they did on a title: departments for crew. */
+    did: {
+      Directing: "Director",
+      Writing: "Writer",
+      Production: "Producer",
+      Camera: "Cinematography",
+      Editing: "Editor",
+      Sound: "Music",
+      Creator: "Creator",
+      Crew: "Crew",
+    } satisfies Record<Department, string>,
+    photo: (name: string) => `Photo of ${name}`,
+    failed: "Couldn't load this person from TMDB. Try again in a moment.",
+    back: "Back",
+  },
+  scores: {
+    label: "Critic scores",
+    imdb: "IMDb",
+    rottenTomatoes: "Rotten Tomatoes",
+    metacritic: "Metacritic",
+    votes: (count: string) => `${count} votes`,
+    /** Read out in full: "IMDb 8.8 out of 10". */
+    outOf: (value: string, max: number) => `${value} out of ${max}`,
+    credit: "Scores from OMDb",
+    openImdb: "Open on IMDb",
+  },
+};
+
+const tr: typeof en = {
+  cast: {
+    heading: "Oyuncular ve ekip",
+    directedBy: (count: number) => (count === 1 ? "Yönetmen" : "Yönetmenler"),
+    createdBy: (count: number) => (count === 1 ? "Yaratıcı" : "Yaratıcılar"),
+    none: "TMDB'de henüz oyuncu listesi yok.",
+    failed: "Oyuncular TMDB'den yüklenemedi.",
+    as: (character: string) => `Rolü: ${character}`,
+    open: (name: string) => `${name}: filmleri ve dizileri`,
+  },
+  person: {
+    knownFor: {
+      Acting: "Oyuncu",
+      Directing: "Yönetmen",
+      Writing: "Senarist",
+      Production: "Yapımcı",
+      Camera: "Görüntü yönetmeni",
+      Editing: "Kurgucu",
+      Sound: "Besteci",
+      Creator: "Yaratıcı",
+      Crew: "Ekip",
+    },
+    born: (date: string) => `Doğum: ${date}`,
+    bornIn: (date: string, place: string) => `Doğum: ${date}, ${place}`,
+    bornPlace: (place: string) => `Doğum yeri: ${place}`,
+    died: (date: string) => `Ölüm: ${date}`,
+    inEnglish: "TMDB'de henüz Türkçe biyografi yok, bu yüzden İngilizcesi gösteriliyor.",
+    noBiography: "TMDB'de henüz biyografisi yok.",
+    readMore: "Devamını oku",
+    readLess: "Daha az göster",
+    titles: "Filmler ve diziler",
+    titlesNote: "En bilinenler önce; her birinde hanginizin izleyebileceği yazıyor.",
+    noTitles: "TMDB'de film ya da dizisi görünmüyor.",
+    did: {
+      Directing: "Yönetmen",
+      Writing: "Senarist",
+      Production: "Yapımcı",
+      Camera: "Görüntü yönetimi",
+      Editing: "Kurgu",
+      Sound: "Müzik",
+      Creator: "Yaratıcı",
+      Crew: "Ekip",
+    },
+    photo: (name: string) => `Fotoğraf: ${name}`,
+    failed: "Bu kişi TMDB'den yüklenemedi. Birazdan tekrar dene.",
+    back: "Geri",
+  },
+  scores: {
+    label: "Eleştirmen puanları",
+    imdb: "IMDb",
+    rottenTomatoes: "Rotten Tomatoes",
+    metacritic: "Metacritic",
+    votes: (count: string) => `${count} oy`,
+    outOf: (value: string, max: number) => `${max} üzerinden ${value}`,
+    credit: "Puanlar OMDb'den",
+    openImdb: "IMDb'de aç",
+  },
+};
+
+const messages = { en, tr };
+export default messages;

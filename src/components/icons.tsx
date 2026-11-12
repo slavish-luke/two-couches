@@ -269,3 +269,23 @@ export function WarningIcon({ className }: { className?: string }) {
     </Glyph>
   );
 }
+
+/** Sprint 23: play, then a bar: on to the next episode in the watch room. */
+export function NextEpisodeIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M5 5.5v13l10-6.5z" fill="currentColor" />
+      <path d="M19 5.5v13" />
+    </Glyph>
+  );
+}
+
+/** Sprint 23: a head and shoulders, for a person on TMDB without a photo. */
+export function PersonIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <circle cx="12" cy="8.5" r="4" />
+      <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
+    </Glyph>
+  );
+}

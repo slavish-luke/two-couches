@@ -21,7 +21,7 @@ import {
 } from "@/lib/night-rules";
 import { notifyPartner, type NightChange } from "@/lib/nights";
 import { cleanPrepLabel, MAX_PREP_ITEMS, MAX_PREP_LABEL_LENGTH, MAX_PROPOSAL_TIMES, MIN_PROPOSAL_TIMES } from "@/lib/planning-rules";
-import { cleanFileLabel, MAX_FILE_LABEL_LENGTH, parseLength } from "@/lib/ready-rules";
+import { cleanFileLabel, cleanFileName, cleanFileSize, MAX_FILE_LABEL_LENGTH, parseLength } from "@/lib/ready-rules";
 import { requireCoupleProfile } from "@/lib/session";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -193,7 +193,10 @@ export async function cancelWatchNight(id: string): Promise<NightResult> {
   redirect("/watch-nights");
 }
 
-type CheckFields = Pick<Database["public"]["Tables"]["ready_checks"]["Update"], "ready_at" | "file_label" | "file_seconds">;
+type CheckFields = Pick<
+  Database["public"]["Tables"]["ready_checks"]["Update"],
+  "ready_at" | "file_label" | "file_seconds" | "file_name" | "file_size"
+>;
 
 /**
  * Loads one of the couple's nights that isn't over yet, with who's ready, then saves your own check.
@@ -246,9 +249,18 @@ export async function setReady(nightId: string, ready: boolean): Promise<NightRe
   return {};
 }
 
-export type FileInput = { label: string; length: string };
+export type FileInput = {
+  label: string;
+  length: string;
+  /** The chosen file's name and size, read in the browser (Sprint 23); null when typed by hand. */
+  name?: string | null;
+  size?: number | null;
+};
 
-/** Saves which version of the file you have and how long it is, so you can both check they match. */
+/**
+ * Saves which version of the file you have and how long it is, so you can both check they match, with the
+ * file's name and size when you chose it (only these details: the file itself never leaves your device).
+ */
 export async function saveFile(nightId: string, input: FileInput): Promise<NightResult> {
   const profile = await requireCoupleProfile();
   const { t } = await getI18n();
@@ -258,7 +270,11 @@ export async function saveFile(nightId: string, input: FileInput): Promise<Night
   const seconds = parseLength(input.length);
   if (seconds === undefined) return { error: errors.badLength };
 
-  const result = await saveCheck(nightId, { file_label: label, file_seconds: seconds }, profile);
+  // A name that can't be kept (all link-like) is left out; the size still compares.
+  const name = cleanFileName(input.name);
+  const size = cleanFileSize(input.size);
+
+  const result = await saveCheck(nightId, { file_label: label, file_seconds: seconds, file_name: name, file_size: size }, profile);
   if (!result.night) return result;
   refresh();
   return {};

@@ -1,7 +1,12 @@
 import { NBSP, SkelButton, SkelParagraph, SkelPoster, Skeleton, SkelText } from "@/components/skeleton";
+import { CAST_CARD, CAST_ROW } from "./cast";
+import { SCORE_TILE } from "./critic-scores";
 
-/** The title page while it loads: the poster (the deck's top card), the title column and where to watch. */
-export function TitleSkeleton() {
+/**
+ * The title page while it loads: the poster (the deck's top card), the title column (with critic scores
+ * when OMDb is set up: `scores`), where to watch and the cast.
+ */
+export function TitleSkeleton({ scores = false }: { scores?: boolean }) {
   return (
     <Skeleton className="grid gap-12">
       <div className="grid gap-x-9 gap-y-6 sm:grid-cols-[auto_minmax(0,1fr)]">
@@ -26,9 +31,11 @@ export function TitleSkeleton() {
             <SkelButton width="11rem" />
             <SkelButton quiet width="7.5rem" icon="size-4" />
           </div>
+          {scores && <ScoresSkeleton />}
         </div>
       </div>
       <WhereToWatchSkeleton />
+      <CastSkeleton />
       <GuidanceSkeleton />
     </Skeleton>
   );
@@ -100,6 +107,43 @@ export function WhereToWatchSkeleton() {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+/** Critic scores (Sprint 23) while OMDb answers: three score tiles and the credit under them. */
+export function ScoresSkeleton() {
+  return (
+    <div aria-busy className="grid justify-items-start gap-1.5">
+      <span aria-hidden className="flex flex-wrap gap-2.5">
+        {["9.5rem", "9rem", "8rem"].map((width) => (
+          <span key={width} className={SCORE_TILE} style={{ width }}>
+            <span className="display-ink text-xl leading-none">{NBSP}</span>
+          </span>
+        ))}
+      </span>
+      <SkelText className="text-sm" width="7.5rem" />
+    </div>
+  );
+}
+
+/** Cast and crew (Sprint 23) while TMDB answers: the heading, who made it, and a row of cast cards. */
+export function CastSkeleton() {
+  return (
+    <section aria-busy className="grid gap-3">
+      <SkelText bar="lettering" className="display text-[2rem]" width="14rem" />
+      <SkelText className="text-lg" width="16rem" />
+      <ul aria-hidden className={`${CAST_ROW} overflow-hidden`}>
+        {Array.from({ length: 6 }, (_, i) => (
+          <li key={i} data-title-card className={`${CAST_CARD} grid content-start justify-items-start gap-1`}>
+            <span className="mb-1.5 block w-full">
+              <SkelPoster size="fluid" className="shadow-[4px_4px_0_var(--outline)]" />
+            </span>
+            <SkelText className="font-bold leading-snug" width="85%" />
+            <SkelText className="text-sm" width="70%" />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

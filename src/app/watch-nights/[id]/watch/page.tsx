@@ -50,6 +50,8 @@ async function Room({ params }: Pick<PageProps<"/watch-nights/[id]/watch">, "par
 
   // A series night looks for subtitles for the next episode on your list (season 1, episode 1 if none).
   let episode: Progress | null = null;
+  // On the list, the room also offers the next episode when one ends (Sprint 23), from the one up next.
+  let series: { playing: Progress; seasonEpisodes: number[] | null } | null = null;
   if (night.title?.media_type === "tv") {
     const supabase = await createClient();
     const [item, counts] = await Promise.all([
@@ -57,7 +59,10 @@ async function Room({ params }: Pick<PageProps<"/watch-nights/[id]/watch">, "par
       supabase.from("titles").select("season_episodes").eq("media_type", "tv").eq("tmdb_id", night.title.tmdb_id).maybeSingle(),
     ]);
     const progress = item?.season && item.episode ? { season: item.season, episode: item.episode } : null;
-    episode = episodeAfter(progress, counts.data?.season_episodes ?? null) ?? progress ?? { season: 1, episode: 1 };
+    const seasonEpisodes = counts.data?.season_episodes ?? null;
+    const upNext = episodeAfter(progress, seasonEpisodes);
+    episode = upNext ?? progress ?? { season: 1, episode: 1 };
+    if (item && upNext) series = { playing: upNext, seasonEpisodes };
   }
 
   return (
@@ -79,6 +84,7 @@ async function Room({ params }: Pick<PageProps<"/watch-nights/[id]/watch">, "par
         partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
         language={language}
         finder={{ enabled: subtitlesConfigured(), episode }}
+        series={series}
       />
     </div>
   );

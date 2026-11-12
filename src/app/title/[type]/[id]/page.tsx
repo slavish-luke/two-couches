@@ -36,16 +36,19 @@ import {
   type TitleRef,
   type Watcher,
 } from "@/lib/watch";
+import { omdbConfigured } from "@/lib/omdb";
+import { Cast } from "./cast";
+import { CriticScores } from "./critic-scores";
 import { ContentGuidance } from "./guidance";
 import { TitleTogether } from "@/app/together/title-together";
 import { ListPanel } from "./list-panel";
-import { GuidanceSkeleton, TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
+import { CastSkeleton, GuidanceSkeleton, ScoresSkeleton, TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("title");
 
 export default function TitlePage({ params }: PageProps<"/title/[type]/[id]">) {
   return (
-    <Suspense fallback={<TitleSkeleton />}>
+    <Suspense fallback={<TitleSkeleton scores={omdbConfigured()} />}>
       <TitleView params={params} />
     </Suspense>
   );
@@ -130,11 +133,22 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
               )}
             </div>
           )}
+          {/* Sprint 23: IMDb, Rotten Tomatoes and Metacritic from OMDb, when it's set up and has them. */}
+          {omdbConfigured() && (
+            <Suspense fallback={<ScoresSkeleton />}>
+              <CriticScores titleRef={ref} />
+            </Suspense>
+          )}
         </div>
       </div>
 
       <Suspense fallback={<WhereToWatchSkeleton />}>
         <WhereToWatch titleRef={ref} />
+      </Suspense>
+
+      {/* Sprint 23: who made it and the main cast, each with a page of their own. */}
+      <Suspense fallback={<CastSkeleton />}>
+        <Cast titleRef={ref} locale={tmdbLocale(profile.language, profile.home_country)} />
       </Suspense>
 
       {/* Sprint 19: age ratings, "Heads up" topics and DoesTheDogDie. */}

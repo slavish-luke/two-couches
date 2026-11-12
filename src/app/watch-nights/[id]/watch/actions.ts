@@ -1,8 +1,12 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { getI18n } from "@/lib/i18n/server";
+import { getListItem } from "@/lib/list";
+import type { Progress } from "@/lib/list-rules";
 import { getSubtitleFile, searchSubtitles, subtitlesConfigured, type SubtitleOption } from "@/lib/opensubtitles";
 import { isLanguage } from "@/lib/places";
+import { progressAfterWatching, readEpisode, sameEpisode } from "@/lib/room-rules";
 import { requireCoupleProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type { MediaType } from "@/lib/watch";
@@ -81,5 +85,51 @@ export async function loadSubtitles(nightId: string, input: { fileId: number; la
   } catch (error) {
     console.error("Subtitle download failed", error);
     return { error: errors.downloadFailed };
+  }
+}
+
+export type EpisodeResult = { progress: Progress } | { error: string };
+
+/**
+ * A series night's episode `watched` has just ended: the list's progress moves on to it, once for the
+ * couple (progressAfterWatching(): never backwards, and a second tap for the same ending changes nothing),
+ * and a title still under Up next counts as being watched. Returns the progress the list has now, from
+ * which both screens work out the next episode.
+ */
+export async function finishEpisode(nightId: string, watched: Progress): Promise<EpisodeResult> {
+  const { t } = await getI18n();
+  const errors = t.nights.room.next.errors;
+  const [night, profile] = await Promise.all([nightFor(nightId), requireCoupleProfile()]);
+  const episode = readEpisode(watched);
+  if (!night || night.media_type !== "tv" || !night.tmdb_id || !episode) return { error: errors.saveFailed };
+
+  const ref = { media_type: "tv" as const, tmdb_id: night.tmdb_id };
+  const progressOf = (item: { season: number | null; episode: number | null }) =>
+    item.season && item.episode ? { season: item.season, episode: item.episode } : null;
+  try {
+    const item = await getListItem(profile.couple_id, ref);
+    if (!item) return { error: errors.notOnList };
+    const current = progressOf(item);
+    const progress = progressAfterWatching(current, episode);
+    if (sameEpisode(progress, current)) return { progress };
+
+    // Only from the progress just read: if your partner moved it on in between, theirs stands.
+    const supabase = await createClient();
+    const update = supabase
+      .from("list_items")
+      .update({ season: progress.season, episode: progress.episode, ...(item.status === "want" && { status: "watching" }) })
+      .eq("id", item.id);
+    const { data, error } = await (current
+      ? update.eq("season", current.season).eq("episode", current.episode)
+      : update.is("season", null).is("episode", null)
+    ).select("id");
+    if (error) throw error;
+    refresh();
+    if (data.length) return { progress };
+    const now = await getListItem(profile.couple_id, ref);
+    return { progress: (now && progressOf(now)) ?? progress };
+  } catch (error) {
+    console.error("Moving the list on to the next episode failed", error);
+    return { error: errors.saveFailed };
   }
 }

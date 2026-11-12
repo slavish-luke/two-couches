@@ -22,7 +22,8 @@ export type CardContext = {
  * A poster card for browse-style grids and rows: an outlined poster with who-can-watch on a tab over its
  * top edge (PosterTab), title, year (or `details` instead) and "+ Add". `children` go last, for extra
  * actions. `index` staggers the tabs dropping in along a row or grid. `eager` loads the poster straight
- * away, for the first cards a page opens on (its largest paint).
+ * away, for the first cards a page opens on (its largest paint). `morph` names the poster for the morph into
+ * the title page (posterMorph(); unique on the page).
  */
 export function TitleCard({
   result,
@@ -31,6 +32,7 @@ export function TitleCard({
   details,
   index = 0,
   eager = false,
+  morph,
   children,
 }: {
   result: Pick<SearchResult, "media_type" | "tmdb_id" | "title" | "poster_path" | "release_date">;
@@ -39,6 +41,7 @@ export function TitleCard({
   details?: ReactNode;
   index?: number;
   eager?: boolean;
+  morph?: string;
   children?: ReactNode;
 }) {
   const href = titleHref(result);
@@ -53,6 +56,7 @@ export function TitleCard({
             size="fluid"
             language={context.language}
             eager={eager}
+            morph={morph}
             className="shadow-[4px_4px_0_var(--outline)]"
           />
         </Link>

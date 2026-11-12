@@ -3,6 +3,8 @@ import { batchPages, discoverTitles, getGenres, popularIn, trendingTitles } from
 import { getEpisodeGuides } from "./diary";
 import { getAgeRatings, getTitleKeywords } from "./guidance";
 import { localDate } from "./list-rules";
+import { getCriticScores } from "./omdb";
+import { getCredits } from "./people";
 import { isCountry } from "./places";
 import { getPosterDeck } from "./poster-deck";
 import { FOR_YOU_CHECKED, getForYou } from "./recommend";
@@ -20,8 +22,9 @@ const UP_NEXT_WARMED = 30;
 
 /**
  * What a title page fetches for one title (src/app/title/[type]/[id]/page.tsx), so opening it from the
- * list is quick: the title in the viewer's locale and its poster deck. Where to watch it is warmed for all
- * of them at once in warmCaches(). Anything else the title page starts fetching per title belongs here too.
+ * list is quick: the title in the viewer's locale, its poster deck, guidance, cast and critic scores. Where
+ * to watch it is warmed for all of them at once in warmCaches(). Anything else the title page starts
+ * fetching per title belongs here too.
  */
 async function warmTitlePage(ref: TitleRef, view: { profile: Profile; locale: string; countries: string[] }) {
   await Promise.all([
@@ -30,6 +33,9 @@ async function warmTitlePage(ref: TitleRef, view: { profile: Profile; locale: st
     // "Before you watch" (Sprint 19): age ratings in your countries and the title's topics.
     getAgeRatings(ref, view.countries),
     getTitleKeywords(ref),
+    // Cast and crew, and critic scores from OMDb (Sprint 23; never throws, nothing without a key).
+    getCredits(ref, view.locale),
+    getCriticScores(ref),
   ]);
 }
 
