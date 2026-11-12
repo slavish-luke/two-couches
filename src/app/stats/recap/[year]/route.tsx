@@ -9,6 +9,7 @@ import { localDate } from "@/lib/list-rules";
 import { isCountry } from "@/lib/places";
 import { getCurrentProfile, getPartner } from "@/lib/session";
 import { computeStats } from "@/lib/stats-rules";
+import { getRewatches } from "@/lib/diary";
 import { getNightsAt } from "@/lib/taste";
 import { streaks, tasteMatch } from "@/lib/taste-rules";
 import { tmdbLocale } from "@/lib/tmdb";
@@ -108,19 +109,20 @@ export async function GET(_request: Request, { params }: RouteContext<"/stats/re
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const zones = { [profile.id]: profile.time_zone, ...(partner ? { [partner.id]: partner.time_zone } : {}) };
   const now = new Date();
-  const [entries, nights, movieGenres, tvGenres, fontData] = await Promise.all([
+  const [entries, nights, movieGenres, tvGenres, fontData, rewatches] = await Promise.all([
     getList(profile.couple_id, locales),
     getNightsAt(profile.couple_id, zones, profile.time_zone),
     getGenres("movie", locale).catch(() => []),
     getGenres("tv", locale).catch(() => []),
     font,
+    getRewatches(profile.couple_id),
   ]);
   const genreNames = new Map([...movieGenres, ...tvGenres].map((g) => [g.id, g.name]));
 
   const stats = computeStats(
     entries,
     nights.map((n) => n.starts_at),
-    { period: year, meId: profile.id, partnerId: partner?.id ?? null, timeZone: profile.time_zone, now },
+    { period: year, meId: profile.id, partnerId: partner?.id ?? null, timeZone: profile.time_zone, now, rewatches },
   );
   const watchedThisYear = entries.filter((e) => e.status === "watched" && e.watched_on?.startsWith(`${year}-`));
   const taste = tasteMatch(watchedThisYear, profile.id, partner?.id ?? null);

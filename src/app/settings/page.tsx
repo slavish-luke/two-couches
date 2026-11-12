@@ -12,6 +12,7 @@ import { SettingsForm } from "./settings-form";
 import { SignOutButton } from "./sign-out-button";
 import { AdvisorSkeleton, SettingsSkeleton } from "./skeleton";
 import { VisitForm } from "./visit-form";
+import { ExportPanel, ImportPanel } from "./your-data";
 
 export const generateMetadata = localisedTitle("settings");
 
@@ -79,6 +80,8 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
           <Suspense fallback={<AdvisorSkeleton />}>
             <Advisor />
           </Suspense>
+          <ImportPanel language={language} />
+          <ExportPanel language={language} />
         </>
       )}
 
@@ -98,6 +101,7 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
         <div className="grid gap-5 sm:grid-cols-2">
           <Panel heading={t.account.install.heading} intro={t.account.install.intro}>
             <InstallSettings language={language} />
+            <p className="text-sm font-medium text-muted">{t.diary.share.settingsHint}</p>
           </Panel>
           <Panel heading={t.account.dataSaver.heading} intro={t.account.dataSaver.intro}>
             <DataSaverSettings language={language} />

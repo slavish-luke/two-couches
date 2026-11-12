@@ -241,3 +241,21 @@ export function DownloadIcon({ className }: { className?: string }) {
     </Glyph>
   );
 }
+
+/** An arrow up out of a tray: bring a file in (Sprint 18's import). */
+export function UploadIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.5}>
+      <path d="M12 15.5V4.5M7 9l5-5 5 5M5 19.5h14" />
+    </Glyph>
+  );
+}
+
+/** Two arrows chasing each other round: watch it again (Sprint 18). */
+export function RepeatIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M4 11.5V10a4 4 0 0 1 4-4h11M16 3l3 3-3 3M20 12.5V14a4 4 0 0 1-4 4H5M8 21l-3-3 3-3" />
+    </Glyph>
+  );
+}

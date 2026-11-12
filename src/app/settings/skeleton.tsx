@@ -10,6 +10,7 @@ import {
   SkelPoster,
   SkelText,
 } from "@/components/skeleton";
+import { YourDataSkeleton } from "./your-data";
 
 /** The services panel shows this many tiles until "Show all" (SettingsForm's COLLAPSED_COUNT). */
 const SERVICE_TILES = 18;
@@ -91,6 +92,7 @@ export function SettingsSkeleton() {
       </div>
 
       <AdvisorSkeleton />
+      <YourDataSkeleton />
 
       <div className="mt-4 grid gap-5">
         <div className="grid gap-2">
@@ -139,6 +141,7 @@ export function SettingsSkeleton() {
         <div className="grid gap-5 sm:grid-cols-2">
           <Panel intro={[3, 3]}>
             <SkelButton width="6rem" className="justify-self-start" />
+            <SkelParagraph className="text-sm font-medium" lines={4} smLines={4} />
           </Panel>
           <Panel intro={[4, 4]}>
             <div className="flex flex-wrap gap-2">

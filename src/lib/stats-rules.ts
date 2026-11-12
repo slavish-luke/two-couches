@@ -43,14 +43,20 @@ export type Stats = {
   favourites: StatsEntry[];
   /** The title your ratings differ on most (by 2★ or more), if any. */
   split: StatsEntry | null;
+  /** Rewatches in the period (Sprint 18), already counted in films, series, minutes and months. */
+  rewatches: { films: number; series: number };
 };
+
+/** A rewatch as the stats count it: which list item, and when (a local date). */
+export type StatsRewatch = { list_item_id: string; watched_on: string };
 
 const TOP_GENRES = 5;
 
 /** Years with something watched, newest first, always including this year. */
-export function statsYears(entries: StatsEntry[], thisYear: number) {
+export function statsYears(entries: StatsEntry[], thisYear: number, rewatches: StatsRewatch[] = []) {
   const years = new Set([thisYear]);
   for (const e of entries) if (e.status === "watched" && e.watched_on) years.add(Number(e.watched_on.slice(0, 4)));
+  for (const r of rewatches) years.add(Number(r.watched_on.slice(0, 4)));
   return [...years].sort((a, b) => b - a);
 }
 
@@ -65,14 +71,29 @@ function average(values: number[]) {
 export function computeStats(
   entries: StatsEntry[],
   nightStarts: string[],
-  { period, meId, partnerId, timeZone, now }: { period: Period; meId: string; partnerId: string | null; timeZone: string; now: Date },
+  {
+    period,
+    meId,
+    partnerId,
+    timeZone,
+    now,
+    rewatches = [],
+  }: { period: Period; meId: string; partnerId: string | null; timeZone: string; now: Date; rewatches?: StatsRewatch[] },
 ): Stats {
   const inYear = (date: string | null) => period === "all" || (date !== null && Number(date.slice(0, 4)) === period);
   const watched = entries.filter((e) => e.status === "watched" && (period === "all" || inYear(e.watched_on)));
+  // Each rewatch in the period counts as one more watch of its title (on its own date), whatever year the
+  // first watch was in.
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const again = rewatches.flatMap((r) => {
+    const entry = byId.get(r.list_item_id);
+    return entry && inYear(r.watched_on) ? [{ entry, watched_on: r.watched_on }] : [];
+  });
+  const watches = [...watched.map((entry) => ({ entry, watched_on: entry.watched_on })), ...again];
 
   let minutes = 0;
   let minutesIncomplete = false;
-  for (const e of watched) {
+  for (const { entry: e } of watches) {
     const length = e.media_type === "movie" ? e.runtime : e.runtime && e.episodes ? e.runtime * e.episodes : null;
     if (length) minutes += length;
     else minutesIncomplete = true;
@@ -88,7 +109,7 @@ export function computeStats(
   let months: number[] | null = null;
   if (period !== "all") {
     months = Array.from({ length: 12 }, () => 0);
-    for (const e of watched) if (e.watched_on) months[Number(e.watched_on.slice(5, 7)) - 1]++;
+    for (const w of watches) if (w.watched_on) months[Number(w.watched_on.slice(5, 7)) - 1]++;
   }
 
   const addedInPeriod = entries.filter((e) => inYear(localDate(timeZone, new Date(e.created_at))));
@@ -106,8 +127,8 @@ export function computeStats(
   const split = bothRated.filter((e) => gap(e) >= 2).sort((a, b) => gap(b) - gap(a) || byWatched(a, b))[0] ?? null;
 
   return {
-    films: watched.filter((e) => e.media_type === "movie").length,
-    series: watched.filter((e) => e.media_type === "tv").length,
+    films: watches.filter((w) => w.entry.media_type === "movie").length,
+    series: watches.filter((w) => w.entry.media_type === "tv").length,
     minutes,
     minutesIncomplete,
     nights: nightStarts.filter((at) => Date.parse(at) <= now.getTime() && inYear(localDate(timeZone, new Date(at)))).length,
@@ -120,5 +141,9 @@ export function computeStats(
       .sort((a, b) => combined(b) - combined(a) || byWatched(a, b))
       .slice(0, 3),
     split,
+    rewatches: {
+      films: again.filter((w) => w.entry.media_type === "movie").length,
+      series: again.filter((w) => w.entry.media_type === "tv").length,
+    },
   };
 }

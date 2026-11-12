@@ -13,6 +13,8 @@ import type { ListItem } from "@/lib/list";
 import type { Reviews } from "@/lib/review-rules";
 import { shouldAskGuess, type Guess } from "@/lib/taste-rules";
 import type { TitleRef } from "@/lib/watch";
+import type { Rewatch, SeasonRatings } from "@/lib/diary-rules";
+import { SeasonRatingsPanel, WatchHistory } from "./diary-panel";
 
 type Person = { id: string; name: string };
 
@@ -35,6 +37,8 @@ type Props = {
   predictions?: { me: PredictionLine | null; partner: PredictionLine | null } | null;
   /** Rating guesses made on this title (yours veils your partner's stars until you've made one). */
   guesses?: Guess[];
+  /** Sprint 18: rewatches and ratings per season, when it's on the list. */
+  diary?: { rewatches: Rewatch[]; seasons: SeasonRatings } | null;
 };
 
 /** A predicted rating as the panel shows it: the average, how many ratings, and the genres they share. */
@@ -161,6 +165,9 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
           />
         </label>
       )}
+      {props.diary && (item.status === "watched" || props.diary.rewatches.length > 0) && (
+        <WatchHistory item={item} rewatches={props.diary.rewatches} me={me} partner={partner} language={language} timeZone={props.timeZone} />
+      )}
 
       {predictions && (predictions.me || predictions.partner) && (
         <Predictions predictions={predictions} partnerName={partner?.name ?? null} language={language} t={t} />
@@ -194,6 +201,9 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
             )}
           </div>
         </div>
+      )}
+      {props.diary && titleRef.media_type === "tv" && (
+        <SeasonRatingsPanel item={item} seasons={seasons} rated={props.diary.seasons} me={me} partner={partner} language={language} />
       )}
 
       <Categories item={item} all={categories} pending={pending} update={update} t={t} />

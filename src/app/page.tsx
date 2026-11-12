@@ -25,6 +25,8 @@ import { PickLink } from "./pick/pick-link";
 import { VisitChip } from "./settings/visit-chip";
 import { MilestoneChip } from "./stats/milestone-chip";
 import { NextNight } from "./watch-nights/next-night";
+import { EpisodeChip, NextEpisodes } from "./list/next-episodes";
+import { getEpisodeGuides } from "@/lib/diary";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -175,6 +177,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
 
       <div className="min-w-0 lg:col-span-7 xl:col-span-8">
         <ListSync coupleId={profile.couple_id} />
+        <NextEpisodes />
         <Suspense fallback={<ListSkeleton />}>
           <ListSection
             coupleId={profile.couple_id}
@@ -240,6 +243,9 @@ async function ListSection(props: {
 
   const isFiltered = Boolean(filters.category || filters.type || filters.both);
   const today = localDate(props.timeZone, new Date());
+  // Sprint 18: when the next episode of each series you're watching airs, for the cards' "new episode" chip.
+  const watchingSeries = shown.filter((e) => e.status === "watching" && e.media_type === "tv");
+  const episodeGuides = watchingSeries.length ? getEpisodeGuides(watchingSeries.map((e) => e.tmdb_id)) : Promise.resolve({});
 
   return (
     <section className="grid grid-cols-[minmax(0,1fr)] gap-6">
@@ -375,6 +381,17 @@ async function ListSection(props: {
                           ? ` · ${t.list.upTo(t.common.progress(entry.season, entry.episode))}`
                           : ""}
                       </span>
+                    )}
+                    {entry.status === "watching" && entry.media_type === "tv" && (
+                      <Suspense>
+                        <EpisodeChip
+                          guides={episodeGuides}
+                          tmdbId={entry.tmdb_id}
+                          progress={entry.season && entry.episode ? { season: entry.season, episode: entry.episode } : null}
+                          today={today}
+                          language={language}
+                        />
+                      </Suspense>
                     )}
                   </span>
                   {entry.categories.length > 0 && (

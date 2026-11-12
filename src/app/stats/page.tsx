@@ -16,6 +16,7 @@ import { isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { computeStats, statsYears, type Period, type StatsEntry } from "@/lib/stats-rules";
 import { getGuesses, getNightsAt } from "@/lib/taste";
+import { getRewatches } from "@/lib/diary";
 import {
   anniversary,
   bothFive,
@@ -55,18 +56,19 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
   const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
   const zones = { [profile.id]: profile.time_zone, ...(partner ? { [partner.id]: partner.time_zone } : {}) };
-  const [entries, nightsAt, guesses, movieGenres, tvGenres] = await Promise.all([
+  const [entries, nightsAt, guesses, movieGenres, tvGenres, rewatches] = await Promise.all([
     getList(profile.couple_id, locales),
     getNightsAt(profile.couple_id, zones, profile.time_zone),
     getGuesses(profile.couple_id),
     getGenres("movie", locale).catch(() => []),
     getGenres("tv", locale).catch(() => []),
+    getRewatches(profile.couple_id),
   ]);
   const genreNames = new Map([...movieGenres, ...tvGenres].map((g) => [g.id, g.name]));
 
   const now = new Date();
   const thisYear = Number(localDate(profile.time_zone, now).slice(0, 4));
-  const years = statsYears(entries, thisYear);
+  const years = statsYears(entries, thisYear, rewatches);
   const period: Period = params.year === "all" ? "all" : years.includes(Number(params.year)) ? Number(params.year) : thisYear;
   const stats = computeStats(entries, nightsAt.map((n) => n.starts_at), {
     period,
@@ -74,6 +76,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
     partnerId: partner?.id ?? null,
     timeZone: profile.time_zone,
     now,
+    rewatches,
   });
   const partnerName = partner ? partner.display_name || t.common.yourPartner : null;
   const nothingWatched = stats.films + stats.series === 0;
@@ -128,6 +131,11 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
                 </span>
               )}
               {value}
+              {(key === "films" || key === "series") && stats.rewatches[key] > 0 && (
+                <span className="mt-1 block font-sans text-sm font-semibold normal-case text-muted">
+                  {t.diary.stats.including(stats.rewatches[key])}
+                </span>
+              )}
             </dd>
             <dt className="order-1 text-sm font-bold leading-snug">{t.stats.tiles[key]}</dt>
           </div>

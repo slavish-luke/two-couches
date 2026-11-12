@@ -20,5 +20,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    // Sprint 18: "Share → Two Couches" from another app (Android, once installed; iPhones don't offer it).
+    // /share finds the film or series in what was shared.
+    share_target: { action: "/share", method: "GET", params: { title: "title", text: "text", url: "url" } },
   };
 }

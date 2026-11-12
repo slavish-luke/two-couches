@@ -16,6 +16,7 @@ import { getCategories, getListItem } from "@/lib/list";
 import { countryName } from "@/lib/places";
 import { deckWith, getPosterDeck } from "@/lib/poster-deck";
 import { getDismissedKeys } from "@/lib/recommend";
+import { getDiary } from "@/lib/diary";
 import { getReviews } from "@/lib/reviews";
 import { getItemGuesses, getRatedList } from "@/lib/taste";
 import { predictRating } from "@/lib/taste-rules";
@@ -179,12 +180,13 @@ async function OnOurList({
     getCategories(coupleId),
     getDismissedKeys(coupleId),
   ]);
-  const [reviews, taste] = item
+  const [reviews, taste, diary] = item
     ? await Promise.all([
         getReviews([item.id], profile.id).then((byItem) => byItem[item.id]),
         tasteExtras(coupleId, item, profile.id, partner?.id ?? null, genres, profile.language),
+        getDiary(item.id),
       ])
-    : [null, null];
+    : [null, null, null];
 
   return (
     <div className="grid gap-4">
@@ -201,6 +203,7 @@ async function OnOurList({
         reviews={reviews}
         predictions={taste?.predictions ?? null}
         guesses={taste?.guesses ?? []}
+        diary={diary}
       />
       {!item && (
         <DismissButton titleRef={titleRef} dismissed={dismissed.has(titleKey(titleRef))} language={profile.language} long />
