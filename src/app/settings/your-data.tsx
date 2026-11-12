@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
 import { DownloadIcon } from "@/components/icons";
+import { getPhotoBytes } from "@/lib/together";
+import { COUPLE_PHOTO_BYTES, formatBytes } from "@/lib/together-rules";
 import { SkelButton, SkelParagraph, SkelText } from "@/components/skeleton";
 import { CSV_KINDS } from "@/lib/export-rules";
 import { getMessages } from "@/lib/i18n";
@@ -24,7 +27,7 @@ export function ImportPanel({ language }: { language: string }) {
 }
 
 /** "Your data": plain links to the export route, which answers with a file to save. */
-export function ExportPanel({ language }: { language: string }) {
+export function ExportPanel({ language, children }: { language: string; children?: ReactNode }) {
   const t = getMessages(language).diary.export;
   return (
     <section className="card grid gap-4" aria-labelledby="your-data">
@@ -33,6 +36,7 @@ export function ExportPanel({ language }: { language: string }) {
           {t.heading}
         </h2>
         <p className="max-w-[65ch] text-muted">{t.intro}</p>
+        {children}
       </div>
       <a href="/settings/export?format=json" download className="btn w-fit">
         <DownloadIcon className="size-4" />
@@ -86,4 +90,12 @@ export function YourDataSkeleton() {
       </div>
     </>
   );
+}
+
+/** How much space the night albums take (Sprint 20), under the export panel's intro. Nothing until there are photos. */
+export async function PhotoUsage({ coupleId, language }: { coupleId: string; language: string }) {
+  const bytes = await getPhotoBytes(coupleId);
+  if (bytes === 0) return null;
+  const t = getMessages(language).diary.export;
+  return <p className="max-w-[65ch] text-sm text-muted">{t.photos(formatBytes(bytes, language), formatBytes(COUPLE_PHOTO_BYTES, language))}</p>;
 }

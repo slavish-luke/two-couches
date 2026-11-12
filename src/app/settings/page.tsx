@@ -12,7 +12,7 @@ import { SettingsForm } from "./settings-form";
 import { SignOutButton } from "./sign-out-button";
 import { AdvisorSkeleton, SettingsSkeleton } from "./skeleton";
 import { VisitForm } from "./visit-form";
-import { ExportPanel, ImportPanel } from "./your-data";
+import { ExportPanel, ImportPanel, PhotoUsage } from "./your-data";
 import { WarnPanel, WarnSkeleton } from "./warn-panel";
 
 export const generateMetadata = localisedTitle("settings");
@@ -82,7 +82,11 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
             <Advisor />
           </Suspense>
           <ImportPanel language={language} />
-          <ExportPanel language={language} />
+          <ExportPanel language={language}>
+            <Suspense fallback={null}>
+              <PhotoUsage coupleId={profile.couple_id} language={language} />
+            </Suspense>
+          </ExportPanel>
           <Suspense fallback={<WarnSkeleton />}>
             <WarnPanel />
           </Suspense>

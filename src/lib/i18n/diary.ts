@@ -43,6 +43,7 @@ const en = {
       "Everything you've kept here, to save or take somewhere else: the list with both ratings, every watch and rewatch, season ratings, watch nights and your reviews (your partner's only where you can already read them).",
     json: "Download everything (JSON)",
     csvHeading: "Or as spreadsheets (CSV)",
+    photos: (used: string, cap: string) => `Night photos use ${used} of ${cap}. Supabase's free plan has 1 GB for everything.`,
     csv: { list: "The list", watches: "Every watch", seasons: "Season ratings", nights: "Watch nights", reviews: "Reviews" },
     columns: {
       title: "Title",
@@ -161,6 +162,7 @@ const tr: typeof en = {
       "Burada tuttuğunuz her şey, saklamak ya da başka yere taşımak için: iki puanla birlikte liste, her izleme ve yeniden izleme, sezon puanları, izleme geceleri ve yorumların (partnerinin yorumları yalnızca zaten okuyabildiğin yerlerde).",
     json: "Her şeyi indir (JSON)",
     csvHeading: "Ya da tablo olarak (CSV)",
+    photos: (used: string, cap: string) => `Gece fotoğrafları: ${used} / ${cap}. Supabase'in ücretsiz planında her şey için 1 GB var.`,
     csv: { list: "Liste", watches: "Her izleme", seasons: "Sezon puanları", nights: "İzleme geceleri", reviews: "Yorumlar" },
     columns: {
       title: "Başlık",
