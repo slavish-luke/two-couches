@@ -15,7 +15,7 @@ export type FeedWindow = { from: string; to: string };
 
 /**
  * One all-day event per film, kind (cinema or digital) and date, naming every country with that date
- * ("Dune: in cinemas (GB, NZ)"). The UID is the film, kind and date, so it stays put while the date does
+ * ("Dune · in cinemas (GB, NZ)"). The UID is the film, kind and date, so it stays put while the date does
  * (a moved date is a new event; the old one drops out of the feed).
  */
 export function releaseEvents(
@@ -41,7 +41,7 @@ export function releaseEvents(
   );
 }
 
-/** One all-day event per series for its next episode, on its air date ("Severance: S2 E5"). */
+/** One all-day event per series for its next episode, on its air date ("Severance · S2 E5"). */
 export function episodeEvents(
   series: FeedSeries[],
   { t, window, origin }: { t: Messages; window: FeedWindow; origin: string },

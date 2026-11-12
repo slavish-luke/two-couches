@@ -39,7 +39,8 @@ export function CantWaitButton(props: {
           })
         }
         data-cant-wait
-        className="btn-quiet px-2.5 py-0.5 text-sm aria-pressed:bg-accent-soft"
+        // relative: keeps the sr-only text inside the card, or it escapes the scrolling row and widens the page.
+        className="btn-quiet relative px-2.5 py-0.5 text-sm aria-pressed:bg-accent-soft"
       >
         <span aria-hidden className="flex -space-x-1">
           <span className={`size-3 rounded-full border-2 border-outline ${mine ? "bg-me" : "bg-surface"}`} />

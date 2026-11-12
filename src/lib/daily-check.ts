@@ -7,7 +7,7 @@ import { isPushConfigured, sendPush, type PushMessage } from "./push";
 import { createAdminClient } from "./supabase/admin";
 import type { Database, Json } from "./supabase/database.types";
 import { getAvailability } from "./titles";
-import { tmdbLocale } from "./tmdb";
+import { fetchWatchProviders, tmdbLocale } from "./tmdb";
 import { freeFor, titleHref, titleKey, type Availability, type Provider, type TitleRef, type Watcher } from "./watch";
 
 // Runs once a day (pg_cron calls /api/cron/daily) with the secret key, across every couple.
@@ -102,10 +102,34 @@ export async function runDailyCheck(contact: string): Promise<DailyCheckResult> 
   if (services.error) console.error("Loading service names for the daily check failed", services.error);
   // A provider's name, for one that has gone (snapshots keep only IDs): from the country's service list.
   const serviceNames = new Map((services.data ?? []).map((s) => [`${s.country}:${s.provider_id}`, s.name]));
+  for (const byCountry of Object.values(availability)) {
+    for (const [country, there] of Object.entries(byCountry)) {
+      for (const p of there?.providers ?? []) serviceNames.set(`${country}:${p.provider_id}`, p.name);
+    }
+  }
 
   // What the last check saw, by titleKey() and country.
   const snapshots: Record<string, Record<string, SnapshotRow>> = {};
   for (const row of snapshotRows.data) (snapshots[titleKey(keyOf(row))] ??= {})[row.country] = row;
+
+  // Names the cached service lists don't have (a country nobody has opened Settings for lately, or a
+  // service TMDB no longer lists there): ask TMDB for those countries' lists, once.
+  const unnamed = new Set(
+    snapshotRows.data.flatMap((row) =>
+      countries.includes(row.country) && row.provider_ids.some((id) => !serviceNames.has(`${row.country}:${id}`))
+        ? [row.country]
+        : [],
+    ),
+  );
+  await Promise.all(
+    [...unnamed].map(async (country) => {
+      try {
+        for (const p of await fetchWatchProviders(country)) serviceNames.set(`${country}:${p.provider_id}`, p.name);
+      } catch (error) {
+        console.error(`Loading ${country}'s services from TMDB failed`, error);
+      }
+    }),
+  );
 
   /**
    * A snapshot in availability's shape: its subscription providers, and its free ones. Rows from before free

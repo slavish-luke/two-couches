@@ -434,7 +434,12 @@ function CountryColumn(props: {
           <ul className="flex flex-wrap gap-2">
             {props.gone.map((name) => (
               <li key={name}>
-                <GoneTag services={[name]} who={isMe ? t.discovery.gone.you : props.who} isMe={isMe} label={t.discovery.gone} />
+                <GoneTag
+                  services={[name]}
+                  people={[{ who: isMe ? t.discovery.gone.you : props.who, isMe }]}
+                  label={t.discovery.gone}
+                  language={props.language}
+                />
               </li>
             ))}
           </ul>

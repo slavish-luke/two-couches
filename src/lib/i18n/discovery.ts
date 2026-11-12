@@ -11,7 +11,7 @@ const en = {
     you: "you",
     /** The title page's line under a country's services. */
     heading: "No longer here",
-    note: "It left a service you pay for. We'll tell you if it comes back.",
+    note: "It left a service you pay for, so you can't stream it right now.",
     noteTheirs: (name: string) => `It left a service ${name} pays for.`,
   },
   cantWait: {
@@ -54,9 +54,9 @@ const en = {
     searchFailed: "Couldn't search TMDB. Try again in a minute.",
   },
   feed: {
-    cinema: (title: string, countries: string) => `${title}: in cinemas (${countries})`,
-    digital: (title: string, countries: string) => `${title}: out digitally (${countries})`,
-    episode: (title: string, episode: string) => `${title}: ${episode}`,
+    cinema: (title: string, countries: string) => `${title} · in cinemas (${countries})`,
+    digital: (title: string, countries: string) => `${title} · out digitally (${countries})`,
+    episode: (title: string, episode: string) => `${title} · ${episode}`,
     releaseNote: "On our list. Release dates come from TMDB and can change.",
     episodeNote: "The next episode, on our list. Air dates come from TMDB and can change.",
   },
@@ -68,7 +68,7 @@ const tr: typeof en = {
     label: (services: string, who: string) => `Kalktı: ${services} (${who})`,
     you: "sen",
     heading: "Artık burada değil",
-    note: "Ödediğin bir platformdan kalktı. Geri gelirse haber vereceğiz.",
+    note: "Ödediğin bir platformdan kalktı; şu an izleyemezsin.",
     noteTheirs: (name: string) => `Ödediği bir platformdan kalktı: ${name}`,
   },
   cantWait: {
@@ -109,9 +109,9 @@ const tr: typeof en = {
     searchFailed: "TMDB’de aranamadı. Bir dakika sonra tekrar dene.",
   },
   feed: {
-    cinema: (title: string, countries: string) => `${title}: sinemalarda (${countries})`,
-    digital: (title: string, countries: string) => `${title}: dijitalde (${countries})`,
-    episode: (title: string, episode: string) => `${title}: ${episode}`,
+    cinema: (title: string, countries: string) => `${title} · sinemalarda (${countries})`,
+    digital: (title: string, countries: string) => `${title} · dijitalde (${countries})`,
+    episode: (title: string, episode: string) => `${title} · ${episode}`,
     releaseNote: "Listemizde. Çıkış tarihleri TMDB’den gelir ve değişebilir.",
     episodeNote: "Listemizdeki dizinin sıradaki bölümü. Yayın tarihleri TMDB’den gelir ve değişebilir.",
   },
