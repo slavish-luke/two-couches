@@ -29,7 +29,35 @@ export function TitleSkeleton() {
         </div>
       </div>
       <WhereToWatchSkeleton />
+      <GuidanceSkeleton />
     </Skeleton>
+  );
+}
+
+/** "Before you watch" (Sprint 19) while it loads: the heading, both age-rating tags and the DoesTheDogDie link. */
+export function GuidanceSkeleton() {
+  return (
+    <section aria-busy className="card grid gap-5">
+      <SkelText bar="ink" className="display-ink text-2xl" width="13rem" />
+      <div className="grid gap-2">
+        <SkelText className="font-bold" width="7rem" />
+        <span aria-hidden className="flex flex-wrap gap-2">
+          {(["bg-me", "bg-partner"] as const).map((fill) => (
+            <span
+              key={fill}
+              className="flex overflow-hidden rounded-full border-[2.5px] border-outline bg-surface text-[15px] font-semibold leading-snug"
+            >
+              <span className={`w-24 border-r-[2.5px] border-outline px-2.5 ${fill}`}>{NBSP}</span>
+              <span className="w-10 px-2.5">{NBSP}</span>
+            </span>
+          ))}
+        </span>
+      </div>
+      <div className="grid justify-items-start gap-1.5 border-t-2 border-outline/15 pt-4">
+        <SkelButton quiet width="16rem" icon="size-4" className="text-sm" />
+        <SkelText className="text-sm" width="60%" />
+      </div>
+    </section>
   );
 }
 

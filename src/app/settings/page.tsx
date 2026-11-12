@@ -12,6 +12,7 @@ import { SettingsForm } from "./settings-form";
 import { SignOutButton } from "./sign-out-button";
 import { AdvisorSkeleton, SettingsSkeleton } from "./skeleton";
 import { VisitForm } from "./visit-form";
+import { WarnPanel, WarnSkeleton } from "./warn-panel";
 
 export const generateMetadata = localisedTitle("settings");
 
@@ -78,6 +79,9 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
           </section>
           <Suspense fallback={<AdvisorSkeleton />}>
             <Advisor />
+          </Suspense>
+          <Suspense fallback={<WarnSkeleton />}>
+            <WarnPanel />
           </Suspense>
         </>
       )}

@@ -51,6 +51,23 @@ export function useInstallPrompt() {
 }
 
 /**
+ * Puts `count` on the installed app's icon (Badging API): unseen alerts and proposed times waiting for an
+ * answer (appBadgeCount()). Rendered by the layout for paired people, so it follows each page load and
+ * refresh (marking alerts seen on Coming soon brings it down). Browsers without the API, and tabs that
+ * aren't installed apps, skip it. Renders nothing.
+ */
+export function AppBadge({ count }: { count: number }) {
+  useEffect(() => {
+    if (!("setAppBadge" in navigator)) return;
+    const done = count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge();
+    done.catch(() => {
+      // Not allowed here (e.g. a plain tab in some browsers): nothing to show.
+    });
+  }, [count]);
+  return null;
+}
+
+/**
  * Rendered once in the root layout: registers the service worker (and passes it this device's data saver
  * choice, in case it was reinstalled since), keeps the browser's install prompt
  * (which fires once, possibly before Settings is opened) for useInstallPrompt(). Renders nothing.

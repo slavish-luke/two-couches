@@ -4,12 +4,14 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { Burst } from "@/components/burst";
 import { DismissButton } from "@/components/dismiss-button";
+import { GoneTag } from "@/components/gone-badge";
 import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { Poster, posterMorph } from "@/components/poster";
 import { PosterDeck } from "@/components/poster-deck";
 import { RemindButton } from "@/components/remind-button";
-import { getReminderKeys } from "@/lib/alerts";
+import { stillGone } from "@/lib/alert-rules";
+import { getGoneAlerts, getReminderKeys } from "@/lib/alerts";
 import { type Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getCategories, getListItem } from "@/lib/list";
@@ -33,8 +35,9 @@ import {
   type TitleRef,
   type Watcher,
 } from "@/lib/watch";
+import { ContentGuidance } from "./guidance";
 import { ListPanel } from "./list-panel";
-import { TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
+import { GuidanceSkeleton, TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
 
 export const generateMetadata = localisedTitle("title");
 
@@ -130,6 +133,11 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
 
       <Suspense fallback={<WhereToWatchSkeleton />}>
         <WhereToWatch titleRef={ref} />
+      </Suspense>
+
+      {/* Sprint 19: age ratings, "Heads up" topics and DoesTheDogDie. */}
+      <Suspense fallback={<GuidanceSkeleton />}>
+        <ContentGuidance titleRef={ref} title={title.title} originalTitle={title.original_title} />
       </Suspense>
 
       {profile.couple_id && (
@@ -241,11 +249,15 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
   const partnerName = partner?.display_name || t.common.yourPartner;
 
-  const [byTitle, reminded] = await Promise.all([
+  const [byTitle, reminded, goneByTitle] = await Promise.all([
     getAvailability([titleRef], them ? [me.country, them.country] : [me.country]),
     profile.couple_id ? getReminderKeys(profile.couple_id) : null,
+    profile.couple_id ? getGoneAlerts(profile.couple_id) : ({} as Awaited<ReturnType<typeof getGoneAlerts>>),
   ]);
   const availability = byTitle[titleKey(titleRef)] ?? {};
+  // Services one of you paid to stream it on, that it has left (the daily check's "gone" alerts).
+  const gone = goneByTitle[titleKey(titleRef)] ?? {};
+  const goneFor = (id: string, watcher: Watcher) => stillGone(gone[id], watcher, availability).map((p) => p.name);
   const { verdict, mine, theirs } = whoCanWatch(me, them, availability);
   const names = (providers: Provider[]) => providers.map((p) => p.name).join(", ");
   const theirCountry = them ? countryName(them.country, profile.language) : "";
@@ -313,6 +325,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
           isMe
           watcher={me}
           availability={availability[me.country]}
+          gone={goneFor(profile.id, me)}
           language={profile.language}
           timeZone={profile.time_zone}
           t={t}
@@ -323,6 +336,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
             isMe={false}
             watcher={them}
             availability={availability[them.country]}
+            gone={partner ? goneFor(partner.id, them) : []}
             language={profile.language}
             timeZone={profile.time_zone}
             t={t}
@@ -341,6 +355,8 @@ function CountryColumn(props: {
   isMe: boolean;
   watcher: Watcher;
   availability: CountryAvailability | undefined;
+  /** Services this person paid to stream it on that it has left, while it stays gone. */
+  gone: string[];
   language: string;
   timeZone: string;
   t: Messages;
@@ -410,6 +426,22 @@ function CountryColumn(props: {
             </ul>
           </div>
         ))
+      )}
+
+      {props.gone.length > 0 && (
+        <div data-gone className="grid gap-2">
+          <h4 className="font-bold">{t.discovery.gone.heading}</h4>
+          <ul className="flex flex-wrap gap-2">
+            {props.gone.map((name) => (
+              <li key={name}>
+                <GoneTag services={[name]} who={isMe ? t.discovery.gone.you : props.who} isMe={isMe} label={t.discovery.gone} />
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm font-medium text-muted">
+            {isMe ? t.discovery.gone.note : t.discovery.gone.noteTheirs(props.who)}
+          </p>
+        </div>
       )}
 
       {availability && (

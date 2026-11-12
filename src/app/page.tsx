@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AvailabilityBadge } from "@/components/availability-badge";
 import { Couch, Couches } from "@/components/couch";
+import { GoneBadge } from "@/components/gone-badge";
 import { ListSync } from "@/components/list-sync";
 import { Poster, posterMorph } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
@@ -10,6 +11,8 @@ import { Stars } from "@/components/stars";
 import { VenueClock } from "@/components/venue-clock";
 import { ArrowIcon } from "@/components/icons";
 import { getList, type ListEntry } from "@/lib/list";
+import { ALERT_STATUSES } from "@/lib/alert-rules";
+import { getGoneAlerts } from "@/lib/alerts";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { formatDate, localDate, shortDate, type ListStatus } from "@/lib/list-rules";
@@ -233,6 +236,8 @@ async function ListSection(props: {
   // Started now, awaited by each badge, so the list renders before availability is known.
   const availability: Promise<Record<string, Availability>> =
     filters.view !== "watched" || filters.both ? getAvailability(shown, countries) : Promise.resolve({});
+  // Sprint 19: "Left Netflix" tags for list titles that left a service one of you pays for.
+  const gone = filters.view !== "watched" ? getGoneAlerts(props.coupleId) : Promise.resolve({});
   if (filters.both) {
     const byTitle = await availability;
     shown = shown.filter((e) => whoCanWatch(me, partner?.watcher ?? null, byTitle[titleKey(e)] ?? {}).verdict === "both");
@@ -365,6 +370,18 @@ async function ListSection(props: {
                           partnerName={partner?.name ?? null}
                           language={language}
                           part="proof"
+                        />
+                      </Suspense>
+                    )}
+                    {ALERT_STATUSES.includes(entry.status) && (
+                      <Suspense>
+                        <GoneBadge
+                          gone={gone}
+                          availability={availability}
+                          titleKey={titleKey(entry)}
+                          me={me}
+                          partner={partner && { ...partner.watcher, id: partner.id, name: partner.name }}
+                          language={language}
                         />
                       </Suspense>
                     )}

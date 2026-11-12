@@ -241,3 +241,13 @@ export function DownloadIcon({ className }: { className?: string }) {
     </Glyph>
   );
 }
+
+/** Sprint 19: a heads-up triangle for content warnings, filled in the pop colour. */
+export function WarningIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className}>
+      <path d="M12 3.5 21.5 20h-19z" fill="var(--pop)" strokeLinejoin="round" />
+      <path d="M12 10v4.5M12 17.5v.01" />
+    </Glyph>
+  );
+}
