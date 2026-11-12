@@ -1,8 +1,8 @@
-import { SkelButton, SkelPoster, SkelText } from "@/components/skeleton";
+import { SkelButton, SkelChip, SkelPoster, SkelText } from "@/components/skeleton";
 
 /**
  * A `<NightCard>` while it loads, block for block: the poster, title, a ticket per person, how you'll
- * watch, the ready check (when `actions`) and the links. `className` replaces the card frame, as on
+ * watch, the ready check and the prep list (when `actions`) and the links. `className` replaces the card frame, as on
  * NightCard; `listing` is its larger poster and numerals. `aside` is for Home's narrow aside from `lg`,
  * where the how-line, the ready check's buttons and the links wrap onto more lines.
  */
@@ -30,11 +30,11 @@ export function NightCardSkeleton({
         </div>
         <div className="grid grid-cols-2 gap-2.5">
           {[0, 1].map((i) => (
-            <div key={i} className="paper grid min-w-0 content-start gap-0.5 rounded-control border-[3px] border-outline px-2.5 pb-1.5 pt-1">
+            <div key={i} className="paper @container grid min-w-0 content-start gap-0.5 rounded-control border-[3px] border-outline px-2.5 pb-1.5 pt-1">
               <SkelText className="text-xs font-bold" width="55%" />
               <SkelText
                 bar="ink"
-                className={`display-ink whitespace-nowrap leading-none ${listing ? "text-[clamp(1.35rem,2.2vw,1.7rem)]" : "text-2xl"}`}
+                className={`display-ink whitespace-nowrap leading-none ${listing ? "text-[min(clamp(1.35rem,2.2vw,1.7rem),19cqi)]" : "text-[min(1.5rem,19cqi)]"}`}
                 width="70%"
               />
               <SkelText className="text-xs font-semibold" width="45%" />
@@ -63,6 +63,17 @@ export function NightCardSkeleton({
             <div className="grid">
               <SkelText width="85%" />
               <SkelText className={aside ? "sm:hidden lg:block" : "sm:hidden"} width="40%" />
+            </div>
+          </div>
+        )}
+        {actions && (
+          // The prep list as it starts: its head and a row of ideas.
+          <div className="paper grid gap-2.5 rounded-control border-[3px] border-outline p-3 text-sm">
+            <SkelText className="text-base font-bold" width="35%" />
+            <div className="flex flex-wrap items-center gap-1.5">
+              {["5.5rem", "8.5rem", "9.5rem", "8rem"].map((width, i) => (
+                <SkelChip key={i} width={width} className="gap-1 px-2.5 py-0.5 text-[13px]" />
+              ))}
             </div>
           </div>
         )}

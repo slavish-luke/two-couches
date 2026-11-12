@@ -1,7 +1,9 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMessages } from "./i18n";
 import { getList } from "./list";
 import { formatDay, formatTime, isNightMethod, UNDER_WAY_MS, type NightMethod } from "./night-rules";
+import type { ProposalStatus } from "./planning-rules";
 import { sendPush } from "./push";
 import { createAdminClient } from "./supabase/admin";
 import type { Database } from "./supabase/database.types";
@@ -13,30 +15,51 @@ import { titleKey, type MediaType, type TitleRef } from "./watch";
 
 type NightRow = Database["public"]["Tables"]["watch_nights"]["Row"];
 
+export type PrepItem = Pick<
+  Database["public"]["Tables"]["night_prep_items"]["Row"],
+  "id" | "label" | "done_at" | "done_by" | "added_by" | "created_at"
+>;
+
+/** A title as a night or proposal shows it, in the viewer's locale where cached. */
+export type NightTitle = TitleRef & { title: string; poster_path: string | null; runtime: number | null };
+
 export type WatchNight = Pick<
   NightRow,
   "id" | "starts_at" | "link" | "syncplay_server" | "syncplay_room" | "notes" | "created_by" | "created_at"
 > & {
   method: NightMethod | null;
   /** What you'll watch, or null to decide later. */
-  title: (TitleRef & { title: string; poster_path: string | null; runtime: number | null }) | null;
+  title: NightTitle | null;
   /** Each person's ready check, if they've started one. */
   checks: ReadyCheck[];
+  /** The shared prep checklist, oldest first. */
+  prep: PrepItem[];
 };
 
-const SELECT =
-  "*, titles(original_title, poster_path, runtime, title_texts(locale, title, poster_path)), ready_checks(profile_id, ready_at, file_label, file_seconds)";
+type TitleJoin = {
+  original_title: string;
+  poster_path: string | null;
+  runtime: number | null;
+  title_texts: { locale: string; title: string; poster_path: string | null }[];
+} | null;
+
+const TITLE_SELECT = "titles(original_title, poster_path, runtime, title_texts(locale, title, poster_path))";
+
+const SELECT = `*, ${TITLE_SELECT}, ready_checks(profile_id, ready_at, file_label, file_seconds), night_prep_items(id, label, done_at, done_by, added_by, created_at)`;
+
+function toTitle(row: { media_type: string | null; tmdb_id: number | null; titles: TitleJoin }, locales: string[]) {
+  return row.titles && row.media_type && row.tmdb_id
+    ? {
+        media_type: row.media_type as MediaType,
+        tmdb_id: row.tmdb_id,
+        ...pickText(row.titles.title_texts, locales, row.titles),
+        runtime: row.titles.runtime,
+      }
+    : null;
+}
 
 function toNight(
-  row: NightRow & {
-    titles: {
-      original_title: string;
-      poster_path: string | null;
-      runtime: number | null;
-      title_texts: { locale: string; title: string; poster_path: string | null }[];
-    } | null;
-    ready_checks: ReadyCheck[];
-  },
+  row: NightRow & { titles: TitleJoin; ready_checks: ReadyCheck[]; night_prep_items: PrepItem[] },
   locales: string[],
 ): WatchNight {
   return {
@@ -49,16 +72,9 @@ function toNight(
     notes: row.notes,
     created_by: row.created_by,
     created_at: row.created_at,
-    title:
-      row.titles && row.media_type && row.tmdb_id
-        ? {
-            media_type: row.media_type as MediaType,
-            tmdb_id: row.tmdb_id,
-            ...pickText(row.titles.title_texts, locales, row.titles),
-            runtime: row.titles.runtime,
-          }
-        : null,
+    title: toTitle(row, locales),
     checks: row.ready_checks,
+    prep: row.night_prep_items.toSorted((a, b) => a.created_at.localeCompare(b.created_at)),
   };
 }
 
@@ -105,6 +121,44 @@ export async function getWatchNight(id: string, locales: string[]): Promise<Watc
   return data && toNight(data, locales);
 }
 
+export type NightProposal = {
+  id: string;
+  proposed_by: string;
+  /** The times to pick from (UTC), soonest first. */
+  times: string[];
+  status: ProposalStatus;
+  method: NightMethod | null;
+  notes: string;
+  title: NightTitle | null;
+  created_at: string;
+};
+
+/**
+ * The couple's proposals that aren't a night yet: open ones and those your partner said none of to.
+ * Use proposalView() to decide which of you sees what.
+ */
+export async function getProposals(coupleId: string, locales: string[]): Promise<NightProposal[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("night_proposals")
+    .select(`id, proposed_by, times, status, method, notes, media_type, tmdb_id, created_at, ${TITLE_SELECT}`)
+    .eq("couple_id", coupleId)
+    .in("status", ["open", "declined"])
+    .in("titles.title_texts.locale", locales)
+    .order("created_at");
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    proposed_by: row.proposed_by,
+    times: row.times.toSorted(),
+    status: row.status as ProposalStatus,
+    method: isNightMethod(row.method) ? row.method : null,
+    notes: row.notes,
+    title: toTitle(row, locales),
+    created_at: row.created_at,
+  }));
+}
+
 /** Titles to pick from when planning: the list's "Up next" (watching or want), A to Z, keyed by titleKey(). */
 export async function titleOptions(coupleId: string, locales: string[]) {
   const list = await getList(coupleId, locales);
@@ -114,16 +168,33 @@ export async function titleOptions(coupleId: string, locales: string[]) {
     .sort((a, b) => a.title.localeCompare(b.title, locales[0]));
 }
 
-export type NightChange = "planned" | "changed" | "cancelled" | "ready" | "bothReady";
+/** A title's name in a person's language (their home country's TMDB locale), or the original title. */
+export async function titleNameFor(
+  admin: SupabaseClient<Database>,
+  title: TitleRef,
+  person: { language: string; country: string | null },
+) {
+  const { data } = await admin
+    .from("titles")
+    .select("original_title, title_texts(locale, title)")
+    .eq("media_type", title.media_type)
+    .eq("tmdb_id", title.tmdb_id)
+    .maybeSingle();
+  const locale = person.country ? tmdbLocale(person.language, person.country) : null;
+  return data?.title_texts.find((text) => text.locale === locale)?.title ?? data?.original_title ?? null;
+}
+
+export type NightChange = "planned" | "changed" | "cancelled" | "ready" | "bothReady" | "proposed" | "picked" | "declined";
 
 /**
  * Tells the other member of the couple, on every device they've turned notifications on for, that a watch
- * night was planned, moved or cancelled, or that you're ready for it: in their language, at their local
+ * night was planned, moved or cancelled, that you're ready for it, or about times proposed for one (`starts_at`
+ * is then the list of times, and `tag` keeps one notification per proposal): in their language, at their local
  * time. Never throws.
  */
 export async function notifyPartner(
   change: NightChange,
-  night: { id: string; starts_at: string; title: TitleRef | null },
+  night: { id: string; starts_at: string | string[]; title: TitleRef | null; tag?: string },
   by: { id: string; couple_id: string; display_name: string },
   contact: string,
 ) {
@@ -140,19 +211,14 @@ export async function notifyPartner(
     if (!partner || partner.push_subscriptions.length === 0) return;
 
     const t = getMessages(partner.language).nights;
-    let name = t.push.noTitle;
-    if (night.title) {
-      const { data: title } = await admin
-        .from("titles")
-        .select("original_title, title_texts(locale, title)")
-        .eq("media_type", night.title.media_type)
-        .eq("tmdb_id", night.title.tmdb_id)
-        .maybeSingle();
-      const locale = partner.country ? tmdbLocale(partner.language, partner.country) : null;
-      name = title?.title_texts.find((text) => text.locale === locale)?.title ?? title?.original_title ?? name;
-    }
-    const start = new Date(night.starts_at);
-    const when = `${formatDay(start, partner.time_zone, partner.language)}, ${formatTime(start, partner.time_zone, partner.language)}`;
+    const name = (night.title && (await titleNameFor(admin, night.title, partner))) || t.push.noTitle;
+    const when = [night.starts_at]
+      .flat()
+      .map((at) => {
+        const start = new Date(at);
+        return `${formatDay(start, partner.time_zone, partner.language)}, ${formatTime(start, partner.time_zone, partner.language)}`;
+      })
+      .join(t.push.or);
     const text = t.push[change];
     await sendPush(
       admin,
@@ -161,7 +227,7 @@ export async function notifyPartner(
         title: text.heading,
         body: text.body(name, when, by.display_name || getMessages(partner.language).common.yourPartner),
         url: "/watch-nights",
-        tag: `night-${night.id}`,
+        tag: night.tag ?? `night-${night.id}`,
       },
       contact,
     );

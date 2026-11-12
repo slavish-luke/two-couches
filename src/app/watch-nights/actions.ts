@@ -20,6 +20,7 @@ import {
   type NightMethod,
 } from "@/lib/night-rules";
 import { notifyPartner, type NightChange } from "@/lib/nights";
+import { cleanPrepLabel, MAX_PREP_ITEMS, MAX_PREP_LABEL_LENGTH, MAX_PROPOSAL_TIMES, MIN_PROPOSAL_TIMES } from "@/lib/planning-rules";
 import { cleanFileLabel, MAX_FILE_LABEL_LENGTH, parseLength } from "@/lib/ready-rules";
 import { requireCoupleProfile } from "@/lib/session";
 import type { Database } from "@/lib/supabase/database.types";
@@ -55,17 +56,19 @@ async function notifyLater(change: NightChange, night: Parameters<typeof notifyP
   after(() => notifyPartner(change, night, profile, contact));
 }
 
-/** Plans a new watch night (`id` null) or changes one, then goes back to the calendar. */
-export async function saveWatchNight(id: string | null, input: NightInput): Promise<NightResult> {
-  const profile = await requireCoupleProfile();
-  const { t } = await getI18n();
+type Messages = Awaited<ReturnType<typeof getI18n>>["t"];
+
+/** A start on the planner's own clock as an instant, or an error if it isn't a time or is too far ahead. */
+function startFrom(date: unknown, time: unknown, profile: Profile, t: Messages): { start: Date } | { error: string } {
+  if (!isDateString(date) || !isTimeString(time)) return { error: t.nights.errors.pickTime };
+  const start = zonedToUtc(date, time, profile.time_zone);
+  if (start.getTime() > Date.now() + MAX_DAYS_AHEAD * 24 * 60 * 60 * 1000) return { error: t.nights.errors.tooFar };
+  return { start };
+}
+
+/** What a night (or a proposal of one) is for and how you'll watch, checked and trimmed. */
+function detailsFrom(input: Omit<NightInput, "date" | "time">, t: Messages) {
   const errors = t.nights.errors;
-  if (id !== null && !UUID.test(id)) return { error: errors.gone };
-
-  if (!isDateString(input?.date) || !isTimeString(input.time)) return { error: errors.pickTime };
-  const startsAt = zonedToUtc(input.date, input.time, profile.time_zone);
-  if (startsAt.getTime() > Date.now() + MAX_DAYS_AHEAD * 24 * 60 * 60 * 1000) return { error: errors.tooFar };
-
   let title: TitleRef | null = null;
   if (input.title) {
     if (!isMediaType(input.title.media_type) || !Number.isSafeInteger(input.title.tmdb_id) || input.title.tmdb_id <= 0) {
@@ -83,6 +86,31 @@ export async function saveWatchNight(id: string | null, input: NightInput): Prom
   if (room.length > MAX_SYNCPLAY_LENGTH) return { error: errors.roomTooLong(MAX_SYNCPLAY_LENGTH) };
   const notes = typeof input.notes === "string" ? input.notes.trim() : "";
   if (notes.length > MAX_NIGHT_NOTES_LENGTH) return { error: errors.noteTooLong(MAX_NIGHT_NOTES_LENGTH) };
+  return { title, method, link, server, room, notes };
+}
+
+/** Caches a night's title for both of you, or says why it can't. */
+async function cacheTitle(title: TitleRef | null, profile: Profile, t: Messages) {
+  if (!title) return null;
+  const cached = await cacheForCouple(title, profile);
+  if (cached === "unknown") return t.title.errors.unknownTitle;
+  if (cached === "failed") return t.title.errors.tmdbDown;
+  return null;
+}
+
+/** Plans a new watch night (`id` null) or changes one, then goes back to the calendar. */
+export async function saveWatchNight(id: string | null, input: NightInput): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const { t } = await getI18n();
+  const errors = t.nights.errors;
+  if (id !== null && !UUID.test(id)) return { error: errors.gone };
+
+  const when = startFrom(input?.date, input?.time, profile, t);
+  if ("error" in when) return when;
+  const startsAt = when.start;
+  const details = detailsFrom(input, t);
+  if ("error" in details) return { error: details.error };
+  const { title, method, link, server, room, notes } = details;
 
   const supabase = await createClient();
   const before = id
@@ -99,11 +127,8 @@ export async function saveWatchNight(id: string | null, input: NightInput): Prom
   // Editing the note of a night that's under way is fine; moving one into the past isn't.
   if (moved && startsAt.getTime() < Date.now() - PAST_GRACE_MS) return { error: errors.inPast };
 
-  if (title) {
-    const cached = await cacheForCouple(title, profile);
-    if (cached === "unknown") return { error: t.title.errors.unknownTitle };
-    if (cached === "failed") return { error: t.title.errors.tmdbDown };
-  }
+  const uncached = await cacheTitle(title, profile, t);
+  if (uncached) return { error: uncached };
 
   const fields: Database["public"]["Tables"]["watch_nights"]["Update"] = {
     media_type: title?.media_type ?? null,
@@ -232,6 +257,205 @@ export async function saveFile(nightId: string, input: FileInput): Promise<Night
 
   const result = await saveCheck(nightId, { file_label: label, file_seconds: seconds }, profile);
   if (!result.night) return result;
+  refresh();
+  return {};
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Proposals: two or three times for your partner to pick from
+// ---------------------------------------------------------------------------------------------------------
+
+export type ProposalInput = Omit<NightInput, "date" | "time"> & {
+  /** Each time as a date and time on the proposer's own clock. */
+  times: { date: string; time: string }[];
+};
+
+function titleOf(row: { media_type: string | null; tmdb_id: number | null }): TitleRef | null {
+  return isMediaType(row.media_type) && row.tmdb_id ? { media_type: row.media_type, tmdb_id: row.tmdb_id } : null;
+}
+
+/** Suggests two or three times for a watch night; your partner picks one. Then goes back to the calendar. */
+export async function proposeNight(input: ProposalInput): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const { t } = await getI18n();
+  const errors = t.nights.errors;
+
+  const times = Array.isArray(input?.times) ? input.times : [];
+  if (times.length < MIN_PROPOSAL_TIMES || times.length > MAX_PROPOSAL_TIMES) {
+    return { error: errors.needTimes(MIN_PROPOSAL_TIMES, MAX_PROPOSAL_TIMES) };
+  }
+  const starts: Date[] = [];
+  for (const time of times) {
+    const when = startFrom(time?.date, time?.time, profile, t);
+    if ("error" in when) return when;
+    if (when.start.getTime() < Date.now() - PAST_GRACE_MS) return { error: errors.inPast };
+    starts.push(when.start);
+  }
+  if (new Set(starts.map((s) => s.getTime())).size !== starts.length) {
+    return { error: errors.needTimes(MIN_PROPOSAL_TIMES, MAX_PROPOSAL_TIMES) };
+  }
+  const details = detailsFrom(input, t);
+  if ("error" in details) return { error: details.error };
+  const uncached = await cacheTitle(details.title, profile, t);
+  if (uncached) return { error: uncached };
+
+  const iso = starts.toSorted((a, b) => a.getTime() - b.getTime()).map((s) => s.toISOString());
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("night_proposals")
+    .insert({
+      couple_id: profile.couple_id,
+      proposed_by: profile.id,
+      media_type: details.title?.media_type ?? null,
+      tmdb_id: details.title?.tmdb_id ?? null,
+      times: iso,
+      method: details.method,
+      link: details.link || null,
+      syncplay_server: details.server || null,
+      syncplay_room: details.room || null,
+      notes: details.notes,
+    })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("Proposing a watch night failed", error);
+    return { error: errors.proposeFailed };
+  }
+
+  await notifyLater("proposed", { id: data.id, starts_at: iso, title: details.title, tag: `proposal-${data.id}` }, profile);
+  refresh();
+  redirect("/watch-nights");
+}
+
+/**
+ * Answers your partner's proposal: `choice` is which time (0-based), which becomes the watch night, or null for
+ * none of these. Tells your partner either way.
+ */
+export async function answerProposal(id: string, choice: number | null): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const { t } = await getI18n();
+  const errors = t.nights.proposal.errors;
+  if (!UUID.test(id) || (choice !== null && (!Number.isInteger(choice) || choice < 0 || choice >= MAX_PROPOSAL_TIMES))) {
+    return { error: errors.gone };
+  }
+
+  const supabase = await createClient();
+  const { data: proposal } = await supabase
+    .from("night_proposals")
+    .select("times, media_type, tmdb_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!proposal) return { error: errors.gone };
+  // Picked in the order the proposal shows them (soonest first), stored in the order they were saved.
+  const shown = proposal.times.toSorted();
+  const picked = choice === null ? null : shown[choice];
+  if (choice !== null && !picked) return { error: errors.gone };
+
+  const { data, error } = await supabase
+    .rpc("answer_night_proposal", {
+      proposal_id: id,
+      // null means none of these; the generated type doesn't know the argument is nullable.
+      choice: (picked ? proposal.times.indexOf(picked) + 1 : null) as number,
+    })
+    .single<{ outcome: string; watch_night_id: string | null }>();
+  if (error) {
+    console.error("Answering a proposal failed", error);
+    return { error: errors.failed };
+  }
+  if (data.outcome === "answered") return { error: errors.answered };
+  if (data.outcome === "passed") return { error: errors.passed };
+  if (data.outcome !== "picked" && data.outcome !== "declined") return { error: errors.gone };
+
+  const title = titleOf(proposal);
+  if (data.outcome === "picked" && data.watch_night_id && picked) {
+    await notifyLater("picked", { id: data.watch_night_id, starts_at: picked, title }, profile);
+  } else {
+    await notifyLater("declined", { id, starts_at: shown, title, tag: `proposal-${id}` }, profile);
+  }
+  refresh();
+  return {};
+}
+
+/** Withdraws your proposal, or puts away one that was answered or ran out of time. */
+export async function removeProposal(id: string): Promise<NightResult> {
+  await requireCoupleProfile();
+  const { t } = await getI18n();
+  if (!UUID.test(id)) return { error: t.nights.proposal.errors.gone };
+  const supabase = await createClient();
+  const { error } = await supabase.from("night_proposals").delete().eq("id", id);
+  if (error) {
+    console.error("Removing a proposal failed", error);
+    return { error: t.nights.proposal.errors.failed };
+  }
+  refresh();
+  return {};
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The prep checklist
+// ---------------------------------------------------------------------------------------------------------
+
+/** Adds something to get ready for a night that isn't over yet. */
+export async function addPrepItem(nightId: string, input: string): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const { t } = await getI18n();
+  const errors = t.nights.prep.errors;
+  if (!UUID.test(nightId)) return { error: t.nights.errors.gone };
+  const label = cleanPrepLabel(input);
+  if (!label) return { error: errors.bad(MAX_PREP_LABEL_LENGTH) };
+
+  const supabase = await createClient();
+  const { data: night } = await supabase
+    .from("watch_nights")
+    .select("starts_at, night_prep_items(count)")
+    .eq("id", nightId)
+    .maybeSingle();
+  if (!night) return { error: t.nights.errors.gone };
+  if (Date.parse(night.starts_at) < Date.now() - UNDER_WAY_MS) return { error: t.nights.ready.errors.over };
+  if ((night.night_prep_items[0]?.count ?? 0) >= MAX_PREP_ITEMS) return { error: errors.full(MAX_PREP_ITEMS) };
+
+  const { error } = await supabase
+    .from("night_prep_items")
+    .insert({ watch_night_id: nightId, couple_id: profile.couple_id, label, added_by: profile.id });
+  if (error) {
+    if (error.code === "23505") return { error: errors.duplicate };
+    if (error.code === "23503") return { error: t.nights.errors.gone };
+    console.error("Adding a prep item failed", error);
+    return { error: errors.failed };
+  }
+  refresh();
+  return {};
+}
+
+/** Ticks something on a prep list (in your name), or unticks it. */
+export async function setPrepDone(itemId: string, done: boolean): Promise<NightResult> {
+  const profile = await requireCoupleProfile();
+  const { t } = await getI18n();
+  if (!UUID.test(itemId)) return { error: t.nights.prep.errors.failed };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("night_prep_items")
+    .update(done ? { done_at: new Date().toISOString(), done_by: profile.id } : { done_at: null, done_by: null })
+    .eq("id", itemId);
+  if (error) {
+    console.error("Ticking a prep item failed", error);
+    return { error: t.nights.prep.errors.failed };
+  }
+  refresh();
+  return {};
+}
+
+/** Takes something off a prep list. */
+export async function removePrepItem(itemId: string): Promise<NightResult> {
+  await requireCoupleProfile();
+  const { t } = await getI18n();
+  if (!UUID.test(itemId)) return { error: t.nights.prep.errors.failed };
+  const supabase = await createClient();
+  const { error } = await supabase.from("night_prep_items").delete().eq("id", itemId);
+  if (error) {
+    console.error("Removing a prep item failed", error);
+    return { error: t.nights.prep.errors.failed };
+  }
   refresh();
   return {};
 }

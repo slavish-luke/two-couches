@@ -2403,3 +2403,42 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     scale: 1.03 0.95;
   }
 }
+
+/* ==========================================================================================================
+   Sprint 15: planning nights
+   ========================================================================================================== */
+
+/* The night form's hour grid as a heat map: an hour takes more of the accent the better it suits you both
+   (--heat, set per hour, at most 42% so ink stays readable on every palette's accent). */
+[data-slot] {
+  background-color: color-mix(in srgb, var(--accent) var(--heat, 0%), var(--surface));
+  color: var(--ink);
+}
+
+/* Someone's asleep: hatched paper and muted writing, as before. */
+[data-slot="late"] {
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(135deg, var(--line) 0 3px, transparent 3px 9px);
+  color: var(--muted);
+}
+
+[data-slot][data-picked] {
+  background-color: var(--accent);
+  background-image: none;
+  color: var(--on-accent);
+}
+
+/* Night on someone's own clock: their line in each hour is shaded, and their dot becomes a crescent. */
+[data-sky="night"] {
+  background-color: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+[data-slot][data-picked] [data-sky="night"] {
+  background-color: color-mix(in srgb, var(--on-accent) 24%, transparent);
+}
+
+/* Now: an ink line through the hour that's under way, with a paper edge so it shows on any fill. */
+[data-now-line] {
+  background-color: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--surface);
+}

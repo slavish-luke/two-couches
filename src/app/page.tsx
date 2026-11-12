@@ -10,7 +10,6 @@ import { Stars } from "@/components/stars";
 import { VenueClock } from "@/components/venue-clock";
 import { ArrowIcon } from "@/components/icons";
 import { getList, type ListEntry } from "@/lib/list";
-import { getWatchNights } from "@/lib/nights";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { formatDate, localDate, shortDate, type ListStatus } from "@/lib/list-rules";
@@ -24,7 +23,7 @@ import { AfterNight } from "./after-night/after-night";
 import { HomeSkeleton, ListSkeleton, PickLinkSkeleton } from "./home-skeleton";
 import { PickLink } from "./pick/pick-link";
 import { VisitChip } from "./settings/visit-chip";
-import { NightCard } from "./watch-nights/night-card";
+import { NextNight } from "./watch-nights/next-night";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -196,46 +195,6 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
         </Suspense>
       </div>
     </div>
-  );
-}
-
-/** The next watch night, or a nudge to plan one. */
-async function NextNight(props: {
-  coupleId: string;
-  me: { id: string; name: string; timeZone: string };
-  partner: { id: string; name: string; timeZone: string };
-  locales: string[];
-}) {
-  const [{ language, t }, [night]] = await Promise.all([getI18n(), getWatchNights(props.coupleId, props.locales, { limit: 1 })]);
-  return (
-    <section className="spotlight grid -rotate-1 gap-4 p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="display-pop text-[2rem]">{t.nights.next.heading}</h2>
-        <Link
-          href={night ? "/watch-nights" : "/watch-nights/new"}
-          className="group inline-flex items-center gap-1 font-bold underline underline-offset-4"
-        >
-          {night ? t.nights.next.all : t.nights.next.planOne}
-          <ArrowIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
-        </Link>
-      </div>
-      {night ? (
-        <ul>
-          <NightCard
-            night={night}
-            me={props.me}
-            partner={props.partner}
-            now={new Date()}
-            language={language}
-            t={t}
-            className=""
-            listing
-          />
-        </ul>
-      ) : (
-        <p className="text-muted">{t.nights.next.none}</p>
-      )}
-    </section>
   );
 }
 

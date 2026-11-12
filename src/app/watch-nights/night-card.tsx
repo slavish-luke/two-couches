@@ -8,6 +8,8 @@ import { titleHref } from "@/lib/watch";
 import { ExternalIcon } from "@/components/icons";
 import { Sfx } from "@/components/sfx";
 import { usesOwnFiles } from "@/lib/ready-rules";
+import { Countdown } from "./countdown";
+import { PrepList } from "./prep-list";
 import { ReadyCheck } from "./ready-check";
 
 type Person = { id: string; name: string; timeZone: string };
@@ -16,7 +18,8 @@ type Person = { id: string; name: string; timeZone: string };
  * A watch night: what, when on each person's clock, how you'll watch, the note, the ready check, and links
  * to change it or add it to a calendar. `actions` false leaves the ready check and links out (for a night
  * that's over). `className` replaces the card frame (the home page shows it in its spotlight). Each
- * person's time is a ticket on their own clock; `listing` sets them larger with a bigger poster.
+ * person's time is a ticket on their own clock; `listing` sets them larger with a bigger poster. An upcoming
+ * night also has the shared prep list.
  */
 export function NightCard(props: {
   night: WatchNight;
@@ -28,8 +31,10 @@ export function NightCard(props: {
   actions?: boolean;
   className?: string;
   listing?: boolean;
+  /** A live countdown in place of "in 3 days" (Home's next night). */
+  live?: boolean;
 }) {
-  const { night, me, partner, language, t, actions = true, className = "card p-4", listing = false } = props;
+  const { night, me, partner, language, t, actions = true, className = "card p-4", listing = false, live = false } = props;
   const start = new Date(night.starts_at);
   const started = start <= props.now;
   const plannedBy =
@@ -65,17 +70,20 @@ export function NightCard(props: {
           ) : (
             <span className="text-xl font-bold leading-snug text-muted">{t.nights.noTitle}</span>
           )}
-          {actions && (
-            <span
-              className={
-                started
-                  ? "rounded-full border-2 border-outline bg-accent px-2 text-sm font-bold text-on-accent"
-                  : "text-sm font-semibold text-muted"
-              }
-            >
-              {started ? t.nights.underWay : formatRelative(start, props.now, language)}
-            </span>
-          )}
+          {actions &&
+            (live ? (
+              <Countdown startsAt={night.starts_at} serverNow={props.now.getTime()} language={language} />
+            ) : (
+              <span
+                className={
+                  started
+                    ? "rounded-full border-2 border-outline bg-accent px-2 text-sm font-bold text-on-accent"
+                    : "text-sm font-semibold text-muted"
+                }
+              >
+                {started ? t.nights.underWay : formatRelative(start, props.now, language)}
+              </span>
+            ))}
         </div>
 
         {/* A ticket per person: their time on their own clock. */}
@@ -83,13 +91,14 @@ export function NightCard(props: {
           {people.map(({ person, fill }) => (
             <div
               key={person.id}
-              className="paper relative grid min-w-0 content-start gap-0.5 rounded-control border-[3px] border-outline px-2.5 pb-1.5 pt-1"
+              className="paper @container relative grid min-w-0 content-start gap-0.5 rounded-control border-[3px] border-outline px-2.5 pb-1.5 pt-1"
             >
               <dt className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
                 <span aria-hidden className={`size-2.5 shrink-0 rounded-full border-2 border-outline ${fill}`} />
                 <span className="truncate">{person.name}</span>
               </dt>
-              <dd className={`display-ink whitespace-nowrap leading-none ${listing ? "text-[clamp(1.35rem,2.2vw,1.7rem)]" : "text-2xl"}`}>
+              {/* Sized to the ticket too, so "12:46 PM" fits Home's narrow aside. */}
+              <dd className={`display-ink whitespace-nowrap leading-none ${listing ? "text-[min(clamp(1.35rem,2.2vw,1.7rem),19cqi)]" : "text-[min(1.5rem,19cqi)]"}`}>
                 {formatTime(start, person.timeZone, language)}
               </dd>
               <dd className="text-xs font-semibold text-muted">
@@ -117,6 +126,16 @@ export function NightCard(props: {
             me={me}
             partner={partner}
             runtime={night.title?.media_type === "movie" ? night.title.runtime : null}
+            language={language}
+          />
+        )}
+        {actions && (
+          <PrepList
+            nightId={night.id}
+            items={night.prep}
+            method={night.method}
+            me={me}
+            partner={partner}
             language={language}
           />
         )}
