@@ -2403,3 +2403,297 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     scale: 1.03 0.95;
   }
 }
+
+/* ==========================================================================================================
+ * Sprint 16: deciding together. The swipe deck (/pick/swipe), its match pop-up, the mood check-in and
+ * "Surprise us" (Pick's card shuffling in). Drawn from shared pieces (.card, .deck-card, .burst, .sfx), so
+ * each skin dresses them its own way; the few skin notes are at the end.
+ * ======================================================================================================== */
+
+/* The deck: up to three cards in one grid cell, the top one on top and two peeking out under it. */
+[data-swipe-card] {
+  grid-area: 1 / 1;
+  transform-origin: 50% 85%;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-swipe-card][data-place="0"] {
+  z-index: 3;
+  rotate: -1deg;
+  cursor: grab;
+}
+[data-swipe-card][data-place="0"][data-dragging] {
+  cursor: grabbing;
+}
+[data-swipe-card][data-place="1"] {
+  z-index: 2;
+  translate: 7px 9px;
+  rotate: 3deg;
+  scale: 0.96;
+}
+[data-swipe-card][data-place="2"] {
+  z-index: 1;
+  translate: -7px 16px;
+  rotate: -4deg;
+  scale: 0.92;
+}
+[data-swipe-card] img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* Yes and Nope, stamped on the poster as the card is dragged their way (--yes / --no, 0 to 1). */
+.swipe-stamp {
+  position: absolute;
+  top: 14%;
+  z-index: 2;
+  padding: 0.2em 0.45em 0.05em;
+  border: 3px solid var(--outline);
+  border-radius: var(--radius-control);
+  box-shadow: 3px 3px 0 var(--outline);
+  font-family: var(--font-skin-display);
+  font-size: clamp(1.4rem, 14cqi, 2.2rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--p-ink);
+  pointer-events: none;
+}
+.swipe-stamp-yes {
+  left: 7%;
+  rotate: -14deg;
+  background: var(--me);
+  opacity: var(--yes, 0);
+}
+.swipe-stamp-no {
+  right: 7%;
+  rotate: 12deg;
+  background: var(--p-surface);
+  opacity: var(--no, 0);
+}
+
+/* No / Yes: big enough to hit without looking; Undo is a round button between them. */
+.swipe-button {
+  min-width: 7.5rem;
+  justify-content: center;
+  padding-block: 0.7rem;
+  font-size: 1.1rem;
+}
+.swipe-button-small {
+  aspect-ratio: 1;
+  justify-content: center;
+  padding: 0.6rem;
+  border-radius: 9999px;
+}
+.swipe-button-small:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+/* The match pop-up: a modal dialog over the page, the card in the "both" soft colour with the burst. */
+.swipe-match {
+  width: min(26rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: var(--p-ink);
+}
+.swipe-match::backdrop {
+  background: color-mix(in srgb, var(--outline) 60%, transparent);
+}
+
+/* "Surprise us": the shuffled cards only exist with motion allowed. */
+.surprise-deck {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-swipe-card] {
+    transition:
+      translate 0.35s var(--ease-spring),
+      rotate 0.35s var(--ease-spring),
+      scale 0.35s var(--ease-spring),
+      transform 0.35s var(--ease-spring);
+  }
+  [data-swipe-card][data-dragging] {
+    transition: none;
+  }
+  .swipe-stamp {
+    transition: opacity 0.12s;
+  }
+  .swipe-match[open] > .card {
+    animation: pick-deal 0.55s var(--ease-spring) both;
+  }
+
+  /*
+   * A little pile of other posters on the pick's poster spins, then flicks off card by card (each the
+   * other way), and the pick lands with a squash; its details deal in last. --n is how many cards there
+   * are, --k each card's place, --dir the way it leaves.
+   */
+  [data-surprise] .surprise-deck {
+    --u: 1;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: block;
+    pointer-events: none;
+    animation: surprise-spin 0.4s var(--ease-spring) both;
+  }
+  [data-surprise] .surprise-deck .deck-card {
+    animation: surprise-flick 0.36s cubic-bezier(0.4, 0, 0.8, 0.6) both;
+    animation-delay: calc(0.4s + var(--k) * 0.12s);
+  }
+  [data-surprise] .surprise-poster {
+    animation: surprise-land 0.5s var(--ease-spring) both;
+    animation-delay: calc(0.45s + var(--n) * 0.12s);
+  }
+  [data-surprise] .surprise-reveal {
+    animation: surprise-reveal 0.4s ease-out both;
+    animation-delay: calc(0.6s + var(--n) * 0.12s);
+  }
+}
+
+@keyframes surprise-spin {
+  0% {
+    rotate: -24deg;
+    scale: 0.82;
+  }
+  60% {
+    rotate: 8deg;
+    scale: 1.06;
+  }
+  100% {
+    rotate: 0deg;
+    scale: 1;
+  }
+}
+@keyframes surprise-flick {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+    opacity: 1;
+  }
+  100% {
+    translate: calc(var(--dir) * 140%) -22%;
+    rotate: calc(var(--dir) * 32deg);
+    opacity: 0;
+  }
+}
+@keyframes surprise-land {
+  0% {
+    opacity: 0;
+    scale: 1.14;
+  }
+  55% {
+    opacity: 1;
+    scale: 0.95 1.03;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes surprise-reveal {
+  0% {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+/* Scrapbook: the polaroids float off like paper caught in a draught. */
+@keyframes surprise-flutter {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+    opacity: 1;
+  }
+  100% {
+    translate: calc(var(--dir) * 110%) -70%;
+    rotate: calc(var(--dir) * 55deg);
+    opacity: 0;
+  }
+}
+/* Candy: the cards hop straight up out of the jar, no spin. */
+@keyframes surprise-hop {
+  0% {
+    translate: 0 0;
+    scale: 1;
+    opacity: 1;
+  }
+  35% {
+    translate: 0 6%;
+    scale: 1.04 0.94;
+  }
+  100% {
+    translate: 0 -120%;
+    scale: 0.9;
+    opacity: 0;
+  }
+}
+@keyframes surprise-squash {
+  0% {
+    scale: 0.8 1.15;
+  }
+  55% {
+    scale: 1.08 0.92;
+  }
+  100% {
+    scale: 1;
+  }
+}
+@keyframes surprise-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Skins. Candy: nothing leans, so the top card sits straight and the pile only peeks out below. */
+[data-skin="candy"] [data-swipe-card][data-place="0"] {
+  rotate: none;
+}
+[data-skin="candy"] [data-swipe-card]:not([data-place="0"]) {
+  rotate: none;
+  translate: 0 12px;
+}
+[data-skin="candy"] [data-swipe-card][data-place="2"] {
+  translate: 0 22px;
+}
+[data-skin="candy"] .swipe-stamp {
+  border-color: transparent;
+  box-shadow: none;
+  text-transform: none;
+}
+[data-skin="scrapbook"] .swipe-stamp {
+  border-color: var(--p-surface);
+  box-shadow: var(--stk-drop-sm);
+  text-transform: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-skin="scrapbook"] [data-surprise] .surprise-deck .deck-card {
+    animation-name: surprise-flutter;
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.3, 1);
+  }
+  [data-skin="candy"] [data-surprise] .surprise-deck {
+    animation-name: surprise-squash;
+  }
+  [data-skin="candy"] [data-surprise] .surprise-deck .deck-card {
+    rotate: none;
+    animation-name: surprise-hop;
+  }
+  /* POW!: "Shuffle!" bangs onto the pile while it shuffles, then goes. */
+  [data-skin="comic"] [data-surprise] .surprise-deck .sfx {
+    z-index: 9;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    animation:
+      pop 0.5s var(--ease-spring) 0.05s both,
+      surprise-fade 0.25s ease-in calc(0.45s + var(--n) * 0.12s) forwards;
+  }
+}

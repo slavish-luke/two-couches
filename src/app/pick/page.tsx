@@ -14,24 +14,29 @@ import { formatDate, localDate } from "@/lib/list-rules";
 import { formatShortTime } from "@/lib/night-rules";
 import {
   daySeed,
-  DEFAULT_EPISODE_MIN,
-  lengthOf,
   listOnlyCount,
   MAX_MINUTES,
   MIN_MINUTES,
   minutesUntilLate,
+  moodsOf,
   parseAnother,
   parseTimeChoice,
   pickAt,
   pickOrder,
+  pickSeed,
   QUICK_MINUTES,
+  type Mood,
 } from "@/lib/pick-rules";
 import { isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
 import { streamableFor, titleHref, type Watcher } from "@/lib/watch";
-import { forYouCandidates, listCandidates, type PickItem } from "./data";
+import { MoodSync } from "./couple-changes";
+import { forYouCandidates, getMoods, listCandidates, type PickItem } from "./data";
+import { tagsFor } from "./describe";
+import { MoodCheck } from "./mood-check";
 import { PickCardSkeleton, PickSkeleton } from "./skeleton";
+import { ShuffleIcon, Surprise, SURPRISE_CARDS } from "./surprise";
 
 export const generateMetadata = localisedTitle("pick");
 
@@ -43,7 +48,10 @@ export default function PickPage({ searchParams }: PageProps<"/pick">) {
   );
 }
 
-/** What's in the URL: `?time=120` (or `late`), `all=1` to include what only one of you can watch, `n` for "Another". */
+/**
+ * What's in the URL: `?time=120` (or `late`), `all=1` to include what only one of you can watch, `n` for
+ * "Another". `surprise=1` (Home's "Surprise us") isn't kept in links: it only shuffles the pick in once.
+ */
 type PickState = { time: string | null; everything: boolean; another: number };
 
 function pickHref(state: PickState, changes: Partial<PickState>) {
@@ -81,6 +89,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
   };
   const partnerName = partner?.display_name || t.common.yourPartner;
   const now = new Date();
+  const moods = await getMoods(profile.couple_id, profile, partner, now);
 
   let minutes: number | null = null;
   let summary: string | null = null;
@@ -113,6 +122,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
   return (
     <div className="grid gap-8">
       <ListSync coupleId={profile.couple_id} />
+      <MoodSync coupleId={profile.couple_id} />
       <div className="grid gap-3">
         <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{text.heading}</h1>
         <p className="max-w-[60ch] text-lg font-medium">{text.intro}</p>
@@ -192,6 +202,8 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
             }}
             minutes={minutes}
             state={state}
+            moods={[moods.mine, moods.theirs]}
+            surprise={params.surprise === "1"}
             now={now}
             timeZone={profile.time_zone}
             partnerName={them ? partnerName : null}
@@ -200,6 +212,20 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
           />
         </Suspense>
       )}
+
+      <MoodCheck mine={moods.mine} theirs={moods.theirs} partnerName={partner ? partnerName : null} language={language} />
+
+      <Link
+        href="/pick/swipe"
+        className="group card flex items-center gap-4 py-4 transition duration-150 ease-(--ease-spring) hover:-translate-y-1 hover:-rotate-1 hover:shadow-[8px_8px_0_var(--outline)]"
+      >
+        <ShuffleIcon className="size-12" />
+        <span className="grid min-w-0 flex-1 gap-1">
+          <span className="display-ink text-2xl leading-[1.05]">{text.swipe.entry.heading}</span>
+          <span className="text-sm font-medium text-muted">{text.swipe.entry.body}</span>
+        </span>
+        <ArrowIcon className="size-6 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
+      </Link>
     </div>
   );
 }
@@ -209,6 +235,10 @@ async function PickResult(props: {
   couple: Parameters<typeof listCandidates>[0];
   minutes: number;
   state: PickState;
+  /** Both of your moods today (yours first), or null where there's none. */
+  moods: (Mood | null)[];
+  /** Arrived from "Surprise us": the pick shuffles in. */
+  surprise: boolean;
   now: Date;
   timeZone: string;
   partnerName: string | null;
@@ -216,7 +246,9 @@ async function PickResult(props: {
   t: Messages;
 }) {
   const { couple, minutes, state, t } = props;
-  const options = { minutes, everything: state.everything, seed: daySeed(props.now) };
+  const day = daySeed(props.now);
+  // Both moods feed the seed (sorted), so both screens still land on the same pick.
+  const options = { minutes, everything: state.everything, seed: pickSeed(day, props.moods), moods: moodsOf(props.moods) };
 
   const list = await listCandidates(couple);
   let candidates = list;
@@ -224,13 +256,14 @@ async function PickResult(props: {
   // The list's titles of known length come first, so suggestions are only loaded once they've all had a turn.
   if (state.another >= listOnlyCount(list, options)) {
     try {
-      candidates = [...list, ...(await forYouCandidates(couple, options.seed, state.everything))];
+      candidates = [...list, ...(await forYouCandidates(couple, day, state.everything))];
     } catch (error) {
       console.error("Loading suggestions for the pick failed", error);
       failed = true;
     }
   }
-  const result = pickAt(pickOrder(candidates, options), state.another);
+  const order = pickOrder(candidates, options);
+  const result = pickAt(order, state.another);
 
   if (!result) {
     return (
@@ -255,9 +288,17 @@ async function PickResult(props: {
     );
   }
 
+  // A surprise shuffles a few of the titles that come after it past first (any it has, going round).
+  const shuffle = props.surprise
+    ? [...new Set(Array.from({ length: order.length - 1 }, (_, i) => order[(result.position + 1 + i) % order.length].poster_path))]
+        .filter((path): path is string => Boolean(path) && path !== result.pick.poster_path)
+        .slice(0, SURPRISE_CARDS)
+    : null;
+
   return (
     <PickCard
       item={result.pick}
+      shuffle={shuffle}
       wrapped={result.round > 0 && result.position === 0}
       anotherHref={pickHref(state, { another: state.another + 1 })}
       startOverHref={state.another > 0 ? pickHref(state, { another: 0 }) : null}
@@ -283,15 +324,10 @@ function reasonFor(item: PickItem, timeZone: string, language: string, t: Messag
     : null;
 }
 
-function lengthFor(item: PickItem, t: Messages) {
-  const length = lengthOf(item);
-  if (length === null) return t.pick.length.unknown;
-  if (item.media_type === "movie") return t.pick.length.film(t.title.runtime(length));
-  return item.runtime ? t.pick.length.episode(t.title.runtime(length)) : t.pick.length.episodeGuess(t.title.runtime(DEFAULT_EPISODE_MIN));
-}
-
 function PickCard(props: {
   item: PickItem;
+  /** "Surprise us": other posters to shuffle past before this one lands, or null for a plain deal. */
+  shuffle: string[] | null;
   wrapped: boolean;
   anotherHref: string;
   startOverHref: string | null;
@@ -310,14 +346,18 @@ function PickCard(props: {
   const theirs = props.partner ? names(props.partner) : "";
   const ref = { media_type: item.media_type, tmdb_id: item.tmdb_id };
 
-  const tags = [item.release_date?.slice(0, 4), t.common.mediaType[item.media_type], lengthFor(item, t)].filter(Boolean);
+  const tags = tagsFor(item, t);
+  const shuffle = props.shuffle;
+  // While a surprise shuffles in, the details wait (globals.css, Sprint 16).
+  const reveal = shuffle ? "surprise-reveal" : "";
 
   return (
     // The screen's one spotlight. Phones: a small poster beside the details, actions across the bottom.
     // Wider: a big poster, actions under the details.
     <>
       <article
-        style={{ "--tilt": "-0.75deg", rotate: "var(--tilt)" } as CSSProperties}
+        data-surprise={shuffle ? "" : undefined}
+        style={{ "--tilt": "-0.75deg", rotate: "var(--tilt)", "--n": shuffle?.length ?? 0 } as CSSProperties}
         className="pick-deal spotlight grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-4 gap-y-5 p-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:gap-x-7 sm:p-6"
       >
         <Link
@@ -326,18 +366,21 @@ function PickCard(props: {
         >
           {/* Who can watch it rides on a tab over the poster's top edge, tipped with it. */}
           <div className="poster-frame -rotate-2">
-            <Poster
-              path={item.poster_path}
-              title={item.title}
-              size="fluid"
-              eager
-              language={language}
-              className="shadow-[6px_6px_0_var(--outline)]"
-            />
-            <PosterTab verdict={item.verdict} partnerName={props.partnerName} language={language} />
+            <div className={shuffle ? "surprise-poster" : undefined}>
+              <Poster
+                path={item.poster_path}
+                title={item.title}
+                size="fluid"
+                eager
+                language={language}
+                className="shadow-[6px_6px_0_var(--outline)]"
+              />
+              <PosterTab verdict={item.verdict} partnerName={props.partnerName} language={language} />
+            </div>
+            {shuffle && <Surprise posters={shuffle} sfx={text.surprise.sfx} />}
           </div>
         </Link>
-        <div className="grid min-w-0 content-start gap-3">
+        <div className={`grid min-w-0 content-start gap-3 ${reveal}`}>
           {props.wrapped && <p className="text-sm font-semibold text-muted">{text.wrapped}</p>}
           <h2 className="display-pop text-[clamp(1.8rem,4vw,2.75rem)] [overflow-wrap:anywhere]">
             <Link href={titleHref(item)} className="decoration-[3px] underline-offset-[6px] hover:underline">
@@ -359,7 +402,7 @@ function PickCard(props: {
             </div>
           )}
         </div>
-        <div className="col-span-2 grid content-start gap-3 sm:col-span-1 sm:col-start-2">
+        <div className={`col-span-2 grid content-start gap-3 sm:col-span-1 sm:col-start-2 ${reveal}`}>
           <div className="flex flex-wrap items-center gap-2.5">
             <Link href={titleHref(item)} className="btn">
               {text.watchNow}

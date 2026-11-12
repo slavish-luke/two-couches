@@ -11,6 +11,8 @@ export const MIN_MINUTES = 15;
 export const MAX_MINUTES = 600;
 /** One-tap choices on the page, in minutes. */
 export const QUICK_MINUTES = [90, 120, 150, 180] as const;
+/** "Surprise us" (Home's pick card) goes straight to a pick for this long. */
+export const SURPRISE_MINUTES = 120;
 /** "Another" stops counting here; the order wraps around long before. */
 export const MAX_ANOTHER = 999;
 
@@ -58,6 +60,8 @@ export type PickCandidate = TitleRef & {
   created_at: string | null;
   /** Minutes: the film, or a typical episode of a series. Null when TMDB doesn't say. */
   runtime: number | null;
+  /** TMDB genre IDs (films and series number some genres differently). */
+  genre_ids: number[];
   verdict: Verdict;
 };
 
@@ -103,27 +107,81 @@ function forYouWeight(index: number, count: number) {
   return 2 - index / Math.max(count, 1);
 }
 
+/** How each of you feels today (the mood check-in on Pick and the swipe deck). */
+export const MOODS = ["cosy", "gripping", "funny", "light", "tired"] as const;
+export type Mood = (typeof MOODS)[number];
+
+export function isMood(value: unknown): value is Mood {
+  return typeof value === "string" && (MOODS as readonly string[]).includes(value);
+}
+
 /**
- * Everything that fits in `minutes`, in the order to suggest it. Leaves out anything longer, and unless
- * `everything`, anything you can't both watch (whoCanWatch()). The order is in tiers: list titles of
- * known length, then For you suggestions of known length, then films of unknown length (list, then For
- * you). Within a tier it's a seeded weighted shuffle: titles you're watching and older adds come up more
- * often (list), better suggestions more often (For you), and with `everything` on, ones you can both
- * watch twice as often. The same seed, list and suggestions always give the same order.
+ * The TMDB genres that suit each mood, for films and for series (TMDB numbers some differently: series
+ * have "Action & Adventure", "Sci-Fi & Fantasy", "Reality", "Kids" and "Talk").
  */
-export function pickOrder<C extends PickCandidate>(
-  candidates: C[],
-  { minutes, everything, seed }: { minutes: number; everything: boolean; seed: string },
-): C[] {
+export const MOOD_GENRES: Record<Mood, Record<"movie" | "tv", number[]>> = {
+  // Romance, family, animation, fantasy, music; soaps and kids' series.
+  cosy: { movie: [10749, 10751, 16, 14, 10402], tv: [10751, 16, 10766, 10762] },
+  // Thriller, crime, mystery, action, horror, war, science fiction.
+  gripping: { movie: [53, 80, 9648, 28, 27, 10752, 878], tv: [80, 9648, 10759, 10768, 10765] },
+  // Comedy and animation.
+  funny: { movie: [35, 16], tv: [35, 16] },
+  // Adventure, comedy, family, fantasy, music, romance; reality and sci-fi & fantasy.
+  light: { movie: [12, 35, 10751, 14, 10402, 10749], tv: [35, 10764, 10751, 10765] },
+  // Nothing too demanding: comedy, animation, documentaries, family; reality and talk shows.
+  tired: { movie: [35, 16, 99, 10751], tv: [35, 16, 99, 10764, 10767] },
+};
+
+/** How much more often a title comes up for each mood it suits. */
+const MOOD_BOOST = 3;
+/** Tired: films up to this long (and series, one episode at a time) come up a little more often. */
+const TIRED_MAX_FILM = 100;
+
+/**
+ * How much a title suits today's moods: 1 with none, times MOOD_BOOST for each mood whose genres it has
+ * (so twice when it suits both of you), and for "tired" a little more for something short.
+ */
+export function moodWeight(c: Pick<PickCandidate, "media_type" | "genre_ids" | "runtime">, moods: Mood[]) {
+  let weight = 1;
+  for (const mood of moods) {
+    if (MOOD_GENRES[mood][c.media_type].some((g) => c.genre_ids.includes(g))) weight *= MOOD_BOOST;
+    if (mood === "tired") {
+      const length = lengthOf(c);
+      if (c.media_type === "tv" || (length !== null && length <= TIRED_MAX_FILM)) weight *= 1.5;
+    }
+  }
+  return weight;
+}
+
+/**
+ * Today's moods, sorted: both screens pass the same pair whoever is looking. Null (no mood today) drops out.
+ */
+export function moodsOf(moods: (Mood | null)[]) {
+  return moods.filter((m): m is Mood => m !== null).toSorted();
+}
+
+/**
+ * The seed for a day's order: the day, then both of your moods sorted (moodsOf()), so the two screens get
+ * the same order whoever is looking, and a new mood deals a new order.
+ */
+export function pickSeed(day: string, moods: (Mood | null)[]) {
+  const set = moodsOf(moods);
+  return set.length ? `${day}|${set.join("+")}` : day;
+}
+
+/** The candidates you'd pick from: no repeats, and unless `everything`, only what you can both watch. */
+function keep<C extends PickCandidate>(candidates: C[], everything: boolean, fits: (c: C) => boolean) {
   const seen = new Set<string>();
-  const kept = candidates.filter((c) => {
+  return candidates.filter((c) => {
     const key = titleKey(c);
     if (seen.has(key)) return false;
     seen.add(key);
-    const length = lengthOf(c);
-    return (everything || c.verdict === "both") && (length === null || length <= minutes);
+    return (everything || c.verdict === "both") && fits(c);
   });
+}
 
+/** Each kept candidate's weight in the shuffle (see pickOrder()). */
+function weigher<C extends PickCandidate>(kept: C[], everything: boolean, moods: Mood[]) {
   const list = kept.filter((c) => c.source === "list");
   // Newest first, so the newest add has age rank 0 and the oldest the highest.
   const byAge = new Map(
@@ -132,11 +190,34 @@ export function pickOrder<C extends PickCandidate>(
   const forYou = kept.filter((c) => c.source === "forYou");
   const forYouIndex = new Map(forYou.map((c, i) => [titleKey(c), i]));
   const bothBoost = (c: C) => (everything && c.verdict === "both" ? 2 : 1);
-  const weight = (c: C) =>
+  return (c: C) =>
     bothBoost(c) *
+    moodWeight(c, moods) *
     (c.source === "list"
       ? listWeight(c, byAge.get(titleKey(c)) ?? 0, list.length)
       : forYouWeight(forYouIndex.get(titleKey(c)) ?? 0, forYou.length));
+}
+
+/**
+ * Everything that fits in `minutes`, in the order to suggest it. Leaves out anything longer, and unless
+ * `everything`, anything you can't both watch (whoCanWatch()). The order is in tiers: list titles of
+ * known length, then For you suggestions of known length, then films of unknown length (list, then For
+ * you). Within a tier it's a seeded weighted shuffle: titles you're watching and older adds come up more
+ * often (list), better suggestions more often (For you), titles that suit today's `moods` more often
+ * (moodWeight()), and with `everything` on, ones you can both watch twice as often. The same seed, list,
+ * suggestions and moods always give the same order (seed and moods from pickSeed() and moodsOf()).
+ */
+export function pickOrder<C extends PickCandidate>(
+  candidates: C[],
+  { minutes, everything, seed, moods = [] }: { minutes: number; everything: boolean; seed: string; moods?: Mood[] },
+): C[] {
+  const kept = keep(candidates, everything, (c) => {
+    const length = lengthOf(c);
+    return length === null || length <= minutes;
+  });
+  const list = kept.filter((c) => c.source === "list");
+  const forYou = kept.filter((c) => c.source === "forYou");
+  const weight = weigher(kept, everything, moods);
 
   const known = (c: C) => lengthOf(c) !== null;
   const tiers = [
@@ -146,6 +227,32 @@ export function pickOrder<C extends PickCandidate>(
     forYou.filter((c) => !known(c)),
   ];
   return tiers.flatMap((tier) => seededShuffle(tier, seed, titleKey, weight));
+}
+
+/**
+ * The swipe deck (/pick/swipe): the same rules as pickOrder() without a time limit, so Up next first,
+ * then For you, each a seeded weighted shuffle. Both screens get the same deck from the same seed.
+ */
+export function swipeOrder<C extends PickCandidate>(
+  candidates: C[],
+  { everything, seed, moods = [] }: { everything: boolean; seed: string; moods?: Mood[] },
+): C[] {
+  const kept = keep(candidates, everything, () => true);
+  const weight = weigher(kept, everything, moods);
+  return [kept.filter((c) => c.source === "list"), kept.filter((c) => c.source === "forYou")].flatMap((tier) =>
+    seededShuffle(tier, seed, titleKey, weight),
+  );
+}
+
+/** A day's swipes by one person: titleKey() → yes (true) or no (false). */
+export type Swipes = Record<string, boolean>;
+
+/** Titles you've both said yes to, in `deck` order (titleKey()s; any not in the deck last, by key). */
+export function matchesOf(mine: Swipes, theirs: Swipes, deck: string[]) {
+  const place = new Map(deck.map((key, i) => [key, i]));
+  return Object.keys(mine)
+    .filter((key) => mine[key] && theirs[key])
+    .toSorted((a, b) => (place.get(a) ?? Infinity) - (place.get(b) ?? Infinity) || a.localeCompare(b));
 }
 
 /** How many of the first picks come from the list alone, so For you only needs loading after them. */

@@ -58,22 +58,28 @@ export function HomeSkeleton() {
   );
 }
 
-/** Home's "Pick for tonight" card: the dice's room, a heading and a line. */
+/** Home's "Pick for tonight" card: the dice's room, a heading and a line, then "Surprise us" and "Swipe together". */
 export function PickLinkSkeleton() {
   return (
-    <div data-pick-card className="card flex items-center gap-4 py-4">
-      <span className="h-14 w-16 shrink-0" />
-      <span className="grid min-w-0 flex-1 gap-1">
-        <span className="grid display-ink text-2xl leading-[1.05]">
-          <SkelText bar="ink" width="90%" />
-          <SkelText bar="ink" width="50%" />
+    <div data-pick-card className="card grid gap-3 py-4">
+      <div className="flex items-center gap-4">
+        <span className="h-14 w-16 shrink-0" />
+        <span className="grid min-w-0 flex-1 gap-1">
+          <span className="grid display-ink text-2xl leading-[1.05]">
+            <SkelText bar="ink" width="90%" />
+            <SkelText bar="ink" width="50%" />
+          </span>
+          <span className="grid text-sm font-medium">
+            <SkelText width="95%" />
+            <SkelText width="60%" />
+          </span>
         </span>
-        <span className="grid text-sm font-medium">
-          <SkelText width="95%" />
-          <SkelText width="60%" />
-        </span>
-      </span>
-      <span className="size-6 shrink-0" />
+        <span className="size-6 shrink-0" />
+      </div>
+      <div className="flex flex-wrap gap-2 sm:pl-20">
+        <SkelButton width="8.5rem" icon="size-5" className="px-3 py-1.5 text-[0.95rem]" />
+        <SkelButton quiet width="10rem" icon="size-6" className="px-3 py-1" />
+      </div>
     </div>
   );
 }

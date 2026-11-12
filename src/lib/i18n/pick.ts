@@ -5,6 +5,8 @@ const en = {
   homeLink: {
     heading: "Pick something for tonight",
     body: "Say how long you have and get one title that fits.",
+    surprise: "Surprise us",
+    swipe: "Swipe together",
   },
   time: {
     label: "How long do you have?",
@@ -53,6 +55,64 @@ const en = {
     tryLonger: "Try more time",
   },
   failed: "Couldn't load suggestions just now. Try again in a moment.",
+  /** "Surprise us": the pick arrives with a shuffle. */
+  surprise: {
+    sfx: "Shuffle!",
+  },
+  /** The mood check-in on Pick and the swipe deck. */
+  mood: {
+    heading: "How are you feeling tonight?",
+    hint: "Picks lean towards what suits both of your moods. It lasts until midnight on your clock.",
+    names: { cosy: "Cosy", gripping: "Gripping", funny: "Funny", light: "Light", tired: "Tired" },
+    you: "You",
+    partner: (name: string, mood: string) => `${name}: ${mood}`,
+    /** After the partner's name tag. */
+    notYet: "hasn't said yet",
+    failed: "Couldn't save your mood. Try again.",
+  },
+  /** /pick/swipe: each of you swipes the same deck; a title you both say yes to is a match. */
+  swipe: {
+    heading: "Swipe together",
+    intro: "You each say yes or no to the same cards on your own screen. The first one you both say yes to is your match.",
+    entry: {
+      heading: "Can't agree? Swipe together",
+      body: "The same deck on both screens. Say yes or no, and see what you both want.",
+    },
+    back: "Back to Pick",
+    yes: "Yes",
+    no: "No",
+    undo: "Undo",
+    yesStamp: "Yes!",
+    noStamp: "Nope",
+    /** The card's accessible name. */
+    card: (title: string, n: number, total: number) => `${title}, card ${n} of ${total}`,
+    keys: "Swipe the card, tap Yes or No, or use the arrow keys.",
+    progress: (done: number, total: number) => `You've swiped ${done} of ${total}`,
+    partnerCount: (name: string, count: number) => `${name} has swiped ${count} ${count === 1 ? "card" : "cards"}`,
+    partnerNone: (name: string) => `${name} hasn't started yet`,
+    startAgain: "Start again",
+    match: {
+      word: "Match!",
+      heading: "You both said yes",
+      planIt: "Plan it",
+      watchNow: "Watch now",
+      keepSwiping: "Keep swiping",
+      /** Read out when a match arrives. */
+      announce: (title: string) => `It's a match: ${title}`,
+    },
+    matches: "Your matches today",
+    done: {
+      heading: "That's the whole deck",
+      body: (name: string) => `If ${name} says yes to one you liked, it'll show up here as a match.`,
+      bodyAlone: "Your partner's yeses will show up here once they've joined.",
+    },
+    empty: {
+      heading: "Nothing to swipe yet",
+      body: "Add a few titles to Up next, or rate some you've watched for For you, and they'll be dealt here.",
+    },
+    tryEverything: "Include what only one of you can watch",
+    failed: "Couldn't save that swipe. Try again.",
+  },
 };
 
 const tr: typeof en = {
@@ -61,6 +121,8 @@ const tr: typeof en = {
   homeLink: {
     heading: "Bu akşam için bir şey seç",
     body: "Ne kadar vaktiniz olduğunu söyleyin, sığan bir yapım gelsin.",
+    surprise: "Bizi şaşırt",
+    swipe: "Birlikte kaydırın",
   },
   time: {
     label: "Ne kadar vaktiniz var?",
@@ -106,6 +168,58 @@ const tr: typeof en = {
     tryLonger: "Daha uzun bir süre dene",
   },
   failed: "Öneriler şu an yüklenemedi. Birazdan tekrar dene.",
+  surprise: {
+    sfx: "Karıştır!",
+  },
+  mood: {
+    heading: "Bu akşam nasıl hissediyorsun?",
+    hint: "Öneriler ikinizin de ruh haline uyanlara yönelir. Senin saatinle gece yarısına kadar geçerli.",
+    names: { cosy: "Sıcacık", gripping: "Sürükleyici", funny: "Komik", light: "Hafif", tired: "Yorgun" },
+    you: "Sen",
+    partner: (name: string, mood: string) => `${name}: ${mood}`,
+    notYet: "henüz seçmedi",
+    failed: "Ruh halin kaydedilemedi. Tekrar dene.",
+  },
+  swipe: {
+    heading: "Birlikte kaydırın",
+    intro: "İkiniz de kendi ekranınızda aynı kartlara evet ya da hayır dersiniz. İkinizin de evet dediği ilk yapım eşleşmenizdir.",
+    entry: {
+      heading: "Karar veremiyor musunuz? Birlikte kaydırın",
+      body: "İki ekranda aynı deste. Evet ya da hayır deyin, ikinizin de ne istediğini görün.",
+    },
+    back: "Seçime dön",
+    yes: "Evet",
+    no: "Hayır",
+    undo: "Geri al",
+    yesStamp: "Evet!",
+    noStamp: "Geç",
+    card: (title: string, n: number, total: number) => `${title}, kart ${n} / ${total}`,
+    keys: "Kartı kaydır, Evet ya da Hayır'a dokun veya ok tuşlarını kullan.",
+    progress: (done: number, total: number) => `Kaydırdığın: ${done} / ${total}`,
+    partnerCount: (name: string, count: number) => `Kaydırılan kart: ${count} (${name})`,
+    partnerNone: (name: string) => `${name} henüz başlamadı`,
+    startAgain: "Baştan başla",
+    match: {
+      word: "Eşleşme!",
+      heading: "İkiniz de evet dediniz",
+      planIt: "Planla",
+      watchNow: "Şimdi izle",
+      keepSwiping: "Kaydırmaya devam",
+      announce: (title: string) => `Eşleşme: ${title}`,
+    },
+    matches: "Bugünkü eşleşmeleriniz",
+    done: {
+      heading: "Destenin sonu",
+      body: (name: string) => `Beğendiğin bir yapıma evet derse burada eşleşme olarak görünecek: ${name}`,
+      bodyAlone: "Partnerin katıldığında onun evetleri burada görünecek.",
+    },
+    empty: {
+      heading: "Henüz kaydırılacak bir şey yok",
+      body: "Sıradakiler listenize birkaç yapım ekleyin ya da izlediklerinizi puanlayın; burada dağıtılsınlar.",
+    },
+    tryEverything: "Sadece birinizin izleyebildiklerini de göster",
+    failed: "Kaydırma kaydedilemedi. Tekrar dene.",
+  },
 };
 
 const messages = { en, tr };
