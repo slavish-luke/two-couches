@@ -8,6 +8,7 @@ import { getSubtitleFile, searchSubtitles, subtitlesConfigured, type SubtitleOpt
 import { isLanguage } from "@/lib/places";
 import { progressAfterWatching, readEpisode, sameEpisode } from "@/lib/room-rules";
 import { requireCoupleProfile } from "@/lib/session";
+import { startsWatching } from "@/lib/shelf-rules";
 import { createClient } from "@/lib/supabase/server";
 import type { MediaType } from "@/lib/watch";
 
@@ -93,7 +94,7 @@ export type EpisodeResult = { progress: Progress } | { error: string };
 /**
  * A series night's episode `watched` has just ended: the list's progress moves on to it, once for the
  * couple (progressAfterWatching(): never backwards, and a second tap for the same ending changes nothing),
- * and a title still under Up next counts as being watched. Returns the progress the list has now, from
+ * and a title still under Up next or on the Someday shelf counts as being watched. Returns the progress the list has now, from
  * which both screens work out the next episode.
  */
 export async function finishEpisode(nightId: string, watched: Progress): Promise<EpisodeResult> {
@@ -117,7 +118,7 @@ export async function finishEpisode(nightId: string, watched: Progress): Promise
     const supabase = await createClient();
     const update = supabase
       .from("list_items")
-      .update({ season: progress.season, episode: progress.episode, ...(item.status === "want" && { status: "watching" }) })
+      .update({ season: progress.season, episode: progress.episode, ...(startsWatching(item.status) && { status: "watching" as const }) })
       .eq("id", item.id);
     const { data, error } = await (current
       ? update.eq("season", current.season).eq("episode", current.episode)
