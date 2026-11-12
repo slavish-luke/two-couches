@@ -10,6 +10,9 @@ import { Stars } from "@/components/stars";
 import { VenueClock } from "@/components/venue-clock";
 import { ArrowIcon } from "@/components/icons";
 import { getList, type ListEntry } from "@/lib/list";
+import { getNightStarts } from "@/lib/nights";
+import { getNudges } from "@/lib/together";
+import { couchMood } from "@/lib/together-rules";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { formatDate, localDate, shortDate, type ListStatus } from "@/lib/list-rules";
@@ -24,6 +27,9 @@ import { HomeSkeleton, ListSkeleton, PickLinkSkeleton } from "./home-skeleton";
 import { PickLink } from "./pick/pick-link";
 import { VisitChip } from "./settings/visit-chip";
 import { MilestoneChip } from "./stats/milestone-chip";
+import { NudgeCouch } from "./together/nudge-couch";
+import { NudgeNote } from "./together/nudge-note";
+import { TonightsQuestion } from "./together/tonights-question";
 import { NextNight } from "./watch-nights/next-night";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
@@ -78,7 +84,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   if (!profile.couple_id) redirect("/couple");
 
   const supabase = await createClient();
-  const [{ data: members }, partner, params, { language, t }] = await Promise.all([
+  const [{ data: members }, partner, params, { language, t }, nightStarts, nudges] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, display_name, country, time_zone, visiting_country, visiting_until")
@@ -87,8 +93,12 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
     getPartner(),
     searchParams,
     getI18n(),
+    getNightStarts(profile.couple_id),
+    getNudges(profile.couple_id, profile.id),
   ]);
   const now = new Date();
+  // Sprint 20: the couches look happier the more you've watched together lately.
+  const mood = couchMood(nightStarts, now);
   const people = [members?.find((m) => m.id === profile.id), members?.find((m) => m.id !== profile.id)];
   const [mine, theirs] = people;
 
@@ -100,6 +110,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
           data-clocks
           className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3"
         >
+          <span className="sr-only">{t.together.mood[mood]}</span>
           {people.map((person, i) => {
             const slot = i === 0 ? "col-start-1" : "col-start-2";
             if (!person) {
@@ -122,7 +133,17 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
                 key={person.id}
                 className={`${slot} @container row-start-1 grid min-w-0 content-start justify-items-center gap-1.5 text-center`}
               >
-                <Couch who={isMe ? "me" : "partner"} size={58} />
+                {isMe ? (
+                  <Couch who="me" size={58} mood={mood} />
+                ) : (
+                  <NudgeCouch
+                    partnerName={person.display_name || t.common.yourPartner}
+                    mood={mood}
+                    language={profile.language}
+                    lastSentAt={nudges.lastSentAt}
+                    incoming={nudges.incoming}
+                  />
+                )}
                 <span
                   className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${isMe ? "bg-me" : "bg-partner"}`}
                 >
@@ -147,6 +168,14 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
               {t.list.people.apart(hoursApart(now, mine.time_zone, theirs.time_zone))}
             </span>
           )}
+          {theirs && nudges.incoming && (
+            <NudgeNote
+              nudge={nudges.incoming}
+              partnerName={theirs.display_name || t.common.yourPartner}
+              language={profile.language}
+              serverNow={now.getTime()}
+            />
+          )}
         </section>
         <MilestoneChip />
 
@@ -164,6 +193,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
           />
         )}
         <AfterNight />
+        <TonightsQuestion />
 
         <div className="grid gap-4">
           <SearchBox language={language} />

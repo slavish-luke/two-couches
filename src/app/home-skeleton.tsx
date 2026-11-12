@@ -1,5 +1,6 @@
 import { Couch } from "@/components/couch";
 import { SkelButton, SkelChip, SkelField, Skeleton, SkelPoster, SkelTab, SkelText } from "@/components/skeleton";
+import { QuestionSkeleton } from "./together/question-skeleton";
 import { NightCardSkeleton } from "./watch-nights/night-skeleton";
 
 /**
@@ -41,6 +42,7 @@ export function HomeSkeleton() {
             <NightCardSkeleton className="" listing aside />
           </ul>
         </div>
+        <QuestionSkeleton />
 
         <div className="grid gap-4">
           <div className="flex gap-2">

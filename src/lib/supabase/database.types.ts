@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "alerts": {
                   Row: {
-                    "couple_id": string,"created_at": string,"id": string,"kind": string,"media_type": string,"services": NonNullable<Json>,"tmdb_id": number
+                    "couple_id": string,"created_at": string,"details": Json | null,"id": string,"kind": string,"media_type": string,"services": NonNullable<Json>,"tmdb_id": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "couple_id": string,"created_at"?: string,"id"?: string,"kind": string,"media_type": string,"services"?: NonNullable<Json>,"tmdb_id": number
+                    "couple_id": string,"created_at"?: string,"details"?: Json | null,"id"?: string,"kind": string,"media_type": string,"services"?: NonNullable<Json>,"tmdb_id": number
                   }
                   Update: {
-                    "couple_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"media_type"?: string,"services"?: NonNullable<Json>,"tmdb_id"?: number
+                    "couple_id"?: string,"created_at"?: string,"details"?: Json | null,"id"?: string,"kind"?: string,"media_type"?: string,"services"?: NonNullable<Json>,"tmdb_id"?: number
                   }
                   Relationships: [
                     {
@@ -79,14 +79,14 @@ isOneToOne: false
                   ]
                 },"availability_snapshots": {
                   Row: {
-                    "country": string,"media_type": string,"provider_ids": (number)[],"recorded_at": string,"tmdb_id": number
+                    "country": string,"free_ids": (number)[] | null,"media_type": string,"provider_ids": (number)[],"recorded_at": string,"tmdb_id": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "country": string,"media_type": string,"provider_ids"?: (number)[],"recorded_at"?: string,"tmdb_id": number
+                    "country": string,"free_ids"?: (number)[] | null,"media_type": string,"provider_ids"?: (number)[],"recorded_at"?: string,"tmdb_id": number
                   }
                   Update: {
-                    "country"?: string,"media_type"?: string,"provider_ids"?: (number)[],"recorded_at"?: string,"tmdb_id"?: number
+                    "country"?: string,"free_ids"?: (number)[] | null,"media_type"?: string,"provider_ids"?: (number)[],"recorded_at"?: string,"tmdb_id"?: number
                   }
                   Relationships: [
                     
@@ -109,6 +109,90 @@ isOneToOne: false
 isOneToOne: true
       referencedRelation: "profiles"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"cant_wait": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"media_type": string,"profile_id": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"media_type": string,"profile_id": string,"tmdb_id": number
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"media_type"?: string,"profile_id"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cant_wait_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "cant_wait_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"comment_reactions": {
+                  Row: {
+                    "comment_id": string,"couple_id": string,"created_at": string,"kind": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "comment_id": string,"couple_id": string,"created_at"?: string,"kind": string,"profile_id": string
+                  }
+                  Update: {
+                    "comment_id"?: string,"couple_id"?: string,"created_at"?: string,"kind"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "comment_reactions_comment_id_couple_id_fkey"
+      columns: ["comment_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "comments"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "comment_reactions_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"comments": {
+                  Row: {
+                    "body": string,"couple_id": string,"created_at": string,"id": string,"list_item_id": string | null,"profile_id": string,"watch_night_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"couple_id": string,"created_at"?: string,"id"?: string,"list_item_id"?: string | null,"profile_id": string,"watch_night_id"?: string | null
+                  }
+                  Update: {
+                    "body"?: string,"couple_id"?: string,"created_at"?: string,"id"?: string,"list_item_id"?: string | null,"profile_id"?: string,"watch_night_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "comments_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "comments_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comments_watch_night_id_couple_id_fkey"
+      columns: ["watch_night_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "watch_nights"
+      referencedColumns: ["id","couple_id"]
     }
                   ]
                 },"couples": {
@@ -146,6 +230,58 @@ isOneToOne: false
     },{
       foreignKeyName: "dismissed_titles_dismissed_by_fkey"
       columns: ["dismissed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"episode_reactions": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"episode": number,"kind": string,"list_item_id": string,"note": string,"profile_id": string,"season": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"episode": number,"kind": string,"list_item_id": string,"note"?: string,"profile_id": string,"season": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"episode"?: number,"kind"?: string,"list_item_id"?: string,"note"?: string,"profile_id"?: string,"season"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "episode_reactions_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "episode_reactions_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"episode_signals": {
+                  Row: {
+                    "changed_at": string,"couple_id": string,"episode": number,"list_item_id": string,"profile_id": string,"season": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changed_at"?: string,"couple_id": string,"episode": number,"list_item_id": string,"profile_id": string,"season": number
+                  }
+                  Update: {
+                    "changed_at"?: string,"couple_id"?: string,"episode"?: number,"list_item_id"?: string,"profile_id"?: string,"season"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "episode_signals_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "episode_signals_profile_id_fkey"
+      columns: ["profile_id"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -259,6 +395,32 @@ isOneToOne: false
 isOneToOne: true
       referencedRelation: "profiles"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"night_photos": {
+                  Row: {
+                    "bytes": number,"couple_id": string,"created_at": string,"height": number,"id": string,"path": string,"thumb_path": string,"uploaded_by": string,"watch_night_id": string,"width": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bytes": number,"couple_id": string,"created_at"?: string,"height": number,"id": string,"path": string,"thumb_path": string,"uploaded_by": string,"watch_night_id": string,"width": number
+                  }
+                  Update: {
+                    "bytes"?: number,"couple_id"?: string,"created_at"?: string,"height"?: number,"id"?: string,"path"?: string,"thumb_path"?: string,"uploaded_by"?: string,"watch_night_id"?: string,"width"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "night_photos_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "night_photos_watch_night_id_couple_id_fkey"
+      columns: ["watch_night_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "watch_nights"
+      referencedColumns: ["id","couple_id"]
     }
                   ]
                 },"night_prep_items": {
@@ -383,6 +545,38 @@ isOneToOne: false
       referencedColumns: ["id","couple_id"]
     }
                   ]
+                },"nudges": {
+                  Row: {
+                    "couple_id": string,"from_profile": string,"id": string,"kind": string,"seen_at": string | null,"sent_at": string,"to_profile": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"from_profile": string,"id"?: string,"kind": string,"seen_at"?: string | null,"sent_at"?: string,"to_profile": string
+                  }
+                  Update: {
+                    "couple_id"?: string,"from_profile"?: string,"id"?: string,"kind"?: string,"seen_at"?: string | null,"sent_at"?: string,"to_profile"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "nudges_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "nudges_from_profile_fkey"
+      columns: ["from_profile"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "nudges_to_profile_fkey"
+      columns: ["to_profile"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "alerts_seen_at": string,"country": string | null,"couple_id": string | null,"created_at": string,"display_name": string,"id": string,"language": string,"services": (number)[],"time_zone": string,"updated_at": string,"visiting_country": string | null,"visiting_until": string | null
@@ -417,6 +611,58 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "push_subscriptions_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"question_answers": {
+                  Row: {
+                    "body": string,"couple_id": string,"created_at": string,"day": string,"profile_id": string,"question": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"couple_id": string,"created_at"?: string,"day": string,"profile_id": string,"question": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "body"?: string,"couple_id"?: string,"created_at"?: string,"day"?: string,"profile_id"?: string,"question"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_answers_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "question_answers_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"question_signals": {
+                  Row: {
+                    "changed_at": string,"couple_id": string,"day": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changed_at"?: string,"couple_id": string,"day": string,"profile_id": string
+                  }
+                  Update: {
+                    "changed_at"?: string,"couple_id"?: string,"day"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_signals_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "question_signals_profile_id_fkey"
       columns: ["profile_id"]
 isOneToOne: false
       referencedRelation: "profiles"
@@ -533,6 +779,84 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"rewatch_ratings": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"profile_id": string,"rating": number,"rewatch_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"profile_id": string,"rating": number,"rewatch_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"profile_id"?: string,"rating"?: number,"rewatch_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rewatch_ratings_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "rewatch_ratings_rewatch_id_couple_id_fkey"
+      columns: ["rewatch_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "rewatches"
+      referencedColumns: ["id","couple_id"]
+    }
+                  ]
+                },"rewatches": {
+                  Row: {
+                    "added_by": string | null,"couple_id": string,"created_at": string,"id": string,"list_item_id": string,"watched_on": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "added_by"?: string | null,"couple_id": string,"created_at"?: string,"id"?: string,"list_item_id": string,"watched_on": string
+                  }
+                  Update: {
+                    "added_by"?: string | null,"couple_id"?: string,"created_at"?: string,"id"?: string,"list_item_id"?: string,"watched_on"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rewatches_added_by_fkey"
+      columns: ["added_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "rewatches_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    }
+                  ]
+                },"season_ratings": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"list_item_id": string,"profile_id": string,"rating": number,"season": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"list_item_id": string,"profile_id": string,"rating": number,"season": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"list_item_id"?: string,"profile_id"?: string,"rating"?: number,"season"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "season_ratings_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "season_ratings_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "country": string,"display_priority": number,"logo_path": string | null,"name": string,"provider_id": number,"refreshed_at": string
@@ -635,6 +959,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"warn_keywords": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"keyword_id": number,"name": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"keyword_id": number,"name": string,"profile_id": string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"keyword_id"?: number,"name"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "warn_keywords_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "warn_keywords_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"watch_nights": {
                   Row: {
                     "couple_id": string,"created_at": string,"created_by": string | null,"id": string,"link": string | null,"media_type": string | null,"method": string | null,"notes": string,"starts_at": string,"syncplay_room": string | null,"syncplay_server": string | null,"tmdb_id": number | null,"updated_at": string
@@ -676,11 +1026,23 @@ isOneToOne: false
             "answer_night_proposal":
 { Args: { "choice": number,"proposal_id": string }; Returns: Record<string, unknown>
                            },
+"can_add_night_photo":
+{ Args: { "p_name": string }; Returns: boolean
+                           },
 "create_couple":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "distinct_times":
 { Args: { "times": (string)[] }; Returns: boolean
+                           },
+"episode_watched":
+{ Args: { "p_episode": number,"p_list_item_id": string,"p_season": number }; Returns: boolean
+                           },
+"has_answered":
+{ Args: { "p_day": string }; Returns: boolean
+                           },
+"has_reacted_episode":
+{ Args: { "p_episode": number,"p_list_item_id": string,"p_season": number }; Returns: boolean
                            },
 "has_reviewed":
 { Args: { "p_list_item_id": string }; Returns: boolean
@@ -699,6 +1061,9 @@ isOneToOne: false
                            },
 "new_invite_code":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"night_photo_orphaned":
+{ Args: { "p_name": string }; Returns: boolean
                            },
 "request_daily_check":
 { Args: Record<PropertyKey, never>; Returns: number
