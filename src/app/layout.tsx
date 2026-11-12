@@ -23,16 +23,16 @@ import "./globals.css";
 // A later skin's fonts are declared with preload: false, so only the active skin's fonts download.
 const luckiest = Luckiest_Guy({ variable: "--font-luckiest", weight: "400", subsets: ["latin", "latin-ext"] });
 const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin", "latin-ext"] });
-// Fredoka has no Turkish capital İ (the browser drew a blocky fallback one): this one-letter face is built from
-// Fredoka's own I and dot (fonts/README.md). It downloads only on pages with an İ.
-const fredokaIdot = localFont({
-  src: "./fonts/fredoka-idot.woff2",
-  variable: "--font-fredoka-idot",
+// Fredoka's Google files have no İ Ş ş Ğ ğ (the browser drew them in a fallback face): this five-letter face builds
+// them from Fredoka's own letters, cedilla, dot and breve (fonts/README.md). It downloads only on pages with one.
+const fredokaTurkish = localFont({
+  src: "./fonts/fredoka-turkish.woff2",
+  variable: "--font-fredoka-turkish",
   weight: "300 700",
   preload: false,
   fallback: [],
   adjustFontFallback: false,
-  declarations: [{ prop: "unicode-range", value: "U+0130" }],
+  declarations: [{ prop: "unicode-range", value: "U+0130, U+011E-011F, U+015E-015F" }],
 });
 // Sticker Scrapbook's faces: Bagel Fat One for sticker lettering, Nunito for reading. Bagel's Google files lack
 // İ Ş ş Ğ ğ (and come as a hundred-odd Korean slices), so it's one local file: Google's latin set plus those five
@@ -79,7 +79,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
       suppressHydrationWarning
-      className={`${luckiest.variable} ${fredoka.variable} ${fredokaIdot.variable} ${bagel.variable} ${nunito.variable} ${dela.variable} ${rubik.variable} ${bangers.variable} ${shantell.variable} h-full antialiased`}
+      className={`${luckiest.variable} ${fredoka.variable} ${fredokaTurkish.variable} ${bagel.variable} ${nunito.variable} ${dela.variable} ${rubik.variable} ${bangers.variable} ${shantell.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />

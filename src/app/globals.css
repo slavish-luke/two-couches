@@ -15,7 +15,7 @@
 /* Saturday Morning: a Saturday-morning cartoon. Thick ink outlines, hard offset shadows, springy motion. */
 [data-skin="saturday"] {
   --font-skin-display: var(--font-luckiest), sans-serif;
-  --font-skin-body: var(--font-fredoka-idot), var(--font-fredoka), sans-serif;
+  --font-skin-body: var(--font-fredoka-turkish), var(--font-fredoka), sans-serif;
   --outline-width: 3px;
   --skin-radius-panel: 22px;
   --skin-radius-control: 14px;
