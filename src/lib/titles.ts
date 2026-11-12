@@ -162,7 +162,14 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     .eq("title_texts.locale", locale)
     .maybeSingle();
   const cachedText = cached?.title_texts[0];
-  if (cached && cachedText && isFresh(cached.refreshed_at) && isFresh(cachedText.refreshed_at)) {
+  // Rows cached before Sprint 22 have no origin countries yet: refreshing once fills them in.
+  if (
+    cached &&
+    cachedText &&
+    cached.origin_countries !== null &&
+    isFresh(cached.refreshed_at) &&
+    isFresh(cachedText.refreshed_at)
+  ) {
     return toTitle(cached, cachedText);
   }
 
@@ -217,6 +224,7 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     episodes: kind.episodes,
     season_episodes: kind.season_episodes,
     vote_average: details.vote_average || null,
+    origin_countries: (details.origin_country ?? []).filter((c) => /^[A-Z]{2}$/.test(c)),
     refreshed_at: refreshedAt,
   };
   const text: TitleTextRow = {

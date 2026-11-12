@@ -28,6 +28,7 @@ export function BrowseSkeleton() {
           <SkelText bar="lettering" className="display text-[clamp(2rem,4vw,2.8rem)]" width="15rem" />
           <div className="flex flex-wrap gap-2">
             <SkelChip width="12rem" />
+            <SkelChip width="13rem" />
             <span className="mx-1 w-[3px] self-stretch rounded-full bg-outline/25" />
             <SkelChip logo width="7rem" />
             <SkelChip logo width="8.5rem" />

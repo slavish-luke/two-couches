@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { Couches } from "@/components/couch";
 import { CountryChip } from "@/components/country-chip";
-import { ArrowIcon, BackIcon } from "@/components/icons";
+import { ArrowIcon, BackIcon, GlobeIcon } from "@/components/icons";
 import { FilterSelect } from "@/components/filter-select";
 import { ListSync } from "@/components/list-sync";
 import { TitleCard, type CardContext } from "@/components/title-card";
@@ -33,6 +33,7 @@ import { countryName, isCountry } from "@/lib/places";
 import { getServices, type Service } from "@/lib/services";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability } from "@/lib/titles";
+import { ourCountries } from "@/lib/time-rules";
 import { tmdbLocale } from "@/lib/tmdb";
 import {
   isMediaType,
@@ -66,6 +67,8 @@ type Filters = {
   decade: Decade | null;
   rating: MinRating | null;
   sort: Sort;
+  /** Sprint 22: only titles made in one of your home countries. */
+  made: boolean;
   page: number;
 };
 
@@ -79,6 +82,7 @@ function filtersQuery(filters: Filters): Record<string, string> {
   if (filters.decade) query.decade = filters.decade;
   if (filters.rating) query.rating = filters.rating;
   if (filters.sort !== "popular") query.sort = filters.sort;
+  if (filters.made) query.made = "1";
   if (filters.page > 1) query.page = String(filters.page);
   return query;
 }
@@ -141,6 +145,8 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
     profile.couple_id ? getListKeys(profile.couple_id) : null,
   ]);
   const chips = serviceChips(myServices, theirServices, me, them);
+  // Both of your home countries (a visit doesn't change where you're from).
+  const homes = ourCountries([profile.home_country, partner?.home_country]);
 
   const filters: Filters = {
     type,
@@ -150,10 +156,13 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
     decade: oneOf(DECADES, params.decade),
     rating: oneOf(MIN_RATINGS, params.rating),
     sort: oneOf(SORTS, params.sort) ?? "popular",
+    made: params.made === "1" && homes.length > 0,
     page: Math.min(positiveInt(params.page) ?? 1, Math.floor(MAX_PAGES / BOTH_BATCH)),
   };
   const chip = chips.find((c) => c.provider_id === filters.service);
-  const isFiltered = Boolean(filters.service || filters.genre || filters.decade || filters.rating || filters.sort !== "popular");
+  const isFiltered = Boolean(
+    filters.service || filters.genre || filters.decade || filters.rating || filters.sort !== "popular" || filters.made,
+  );
   const showRows = !isFiltered && filters.page === 1;
 
   // Look in the selected service's country (yours if you both have it), else on everything you pay for.
@@ -165,6 +174,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
     decade: filters.decade,
     minRating: filters.rating,
     sort: filters.sort,
+    ...(filters.made && { origins: homes }),
   };
   // warmCaches() (src/lib/warm.ts) asks for the same as an unfiltered first page; keep the two in step.
   const tmdbPages = batchPages(filters.page, filters.both);
@@ -202,6 +212,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
   const whose = { both: t.browse.whose.both, me: t.browse.whose.me, partner: t.browse.whose.partner(partnerName) };
   const dot = { both: "bg-stamp", me: "bg-me", partner: "bg-partner" };
   const selectQuery = filtersQuery({ ...filters, page: 1 });
+  const homeNames = homes.map((code) => countryName(code, language)).join(t.time.made.or);
 
   return (
     <div data-wide className="grid gap-8">
@@ -247,6 +258,18 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
               <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-pressed={filters.both}>
                 <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
                 {t.browse.bothToggle}
+              </Link>
+            )}
+            {homes.length > 0 && (
+              <Link
+                href={filtersHref(filters, { made: !filters.made })}
+                className="chip"
+                aria-pressed={filters.made}
+                title={t.time.made.names(homeNames)}
+              >
+                <GlobeIcon className="size-4" />
+                {homes.length > 1 ? t.time.made.ours : t.time.made.one(homeNames)}
+                {homes.length > 1 && <span className="sr-only"> ({t.time.made.names(homeNames)})</span>}
               </Link>
             )}
             {chips.length > 0 && filters.both !== null && (
@@ -404,7 +427,15 @@ async function BrowseResults(props: {
         <p className="display-ink text-2xl">{t.browse.noMatches}</p>
         {(isFiltered || filters.both) && (
           <Link
-            href={filtersHref(filters, { service: null, genre: null, decade: null, rating: null, sort: "popular", both: them ? false : null })}
+            href={filtersHref(filters, {
+              service: null,
+              genre: null,
+              decade: null,
+              rating: null,
+              sort: "popular",
+              made: false,
+              both: them ? false : null,
+            })}
             className="btn-quiet mt-2 text-sm"
           >
             {t.browse.clearFilters}

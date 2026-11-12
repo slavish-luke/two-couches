@@ -36,6 +36,11 @@ import { TonightsQuestion } from "./together/tonights-question";
 import { NextNight } from "./watch-nights/next-night";
 import { EpisodeChip, NextEpisodes } from "./list/next-episodes";
 import { getEpisodeGuides } from "@/lib/diary";
+import { formatTime } from "@/lib/night-rules";
+import { getFreeEvenings } from "@/lib/time";
+import { isFreeOn, tonightFor, tonightSlot } from "@/lib/time-rules";
+import { ClockState } from "./time/clock-state";
+import { FreeTonight } from "./time/free-tonight";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -89,7 +94,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   if (!profile.couple_id) redirect("/couple");
 
   const supabase = await createClient();
-  const [{ data: members }, partner, params, { language, t }, nightStarts, nudges] = await Promise.all([
+  const [{ data: members }, partner, params, { language, t }, nightStarts, nudges, freeRows] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, display_name, country, time_zone, visiting_country, visiting_until")
@@ -100,12 +105,17 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
     getI18n(),
     getNightStarts(profile.couple_id),
     getNudges(profile.couple_id, profile.id),
+    getFreeEvenings(profile.couple_id),
   ]);
   const now = new Date();
   // Sprint 20: the couches look happier the more you've watched together lately.
   const mood = couchMood(nightStarts, now);
   const people = [members?.find((m) => m.id === profile.id), members?.find((m) => m.id !== profile.id)];
   const [mine, theirs] = people;
+  // Sprint 22: who said they're free on their own tonight, and the best hour tonight if you both are.
+  const myTonight = tonightFor(profile.time_zone, now);
+  const partnerTonight = theirs ? tonightFor(theirs.time_zone, now) : null;
+  const tonight = tonightSlot(now, partnerTonight ? [myTonight, partnerTonight] : [myTonight], profile.time_zone);
 
   return (
     <div data-wide className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-8 lg:grid-cols-12">
@@ -160,7 +170,15 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
                   )}
                 </span>
                 {person.country ? (
-                  <VenueClock timeZone={person.time_zone} language={profile.language} serverNow={now.getTime()} />
+                  <>
+                    <VenueClock timeZone={person.time_zone} language={profile.language} serverNow={now.getTime()} />
+                    <ClockState
+                      timeZone={person.time_zone}
+                      name={isMe ? t.common.you : person.display_name || t.list.people.noName}
+                      language={profile.language}
+                      serverNow={now.getTime()}
+                    />
+                  </>
                 ) : (
                   <span className="text-sm text-muted">{t.list.people.settingUp}</span>
                 )}
@@ -182,6 +200,24 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             />
           )}
         </section>
+        {theirs && partnerTonight && (
+          <FreeTonight
+            coupleId={profile.couple_id}
+            mine={isFreeOn(freeRows, profile.id, myTonight.day)}
+            partner={{
+              name: theirs.display_name || t.common.yourPartner,
+              free: isFreeOn(freeRows, theirs.id, partnerTonight.day),
+            }}
+            slot={
+              tonight && {
+                href: `/watch-nights/new?date=${tonight.date}&time=${tonight.time}`,
+                mine: formatTime(tonight.at, profile.time_zone, language),
+                theirs: formatTime(tonight.at, theirs.time_zone, language),
+              }
+            }
+            language={language}
+          />
+        )}
         <MilestoneChip />
 
         {/* No boundary of its own: the spotlight arrives with the aside, so nothing below it jumps when it does. */}

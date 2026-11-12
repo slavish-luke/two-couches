@@ -269,3 +269,45 @@ export function WarningIcon({ className }: { className?: string }) {
     </Glyph>
   );
 }
+
+// Sprint 22: time together.
+
+/** A crescent moon: "I'm free tonight", and someone probably asleep under their clock. */
+export function MoonIcon({ className, filled = false }: { className?: string; filled?: boolean }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill={filled ? "var(--pop)" : "none"} />
+    </Glyph>
+  );
+}
+
+/** A little sofa: free time under a clock. */
+export function SofaIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3" />
+      <path d="M3 13a2 2 0 0 1 4 0v1h10v-1a2 2 0 0 1 4 0v4H3z" />
+      <path d="M5 17v2M19 17v2" />
+    </Glyph>
+  );
+}
+
+/** A clock face with its hands at work time: busy hours under a clock. */
+export function BusyIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </Glyph>
+  );
+}
+
+/** A globe: "Made in our countries". */
+export function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z" />
+    </Glyph>
+  );
+}

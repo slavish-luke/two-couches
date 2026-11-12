@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
  * your couple, and when the tab comes back into view (phones drop the socket in the background). Joins
  * Realtime as the signed-in user, so RLS lets the rows through, as ListSync does.
  */
-export function useCoupleChanges(coupleId: string, table: "moods" | "swipes", onChange: () => void) {
+export function useCoupleChanges(coupleId: string, table: "moods" | "swipes" | "free_evenings", onChange: () => void) {
   const latest = useRef(onChange);
   useEffect(() => {
     latest.current = onChange;
