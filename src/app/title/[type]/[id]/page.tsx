@@ -37,6 +37,7 @@ import {
   type Watcher,
 } from "@/lib/watch";
 import { ContentGuidance } from "./guidance";
+import { TitleTogether } from "@/app/together/title-together";
 import { ListPanel } from "./list-panel";
 import { GuidanceSkeleton, TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
 
@@ -152,6 +153,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
           <ListSync coupleId={profile.couple_id} />
         </Suspense>
       )}
+      {profile.couple_id && <TitleTogether titleRef={ref} seasonEpisodes={title.season_episodes} />}
     </div>
   );
 }

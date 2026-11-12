@@ -8,6 +8,8 @@ import { titleHref } from "@/lib/watch";
 import { ExternalIcon } from "@/components/icons";
 import { Sfx } from "@/components/sfx";
 import { usesOwnFiles } from "@/lib/ready-rules";
+import { CommentThread } from "../together/comment-thread";
+import { NightAlbum } from "../together/night-album";
 import { Countdown } from "./countdown";
 import { PrepList } from "./prep-list";
 import { ReadyCheck } from "./ready-check";
@@ -139,6 +141,26 @@ export function NightCard(props: {
             language={language}
           />
         )}
+        {/* Sprint 20: the night's photo album (once it has started) and its comment thread, folded away. */}
+        <NightAlbum
+          nightId={night.id}
+          coupleId={night.couple_id}
+          photos={night.photos}
+          me={me}
+          partner={partner}
+          language={language}
+          serverNow={props.now.getTime()}
+          canAdd={started}
+        />
+        <CommentThread
+          target={{ nightId: night.id }}
+          comments={night.comments}
+          me={me}
+          partner={partner}
+          language={language}
+          serverNow={props.now.getTime()}
+          collapsed
+        />
 
         <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
           {plannedBy && <span>{plannedBy}</span>}

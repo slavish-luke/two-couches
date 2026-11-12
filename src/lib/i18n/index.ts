@@ -19,11 +19,12 @@ import places from "./places";
 import reviews from "./reviews";
 import stats from "./stats";
 import title from "./title";
+import together from "./together";
 import upcoming from "./upcoming";
 
 const dictionaries = {
-  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en, pick: pick.en, places: places.en, reviews: reviews.en, diary: diary.en, discovery: discovery.en },
-  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr, pick: pick.tr, places: places.tr, reviews: reviews.tr, diary: diary.tr, discovery: discovery.tr },
+  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en, pick: pick.en, places: places.en, reviews: reviews.en, diary: diary.en, discovery: discovery.en, together: together.en },
+  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr, pick: pick.tr, places: places.tr, reviews: reviews.tr, diary: diary.tr, discovery: discovery.tr, together: together.tr },
 } satisfies Record<Language, unknown>;
 
 export type Messages = (typeof dictionaries)["en"];

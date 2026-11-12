@@ -10,6 +10,7 @@ import { createAdminClient } from "./supabase/admin";
 import type { Database } from "./supabase/database.types";
 import { createClient } from "./supabase/server";
 import type { ReadyCheck } from "./ready-rules";
+import { COMMENTS_SELECT, PHOTOS_SELECT, toComments, type CommentRow, type NightPhoto } from "./together";
 import { pickText } from "./titles";
 import { tmdbLocale } from "./tmdb";
 import { titleKey, type MediaType, type TitleRef } from "./watch";
@@ -26,7 +27,7 @@ export type NightTitle = TitleRef & { title: string; poster_path: string | null;
 
 export type WatchNight = Pick<
   NightRow,
-  "id" | "starts_at" | "link" | "syncplay_server" | "syncplay_room" | "notes" | "created_by" | "created_at"
+  "id" | "couple_id" | "starts_at" | "link" | "syncplay_server" | "syncplay_room" | "notes" | "created_by" | "created_at"
 > & {
   method: NightMethod | null;
   /** What you'll watch, or null to decide later. */
@@ -35,6 +36,10 @@ export type WatchNight = Pick<
   checks: ReadyCheck[];
   /** The shared prep checklist, oldest first. */
   prep: PrepItem[];
+  /** The night's comment thread, oldest first (Sprint 20). */
+  comments: CommentRow[];
+  /** The night's photo album, oldest first (Sprint 20). */
+  photos: NightPhoto[];
 };
 
 type TitleJoin = {
@@ -46,7 +51,7 @@ type TitleJoin = {
 
 const TITLE_SELECT = "titles(original_title, poster_path, runtime, title_texts(locale, title, poster_path))";
 
-const SELECT = `*, ${TITLE_SELECT}, ready_checks(profile_id, ready_at, file_label, file_seconds), night_prep_items(id, label, done_at, done_by, added_by, created_at)`;
+const SELECT = `*, ${TITLE_SELECT}, ready_checks(profile_id, ready_at, file_label, file_seconds), night_prep_items(id, label, done_at, done_by, added_by, created_at), ${COMMENTS_SELECT}, ${PHOTOS_SELECT}`;
 
 function toTitle(row: { media_type: string | null; tmdb_id: number | null; titles: TitleJoin }, locales: string[]) {
   return row.titles && row.media_type && row.tmdb_id
@@ -60,11 +65,18 @@ function toTitle(row: { media_type: string | null; tmdb_id: number | null; title
 }
 
 function toNight(
-  row: NightRow & { titles: TitleJoin; ready_checks: ReadyCheck[]; night_prep_items: PrepItem[] },
+  row: NightRow & {
+    titles: TitleJoin;
+    ready_checks: ReadyCheck[];
+    night_prep_items: PrepItem[];
+    comments: Parameters<typeof toComments>[0];
+    night_photos: NightPhoto[];
+  },
   locales: string[],
 ): WatchNight {
   return {
     id: row.id,
+    couple_id: row.couple_id,
     starts_at: row.starts_at,
     method: isNightMethod(row.method) ? row.method : null,
     link: row.link,
@@ -76,6 +88,8 @@ function toNight(
     title: toTitle(row, locales),
     checks: row.ready_checks,
     prep: row.night_prep_items.toSorted((a, b) => a.created_at.localeCompare(b.created_at)),
+    comments: toComments(row.comments),
+    photos: row.night_photos.toSorted((a, b) => a.created_at.localeCompare(b.created_at)),
   };
 }
 

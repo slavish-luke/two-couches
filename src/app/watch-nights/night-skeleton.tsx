@@ -77,6 +77,10 @@ export function NightCardSkeleton({
             </div>
           </div>
         )}
+        {/* The folded comment thread's toggle (Sprint 20). */}
+        <div className="text-sm font-bold">
+          <SkelText width="7rem" />
+        </div>
         <div className="grid text-sm">
           <SkelText width={actions ? "60%" : "35%"} />
           {actions && <SkelText className={wrapped} width="35%" />}

@@ -25,6 +25,7 @@ import { cleanFileLabel, MAX_FILE_LABEL_LENGTH, parseLength } from "@/lib/ready-
 import { requireCoupleProfile } from "@/lib/session";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
+import { clearNightPhotos } from "@/lib/together";
 import { isMediaType, type TitleRef } from "@/lib/watch";
 
 // Everything here runs as the signed-in user, so RLS limits it to their couple's watch nights.
@@ -182,6 +183,8 @@ export async function cancelWatchNight(id: string): Promise<NightResult> {
     console.error("Cancelling a watch night failed", error);
     return { error: t.nights.errors.cancelFailed };
   }
+  // Sprint 20: the night's album files don't go with the row.
+  if (data) await clearNightPhotos(profile.couple_id, data.id);
   if (data && Date.parse(data.starts_at) > Date.now()) {
     const title = isMediaType(data.media_type) && data.tmdb_id ? { media_type: data.media_type, tmdb_id: data.tmdb_id } : null;
     await notifyLater("cancelled", { id: data.id, starts_at: data.starts_at, title }, profile);
