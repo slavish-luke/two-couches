@@ -1,13 +1,14 @@
 import "server-only";
-import { ALERT_STATUSES, alertFor, describeAlert, isAlertKind, reminderDone } from "./alert-rules";
-import { alertServices, flatrateIds } from "./alerts";
+import { ALERT_STATUSES, alertsFor, describeAlert, isAlertKind, readAlertDetails, reminderDone } from "./alert-rules";
+import { alertServices, flatrateIds, freeIds } from "./alerts";
+import { appBadgeCount } from "./app-badge";
 import { getMessages } from "./i18n";
 import { isPushConfigured, sendPush, type PushMessage } from "./push";
 import { createAdminClient } from "./supabase/admin";
-import type { Database } from "./supabase/database.types";
+import type { Database, Json } from "./supabase/database.types";
 import { getAvailability } from "./titles";
-import { tmdbLocale } from "./tmdb";
-import { streamableFor, titleHref, titleKey, type Availability, type TitleRef, type Watcher } from "./watch";
+import { fetchWatchProviders, tmdbLocale } from "./tmdb";
+import { freeFor, titleHref, titleKey, type Availability, type Provider, type TitleRef, type Watcher } from "./watch";
 
 // Runs once a day (pg_cron calls /api/cron/daily) with the secret key, across every couple.
 
@@ -20,11 +21,21 @@ const MAX_NOTIFICATIONS = 3;
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 type AlertRow = Database["public"]["Tables"]["alerts"]["Row"];
-type Member = Watcher & { id: string; name: string | null; language: string };
+type SnapshotRow = Database["public"]["Tables"]["availability_snapshots"]["Row"];
+type Member = Watcher & { id: string; name: string | null; language: string; couple_id: string; alerts_seen_at: string };
 /** A title a couple is waiting for: on their list, with a reminder, or both. */
 type Watched = { ref: TitleRef; listed: boolean; reminderId: string | null };
 
-export type DailyCheckResult = { titles: number; alerts: number; notifications: number; remindersDone: number };
+/** A notification as it was (or, with no devices, would have been) sent. For checking the job by hand. */
+export type SentMessage = PushMessage & { profileId: string; devices: number };
+
+export type DailyCheckResult = {
+  titles: number;
+  alerts: number;
+  notifications: number;
+  remindersDone: number;
+  messages: SentMessage[];
+};
 
 function keyOf(row: { media_type: string; tmdb_id: number }): TitleRef {
   return { media_type: row.media_type as TitleRef["media_type"], tmdb_id: row.tmdb_id };
@@ -32,8 +43,8 @@ function keyOf(row: { media_type: string; tmdb_id: number }): TitleRef {
 
 /**
  * Re-checks where every watched title streams, records an alert for each couple whose title has newly
- * arrived (see alertFor()), retires reminders that are done and sends push notifications. `contact` is
- * the app's own URL, given to push services.
+ * arrived, turned free or gone (see alertsFor()), retires reminders that are done and sends push
+ * notifications. `contact` is the app's own URL, given to push services.
  */
 export async function runDailyCheck(contact: string): Promise<DailyCheckResult> {
   const admin = createAdminClient();
@@ -61,7 +72,7 @@ export async function runDailyCheck(contact: string): Promise<DailyCheckResult> 
 
   const { data: profiles, error } = await admin
     .from("profiles")
-    .select("id, display_name, country, language, services, couple_id")
+    .select("id, display_name, country, language, services, couple_id, alerts_seen_at")
     .in("couple_id", [...watching.keys()])
     .order("created_at");
   if (error) throw error;
@@ -70,23 +81,84 @@ export async function runDailyCheck(contact: string): Promise<DailyCheckResult> 
   for (const p of profiles) {
     if (!p.couple_id || !p.country) continue;
     const couple = members.get(p.couple_id) ?? [];
-    couple.push({ id: p.id, name: p.display_name || null, language: p.language, country: p.country, services: p.services });
+    couple.push({
+      id: p.id,
+      name: p.display_name || null,
+      language: p.language,
+      country: p.country,
+      services: p.services,
+      couple_id: p.couple_id,
+      alerts_seen_at: p.alerts_seen_at,
+    });
     members.set(p.couple_id, couple);
   }
 
   const refs = [...new Map([...watching.values()].flatMap((titles) => [...titles])).values()].map((w) => w.ref);
   const countries = [...new Set([...members.values()].flat().map((m) => m.country))];
-  const availability = await getAvailability(refs, countries, { client: admin, maxAgeMs: MAX_AGE_MS });
-
-  // What the last check saw, in the same shape. Snapshots keep only subscription providers.
-  const snapshots: Record<string, Availability> = {};
-  for (const row of snapshotRows.data) {
-    (snapshots[titleKey(keyOf(row))] ??= {})[row.country] = {
-      providers: row.provider_ids.map((id) => ({ provider_id: id, name: "", logo_path: null, kind: "flatrate", display_priority: 0 })),
-      link: null,
-      checked_at: row.recorded_at,
-    };
+  const [availability, services] = await Promise.all([
+    getAvailability(refs, countries, { client: admin, maxAgeMs: MAX_AGE_MS }),
+    admin.from("services").select("country, provider_id, name").in("country", countries),
+  ]);
+  if (services.error) console.error("Loading service names for the daily check failed", services.error);
+  // A provider's name, for one that has gone (snapshots keep only IDs): from the country's service list.
+  const serviceNames = new Map((services.data ?? []).map((s) => [`${s.country}:${s.provider_id}`, s.name]));
+  for (const byCountry of Object.values(availability)) {
+    for (const [country, there] of Object.entries(byCountry)) {
+      for (const p of there?.providers ?? []) serviceNames.set(`${country}:${p.provider_id}`, p.name);
+    }
   }
+
+  // What the last check saw, by titleKey() and country.
+  const snapshots: Record<string, Record<string, SnapshotRow>> = {};
+  for (const row of snapshotRows.data) (snapshots[titleKey(keyOf(row))] ??= {})[row.country] = row;
+
+  // Names the cached service lists don't have (a country nobody has opened Settings for lately, or a
+  // service TMDB no longer lists there): ask TMDB for those countries' lists, once.
+  const unnamed = new Set(
+    snapshotRows.data.flatMap((row) =>
+      countries.includes(row.country) && row.provider_ids.some((id) => !serviceNames.has(`${row.country}:${id}`))
+        ? [row.country]
+        : [],
+    ),
+  );
+  await Promise.all(
+    [...unnamed].map(async (country) => {
+      try {
+        for (const p of await fetchWatchProviders(country)) serviceNames.set(`${country}:${p.provider_id}`, p.name);
+      } catch (error) {
+        console.error(`Loading ${country}'s services from TMDB failed`, error);
+      }
+    }),
+  );
+
+  /**
+   * A snapshot in availability's shape: its subscription providers, and its free ones. Rows from before free
+   * providers were kept (`free_ids` null) take today's free providers, so they don't all count as new.
+   */
+  const snapshotAvailability = (rows: Record<string, SnapshotRow>, now: Availability): Availability => {
+    const provider = (country: string, id: number, kind: Provider["kind"]): Provider => ({
+      provider_id: id,
+      name: serviceNames.get(`${country}:${id}`) ?? "",
+      logo_path: null,
+      kind,
+      display_priority: 0,
+    });
+    return Object.fromEntries(
+      Object.entries(rows).map(([country, row]) => [
+        country,
+        {
+          providers: [
+            ...row.provider_ids.map((id) => provider(country, id, "flatrate")),
+            ...(row.free_ids
+              ? row.free_ids.map((id) => provider(country, id, "free"))
+              : freeFor({ country }, now)),
+          ],
+          link: null,
+          checked_at: row.recorded_at,
+        },
+      ]),
+    );
+  };
 
   const newAlerts: Database["public"]["Tables"]["alerts"]["Insert"][] = [];
   const done: string[] = [];
@@ -99,14 +171,17 @@ export async function runDailyCheck(contact: string): Promise<DailyCheckResult> 
       if (couple.some((m) => !now[m.country])) continue;
       // Nothing to compare with yet (or someone has moved country): today becomes the baseline.
       const last = snapshots[key];
-      const before = last && couple.every((m) => last[m.country]) ? last : now;
-      const kind = alertFor(couple, before, now, { listed: watched.listed, reminded: watched.reminderId !== null });
-      if (kind) {
+      const before = last && couple.every((m) => last[m.country]) ? snapshotAvailability(last, now) : now;
+      const news = alertsFor(couple, before, now, { listed: watched.listed, reminded: watched.reminderId !== null });
+      for (const { kind, details } of news) {
         newAlerts.push({
           couple_id: coupleId,
           ...watched.ref,
           kind,
-          services: Object.fromEntries(couple.map((m) => [m.id, streamableFor(m, now).map((p) => p.name)])),
+          services: Object.fromEntries(
+            Object.entries(details).map(([id, d]) => [id, d.providers.map((p) => p.name || `#${p.id}`)]),
+          ),
+          details: details as Json,
         });
       }
       if (watched.reminderId && reminderDone(couple, now)) done.push(watched.reminderId);
@@ -125,7 +200,9 @@ export async function runDailyCheck(contact: string): Promise<DailyCheckResult> 
   const snapshotUpdates = refs.flatMap((ref) =>
     countries.flatMap((country) => {
       const there = availability[titleKey(ref)]?.[country];
-      return there ? [{ ...ref, country, provider_ids: flatrateIds(there), recorded_at: recordedAt }] : [];
+      return there
+        ? [{ ...ref, country, provider_ids: flatrateIds(there), free_ids: freeIds(there), recorded_at: recordedAt }]
+        : [];
     }),
   );
   const watchedKeys = new Set(refs.map(titleKey));
@@ -146,13 +223,22 @@ export async function runDailyCheck(contact: string): Promise<DailyCheckResult> 
   const tidyError = tidying.find((r) => r.error)?.error;
   if (tidyError) console.error("Saving the daily check's snapshots failed", tidyError);
 
-  const notifications = await notify(admin, inserted, members, contact);
-  return { titles: refs.length, alerts: inserted.length, notifications, remindersDone: done.length };
+  const messages = await notify(admin, inserted, members, contact);
+  return {
+    titles: refs.length,
+    alerts: inserted.length,
+    notifications: messages.reduce((sum, m) => sum + m.devices, 0),
+    remindersDone: done.length,
+    messages,
+  };
 }
 
-/** Push notifications for new alerts, to each member's devices, in their own language. */
+/**
+ * Push notifications for new alerts, to each member's devices, in their own language, with the app icon's
+ * new count. Returns every message, including the ones for people with no devices (not sent).
+ */
 async function notify(admin: Admin, alerts: AlertRow[], members: Map<string, Member[]>, contact: string) {
-  if (alerts.length === 0 || !isPushConfigured()) return 0;
+  if (alerts.length === 0) return [];
 
   const people = [...new Set(alerts.map((a) => a.couple_id))].flatMap((id) => members.get(id) ?? []);
   const [subscriptions, titles] = await Promise.all([
@@ -176,31 +262,33 @@ async function notify(admin: Admin, alerts: AlertRow[], members: Map<string, Mem
     return text?.title ?? title.original_title;
   };
 
-  let sent = 0;
+  const sent: SentMessage[] = [];
   for (const [coupleId, couple] of members) {
     const theirs = alerts.filter((a) => a.couple_id === coupleId);
     for (const person of theirs.length > 0 ? couple : []) {
       const devices = subscriptions.data.filter((s) => s.profile_id === person.id);
-      if (devices.length === 0) continue;
-
       const t = getMessages(person.language);
       const other = couple.find((m) => m.id !== person.id);
       const partner = other ? { id: other.id, name: other.name ?? t.common.yourPartner } : null;
+      const badge = await appBadgeCount(admin, person);
       const messages: PushMessage[] =
         theirs.length > MAX_NOTIFICATIONS
-          ? [{ title: t.common.appName, body: t.upcoming.alerts.summary(theirs.length), url: "/coming-soon", tag: "alerts" }]
+          ? [{ title: t.common.appName, body: t.upcoming.alerts.summary(theirs.length), url: "/coming-soon", tag: "alerts", badge }]
           : theirs.flatMap((alert) => {
               if (!isAlertKind(alert.kind)) return [];
               const { heading, detail } = describeAlert(
-                { kind: alert.kind, services: alertServices(alert.services) },
+                { kind: alert.kind, services: alertServices(alert.services), details: readAlertDetails(alert.details) },
                 person.id,
                 partner,
                 t.upcoming.alerts,
               );
               const body = detail ? `${heading}. ${detail}` : heading;
-              return [{ title: nameFor(alert, person), body, url: titleHref(keyOf(alert)), tag: alert.id }];
+              return [{ title: nameFor(alert, person), body, url: titleHref(keyOf(alert)), tag: alert.id, badge }];
             });
-      for (const message of messages) sent += await sendPush(admin, devices, message, contact);
+      for (const message of messages) {
+        const accepted = isPushConfigured() ? await sendPush(admin, devices, message, contact) : 0;
+        sent.push({ ...message, profileId: person.id, devices: accepted });
+      }
     }
   }
   return sent;

@@ -8,8 +8,11 @@ export function isPushConfigured() {
   return Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
 }
 
-/** What public/sw.js shows. `url` is opened (relative to the app) when the notification is tapped. */
-export type PushMessage = { title: string; body: string; url: string; tag?: string };
+/**
+ * What public/sw.js shows. `url` is opened (relative to the app) when the notification is tapped. `badge`
+ * (appBadgeCount()) sets the number on the installed app's icon, where the browser supports it.
+ */
+export type PushMessage = { title: string; body: string; url: string; tag?: string; badge?: number };
 
 type Subscription = Pick<Database["public"]["Tables"]["push_subscriptions"]["Row"], "id" | "endpoint" | "p256dh" | "auth">;
 

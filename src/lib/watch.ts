@@ -47,8 +47,13 @@ export function streamableFor(person: Watcher, availability: Availability) {
   );
 }
 
+/** Free and free-with-ads services carrying the title in this person's country (no subscription needed). */
+export function freeFor(person: Pick<Watcher, "country">, availability: Availability) {
+  return (availability[person.country]?.providers ?? []).filter((p) => p.kind === "free" || p.kind === "ads");
+}
+
 function isFreeIn(country: string, availability: Availability) {
-  return (availability[country]?.providers ?? []).some((p) => p.kind === "free" || p.kind === "ads");
+  return freeFor({ country }, availability).length > 0;
 }
 
 export type Verdict = "both" | "me" | "partner" | "free" | "none";

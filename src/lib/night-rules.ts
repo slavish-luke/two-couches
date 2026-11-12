@@ -212,14 +212,28 @@ function fold(line: string) {
 export type IcsEvent = {
   /** Stable per night, so a calendar replaces the event when the night changes. */
   uid: string;
-  start: Date;
-  minutes: number;
   summary: string;
   description: string;
   url: string;
   /** When the night last changed, if known. */
   updated?: Date;
-};
+} & (
+  | { start: Date; minutes: number }
+  /** An all-day event (a release or an episode's air date, Sprint 19): a YYYY-MM-DD date, no time. */
+  | { day: string }
+);
+
+/** "20261107" from "2026-11-07". */
+function icsDate(day: string) {
+  return day.replace(/-/g, "");
+}
+
+/** The day after a YYYY-MM-DD date: an all-day event ends (exclusively) there. */
+function nextDay(day: string) {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
 
 /** A subscribed feed's name and how often calendar apps should fetch it again. */
 export type IcsFeed = { name: string; refreshMinutes: number };
@@ -258,8 +272,17 @@ export function toIcs(events: IcsEvent[], feed?: IcsFeed) {
       `UID:${event.uid}`,
       `DTSTAMP:${now}`,
       ...(event.updated ? [`LAST-MODIFIED:${icsTime(event.updated)}`] : []),
-      `DTSTART:${icsTime(event.start)}`,
-      `DTEND:${icsTime(new Date(event.start.getTime() + event.minutes * 60000))}`,
+      ...("day" in event
+        ? [
+            `DTSTART;VALUE=DATE:${icsDate(event.day)}`,
+            `DTEND;VALUE=DATE:${icsDate(nextDay(event.day))}`,
+            // A release day shouldn't make you look busy.
+            "TRANSP:TRANSPARENT",
+          ]
+        : [
+            `DTSTART:${icsTime(event.start)}`,
+            `DTEND:${icsTime(new Date(event.start.getTime() + event.minutes * 60000))}`,
+          ]),
       `SUMMARY:${icsText(event.summary)}`,
       `DESCRIPTION:${icsText(event.description)}`,
       `URL:${event.url}`,

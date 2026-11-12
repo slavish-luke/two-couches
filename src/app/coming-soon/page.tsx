@@ -8,7 +8,8 @@ import { PosterTab } from "@/components/poster-tab";
 import { RemindButton } from "@/components/remind-button";
 import { TitleCard, type CardContext } from "@/components/title-card";
 import { ALERT_STATUSES, describeAlert } from "@/lib/alert-rules";
-import { countNewAlerts, getAlerts, getReminders, type Alert } from "@/lib/alerts";
+import { countNewAlerts, getAlerts, getCantWaits, getReminders, type Alert } from "@/lib/alerts";
+import { cantWaitFirst, type CantWaits } from "@/lib/cant-wait-rules";
 import { type Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getList, getListKeys } from "@/lib/list";
@@ -26,6 +27,7 @@ import {
   type CountryReleases,
 } from "@/lib/upcoming";
 import { isMediaType, titleHref, titleKey, type MediaType, type TitleRef, type Watcher } from "@/lib/watch";
+import { CantWaitButton } from "./cant-wait-button";
 import { MarkAlertsSeen } from "./mark-seen";
 import { ComingSoonSkeleton, ReleaseRowsSkeleton } from "./skeleton";
 
@@ -55,7 +57,25 @@ type PageContext = {
   card: Omit<CardContext, "availability">;
   /** titleKey() of every title with a reminder. */
   reminded: Set<string>;
+  /** Who has marked which titles "Can't wait", and the couple's profile IDs (yours first). */
+  cantWait: CantWaits;
+  people: string[];
 };
+
+/** A card's "Can't wait" toggle, with both people's marks. */
+function CantWait({ item, context }: { item: TitleRef; context: PageContext }) {
+  const marks = context.cantWait[titleKey(item)] ?? [];
+  const [me, partner] = context.people;
+  return (
+    <CantWaitButton
+      titleRef={{ media_type: item.media_type, tmdb_id: item.tmdb_id }}
+      mine={marks.includes(me)}
+      theirs={Boolean(partner && marks.includes(partner))}
+      partnerName={partner ? context.card.partnerName : null}
+      language={context.language}
+    />
+  );
+}
 
 /** Merges per-country lists, taking each list's first item, then each one's second, and so on, without repeats. */
 function interleave<T extends TitleRef>(lists: T[][]) {
@@ -91,11 +111,12 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
   const partnerName = partner?.display_name || t.common.yourPartner;
 
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
-  const [alerts, reminders, onList, newCount] = await Promise.all([
+  const [alerts, reminders, onList, newCount, cantWait] = await Promise.all([
     getAlerts(coupleId, locales),
     getReminders(coupleId, locales),
     getListKeys(coupleId),
     countNewAlerts(profile.alerts_seen_at),
+    getCantWaits(coupleId),
   ]);
   const context: PageContext = {
     t,
@@ -107,8 +128,14 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
     today: localDate(profile.time_zone),
     card: { language, me, them, partnerName, onList },
     reminded: new Set(reminders.map(titleKey)),
+    cantWait,
+    people: [profile.id, ...(partner ? [partner.id] : [])],
   };
-  const remindersOfType = reminders.filter((r) => r.media_type === type);
+  const remindersOfType = cantWaitFirst(
+    reminders.filter((r) => r.media_type === type),
+    cantWait,
+    context.people,
+  );
   const reminderCard: CardContext = {
     ...context.card,
     availability: getAvailability(remindersOfType, context.countries),
@@ -169,6 +196,7 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
           {remindersOfType.map((r) => (
             <TitleCard key={titleKey(r)} result={r} context={reminderCard} className="w-36 shrink-0 snap-start">
               <RemindButton titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }} reminded language={language} />
+              <CantWait item={r} context={context} />
             </TitleCard>
           ))}
         </Row>
@@ -191,7 +219,10 @@ function AlertRow(props: {
   const { heading, detail } = describeAlert(alert, props.viewerId, props.partner, context.t.upcoming.alerts);
   const day = alert.created_at.slice(0, 10);
   return (
-    <li className="paper tilt-row relative flex items-center gap-4 rounded-control border-[3px] border-outline p-3 pr-4">
+    <li
+      data-alert-kind={alert.kind}
+      className="paper tilt-row relative flex items-center gap-4 rounded-control border-[3px] border-outline p-3 pr-4"
+    >
       <div className="poster-frame w-16 shrink-0">
         <Poster path={alert.poster_path} title={alert.title} size="sm" language={context.language} className="w-full" />
         {alert.kind === "both" && (
@@ -202,7 +233,7 @@ function AlertRow(props: {
         <Link href={titleHref(alert)} className="text-lg font-bold leading-tight hover:underline">
           {alert.title}
         </Link>
-        <p className="font-semibold">{heading}</p>
+        <p className={`font-semibold ${alert.kind === "gone" ? "text-danger" : ""}`}>{heading}</p>
         {detail && <p className="text-sm font-medium text-muted">{detail}</p>}
         <p className="text-[13px] font-medium text-muted">{shortDate(day, context.today, context.language)}</p>
       </div>
@@ -246,8 +277,9 @@ async function FilmSections({ context }: { context: PageContext }) {
     return <Empty text={t.upcoming.failed} />;
   }
 
-  const cinema = interleave(fulfilled(cinemaLists)).slice(0, ROW_LENGTH);
-  const digital = interleave(fulfilled(digitalLists)).slice(0, ROW_LENGTH);
+  const first = <T extends TitleRef>(items: T[]) => cantWaitFirst(items, context.cantWait, context.people);
+  const cinema = first(interleave(fulfilled(cinemaLists)).slice(0, ROW_LENGTH));
+  const digital = first(interleave(fulfilled(digitalLists)).slice(0, ROW_LENGTH));
   const dates = await releaseDates([...cinema, ...digital].map((r) => r.tmdb_id), countries);
   const card: CardContext = { ...context.card, availability: null };
 
@@ -273,6 +305,7 @@ async function FilmSections({ context }: { context: PageContext }) {
                   reminded={context.reminded.has(titleKey(r))}
                   language={context.language}
                 />
+                <CantWait item={r} context={context} />
               </TitleCard>
             ))}
           </Row>
@@ -331,12 +364,17 @@ async function SeriesSections({ context }: { context: PageContext }) {
     console.error("Loading new episodes failed", episodeLists[0]);
   }
 
-  const upcoming = list
-    .filter((item) => next[item.tmdb_id])
-    .toSorted((a, b) => next[a.tmdb_id].air_date.localeCompare(next[b.tmdb_id].air_date));
-  const fresh = interleave(episodeLists.flatMap((l) => (l.status === "fulfilled" ? [l.value] : []))).slice(
-    0,
-    ROW_LENGTH,
+  const upcoming = cantWaitFirst(
+    list
+      .filter((item) => next[item.tmdb_id])
+      .toSorted((a, b) => next[a.tmdb_id].air_date.localeCompare(next[b.tmdb_id].air_date)),
+    context.cantWait,
+    context.people,
+  );
+  const fresh = cantWaitFirst(
+    interleave(episodeLists.flatMap((l) => (l.status === "fulfilled" ? [l.value] : []))).slice(0, ROW_LENGTH),
+    context.cantWait,
+    context.people,
   );
   const card: CardContext = { ...base, availability: getAvailability([...upcoming, ...fresh], context.countries) };
 
@@ -365,7 +403,9 @@ async function SeriesSections({ context }: { context: PageContext }) {
                     )}
                   </span>
                 }
-              />
+              >
+                <CantWait item={item} context={context} />
+              </TitleCard>
             );
           })}
         </Row>
@@ -373,7 +413,9 @@ async function SeriesSections({ context }: { context: PageContext }) {
       {fresh.length > 0 && (
         <Row heading={t.upcoming.newEpisodes.heading} note={t.upcoming.newEpisodes.note}>
           {fresh.map((r) => (
-            <TitleCard key={titleKey(r)} result={r} context={card} className="w-36 shrink-0 snap-start" />
+            <TitleCard key={titleKey(r)} result={r} context={card} className="w-36 shrink-0 snap-start">
+              <CantWait item={r} context={context} />
+            </TitleCard>
           ))}
         </Row>
       )}

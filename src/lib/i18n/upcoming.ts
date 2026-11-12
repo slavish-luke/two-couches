@@ -4,17 +4,32 @@ const en = {
   intro: "New releases in your two countries, and news about titles you're waiting for.",
   typesLabel: "Films or series",
   alerts: {
-    heading: "Now streaming",
+    heading: "Streaming news",
     empty:
-      "Nothing new yet. Once a day we check your list and reminders, and anything that arrives on a service you pay for shows up here.",
+      "Nothing new yet. Once a day we check your list and reminders: anything that arrives on a service you pay for, turns free or leaves one shows up here.",
     both: "Now streaming for both of you",
     me: "Now streaming for you",
     partner: (name: string) => `Now streaming for ${name}`,
     /** e.g. "You: Netflix, Max". */
     services: (who: string, services: string) => `${who}: ${services}`,
     you: "You",
+    free: { both: "Now free for both of you", me: "Now free for you", partner: (name: string) => `Now free for ${name}` },
+    freeAds: {
+      both: "Now free with ads for both of you",
+      me: "Now free with ads for you",
+      partner: (name: string) => `Now free with ads for ${name}`,
+    },
+    gone: {
+      both: "No longer streaming for either of you",
+      me: "No longer streaming for you",
+      partner: (name: string) => `No longer streaming for ${name}`,
+    },
+    /** e.g. "You: left Netflix in GB". */
+    left: (who: string, services: string, country: string) => `${who}: left ${services} in ${country}`,
+    /** The tag on a "gone" alert's poster. */
+    goneTag: "Gone",
     /** One notification standing in for several alerts. */
-    summary: (count: number) => `${count} titles you're waiting for are now streaming.`,
+    summary: (count: number) => `News about ${count} titles you're waiting for.`,
   },
   reminders: {
     heading: "Reminders",
@@ -42,15 +57,32 @@ const tr: typeof en = {
   intro: "İki ülkenizdeki yeni çıkanlar ve beklediğiniz yapımlarla ilgili haberler.",
   typesLabel: "Film ya da dizi",
   alerts: {
-    heading: "Artık yayında",
+    heading: "Yayın haberleri",
     empty:
-      "Henüz yeni bir şey yok. Listenizi ve hatırlatmalarınızı her gün kontrol ediyoruz; abone olduğunuz bir platforma gelen her şey burada görünür.",
+      "Henüz yeni bir şey yok. Listenizi ve hatırlatmalarınızı her gün kontrol ediyoruz; abone olduğunuz bir platforma gelen, ücretsiz olan ya da platformdan kalkan her şey burada görünür.",
     both: "Artık ikiniz de izleyebilirsiniz",
     me: "Artık izleyebilirsin",
     partner: (name: string) => `Artık izleyebilir: ${name}`,
     services: (who: string, services: string) => `${who}: ${services}`,
     you: "Sen",
-    summary: (count: number) => `Beklediğiniz ${count} yapım artık yayında.`,
+    free: {
+      both: "Artık ikiniz de ücretsiz izleyebilirsiniz",
+      me: "Artık ücretsiz izleyebilirsin",
+      partner: (name: string) => `Artık ücretsiz izleyebilir: ${name}`,
+    },
+    freeAds: {
+      both: "Artık ikiniz de reklamlı olarak ücretsiz izleyebilirsiniz",
+      me: "Artık reklamlı olarak ücretsiz izleyebilirsin",
+      partner: (name: string) => `Artık reklamlı olarak ücretsiz izleyebilir: ${name}`,
+    },
+    gone: {
+      both: "Artık ikiniz de izleyemiyorsunuz",
+      me: "Artık izleyemiyorsun",
+      partner: (name: string) => `Artık izleyemiyor: ${name}`,
+    },
+    left: (who: string, services: string, country: string) => `${who}: ${services} (${country}) kataloğundan çıktı`,
+    goneTag: "Kalktı",
+    summary: (count: number) => `Beklediğiniz ${count} yapımla ilgili haberler var.`,
   },
   reminders: {
     heading: "Hatırlatmalar",

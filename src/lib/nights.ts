@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { appBadgeCount } from "./app-badge";
 import { getMessages } from "./i18n";
 import { getList } from "./list";
 import { formatDay, formatTime, isNightMethod, UNDER_WAY_MS, type NightMethod } from "./night-rules";
@@ -203,7 +204,7 @@ export async function notifyPartner(
   try {
     const { data: partner, error } = await admin
       .from("profiles")
-      .select("id, language, country, time_zone, push_subscriptions(id, endpoint, p256dh, auth)")
+      .select("id, language, country, time_zone, couple_id, alerts_seen_at, push_subscriptions(id, endpoint, p256dh, auth)")
       .eq("couple_id", by.couple_id)
       .neq("id", by.id)
       .maybeSingle();
@@ -228,6 +229,8 @@ export async function notifyPartner(
         body: text.body(name, when, by.display_name || getMessages(partner.language).common.yourPartner),
         url: "/watch-nights",
         tag: night.tag ?? `night-${night.id}`,
+        // Sprint 19: the app icon's count, which a proposal waiting for an answer adds to.
+        badge: await appBadgeCount(admin, partner),
       },
       contact,
     );

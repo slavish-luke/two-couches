@@ -149,17 +149,32 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// The number on the installed app's icon (Badging API), when a push carries one (appBadgeCount() on the
+// server); the app sets it too while it's open (<AppBadge>). Browsers without it just skip this.
+async function setAppBadge(count) {
+  if (typeof count !== "number" || !("setAppBadge" in self.navigator)) return;
+  try {
+    if (count > 0) await self.navigator.setAppBadge(count);
+    else await self.navigator.clearAppBadge();
+  } catch {
+    // Not allowed here (e.g. not installed): the notification is what matters.
+  }
+}
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   const message = event.data.json();
   event.waitUntil(
-    self.registration.showNotification(message.title, {
-      body: message.body,
-      tag: message.tag,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/badge-96.png",
-      data: { url: message.url || "/" },
-    }),
+    Promise.all([
+      self.registration.showNotification(message.title, {
+        body: message.body,
+        tag: message.tag,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/badge-96.png",
+        data: { url: message.url || "/" },
+      }),
+      setAppBadge(message.badge),
+    ]),
   );
 });
 

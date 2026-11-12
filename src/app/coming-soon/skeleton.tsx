@@ -1,5 +1,5 @@
 import { Couches } from "@/components/couch";
-import { Skeleton, SkelPageTitle, SkelParagraph, SkelTab, SkelText, SkelTitleCard } from "@/components/skeleton";
+import { SkelButton, Skeleton, SkelPageTitle, SkelParagraph, SkelTab, SkelText, SkelTitleCard } from "@/components/skeleton";
 
 /**
  * Coming soon while it loads: the heading and intro, the alerts panel (as it is with no new alerts), the
@@ -38,12 +38,22 @@ export function ReleaseRowsSkeleton() {
           <SkelText className="text-sm font-medium" width="70%" />
           <ul className="-mx-4 flex gap-4 overflow-hidden px-4 pb-4 pt-6">
             {Array.from({ length: 6 }, (_, i) => (
-              <SkelTitleCard key={i} className="w-36 shrink-0" details={<CountryDates />} />
+              <SkelTitleCard key={i} className="w-36 shrink-0" details={<CountryDates />} extra={<CardButtons />} />
             ))}
           </ul>
         </div>
       ))}
     </div>
+  );
+}
+
+/** "Remind us" and "Can't wait" under each card. */
+function CardButtons() {
+  return (
+    <>
+      <SkelButton quiet width="6.5rem" className="px-2.5 py-0.5 text-sm" />
+      <SkelButton quiet width="7.5rem" className="px-2.5 py-0.5 text-sm" />
+    </>
   );
 }
 

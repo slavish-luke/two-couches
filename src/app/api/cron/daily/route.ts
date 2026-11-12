@@ -20,7 +20,9 @@ export async function POST(request: Request) {
 
   try {
     const result = await runDailyCheck(new URL(request.url).origin);
-    console.log("Daily check finished", result);
+    // The response lists each message (for checking by hand); the log keeps to counts.
+    const { messages, ...counts } = result;
+    console.log("Daily check finished", { ...counts, messages: messages.length });
     return Response.json(result);
   } catch (error) {
     console.error("Daily check failed", error);

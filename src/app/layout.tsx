@@ -10,9 +10,11 @@ import { FlightDeck } from "@/components/flight-deck";
 import { HtmlLang } from "@/components/html-lang";
 import { Intro } from "@/components/intro";
 import { OfflineChip } from "@/components/offline-chip";
-import { PwaSetup } from "@/components/pwa";
+import { AppBadge, PwaSetup } from "@/components/pwa";
 import { WarmUp } from "@/components/warm-up";
 import { countNewAlerts } from "@/lib/alerts";
+import { appBadgeCount } from "@/lib/app-badge";
+import { createClient } from "@/lib/supabase/server";
 import { getMessages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/session";
@@ -121,7 +123,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 
 async function AccountNav() {
   const [profile, { language }] = await Promise.all([getCurrentProfile(), getI18n()]);
-  const newAlerts = profile?.couple_id ? await countNewAlerts(profile.alerts_seen_at) : 0;
+  const [newAlerts, badge] = profile?.couple_id
+    ? await Promise.all([countNewAlerts(profile.alerts_seen_at), createClient().then((c) => appBadgeCount(c, profile))])
+    : [0, 0];
 
   return (
     <>
@@ -135,6 +139,7 @@ async function AccountNav() {
           <AppNav newAlerts={newAlerts} language={language} />
           <FlightDeck language={language} />
           {profile.couple_id && <WarmUp />}
+          {profile.couple_id && <AppBadge count={badge} />}
         </>
       )}
     </>

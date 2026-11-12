@@ -1,11 +1,21 @@
 import "server-only";
-import { getMessages } from "@/lib/i18n";
-import { FEED_DAYS_AHEAD, FEED_DAYS_BEHIND, FEED_REFRESH_MINUTES, isNightMethod, toIcs } from "@/lib/night-rules";
+import { ALERT_STATUSES } from "@/lib/alert-rules";
+import { getMessages, type Messages } from "@/lib/i18n";
+import {
+  FEED_DAYS_AHEAD,
+  FEED_DAYS_BEHIND,
+  FEED_REFRESH_MINUTES,
+  isNightMethod,
+  toIcs,
+  type IcsEvent,
+} from "@/lib/night-rules";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { pickText } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
+import { nextEpisodes, releaseDates } from "@/lib/upcoming";
 import { nightEvent, type EventPerson } from "./night-event";
+import { episodeEvents, releaseEvents } from "./release-events";
 import { hashFeedToken } from "./token";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -20,7 +30,8 @@ export async function getMyFeedCreatedAt(profileId: string) {
 
 /**
  * The calendar for a feed token: the owner's couple's watch nights from a month ago to a year ahead, in the
- * owner's language, with both people's local times. Null for an unknown (or revoked) token.
+ * owner's language, with both people's local times, plus (Sprint 19) all-day events for list titles' release
+ * days and next episodes over the same span. Null for an unknown (or revoked) token.
  *
  * There's no session here (calendar apps fetch it), so it uses the admin client: the token is the only
  * key, and it only ever reads the one couple the token belongs to.
@@ -42,6 +53,7 @@ export async function feedCalendar(token: string, origin: string) {
   const people: EventPerson[] = [{ name: t.common.you, timeZone: owner.time_zone }];
   const locales = owner.country ? [tmdbLocale(owner.language, owner.country)] : [];
   let nights: Parameters<typeof nightEvent>[0][] = [];
+  let extras: IcsEvent[] = [];
 
   if (owner.couple_id) {
     const { data: partner, error: partnerError } = await admin
@@ -80,10 +92,66 @@ export async function feedCalendar(token: string, origin: string) {
             }
           : null,
     }));
+
+    const countries = [...new Set([owner.country, partner?.country].filter((c): c is string => Boolean(c)))];
+    extras = await listTitleEvents(admin, owner.couple_id, { t, locales, countries, origin, now });
   }
 
   return toIcs(
-    nights.map((night) => nightEvent(night, { t, language: owner.language, people, origin })),
+    [...nights.map((night) => nightEvent(night, { t, language: owner.language, people, origin })), ...extras],
     { name: t.nights.calendar.feedName, refreshMinutes: FEED_REFRESH_MINUTES },
   );
+}
+
+/** List films older than this (by TMDB's first release) aren't asked about: no release is coming. */
+const RELEASED_LONG_AGO_DAYS = 365;
+
+/**
+ * Sprint 19: release days (cinema and digital, in each of your countries) of films on the list and the next
+ * episode of each series on it, as all-day events over the feed's span. From TMDB through Next's fetch
+ * cache, like Coming soon. Never throws: on trouble the feed keeps its nights and leaves these out.
+ */
+async function listTitleEvents(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  coupleId: string,
+  { t, locales, countries, origin, now }: { t: Messages; locales: string[]; countries: string[]; origin: string; now: number },
+): Promise<IcsEvent[]> {
+  try {
+    const { data, error } = await admin
+      .from("list_items")
+      .select("media_type, tmdb_id, titles(original_title, poster_path, release_date, title_texts(locale, title, poster_path))")
+      .eq("couple_id", coupleId)
+      .in("status", ALERT_STATUSES)
+      .in("titles.title_texts.locale", locales);
+    if (error) throw error;
+
+    const day = (offsetDays: number) => new Date(now + offsetDays * DAY_MS).toISOString().slice(0, 10);
+    const window = { from: day(-FEED_DAYS_BEHIND), to: day(FEED_DAYS_AHEAD) };
+    const longAgo = day(-RELEASED_LONG_AGO_DAYS);
+    const titled = data.map((row) => ({ ...row, title: pickText(row.titles.title_texts, locales, row.titles).title }));
+    const films = titled.filter(
+      (row) => row.media_type === "movie" && (!row.titles.release_date || row.titles.release_date >= longAgo),
+    );
+    const series = titled.filter((row) => row.media_type === "tv");
+
+    const [dates, next] = await Promise.all([
+      releaseDates(films.map((f) => f.tmdb_id), countries),
+      nextEpisodes(series.map((s) => s.tmdb_id)),
+    ]);
+    const context = { t, window, origin };
+    return [
+      ...releaseEvents(
+        films.flatMap((f) => (dates[f.tmdb_id] ? [{ tmdb_id: f.tmdb_id, title: f.title, releases: dates[f.tmdb_id] }] : [])),
+        countries,
+        context,
+      ),
+      ...episodeEvents(
+        series.flatMap((s) => (next[s.tmdb_id] ? [{ tmdb_id: s.tmdb_id, title: s.title, next: next[s.tmdb_id] }] : [])),
+        context,
+      ),
+    ];
+  } catch (error) {
+    console.error("Adding release and episode days to a calendar feed failed", error);
+    return [];
+  }
 }

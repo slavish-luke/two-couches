@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { WarnSkeleton } from "./warn-panel";
 import { Couch } from "@/components/couch";
 import {
   SkelButton,
@@ -93,6 +94,7 @@ export function SettingsSkeleton() {
 
       <AdvisorSkeleton />
       <YourDataSkeleton />
+      <WarnSkeleton />
 
       <div className="mt-4 grid gap-5">
         <div className="grid gap-2">

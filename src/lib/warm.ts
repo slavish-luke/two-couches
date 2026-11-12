@@ -1,6 +1,7 @@
 import "server-only";
 import { batchPages, discoverTitles, getGenres, popularIn, trendingTitles } from "./browse";
 import { getEpisodeGuides } from "./diary";
+import { getAgeRatings, getTitleKeywords } from "./guidance";
 import { localDate } from "./list-rules";
 import { isCountry } from "./places";
 import { getPosterDeck } from "./poster-deck";
@@ -22,8 +23,14 @@ const UP_NEXT_WARMED = 30;
  * list is quick: the title in the viewer's locale and its poster deck. Where to watch it is warmed for all
  * of them at once in warmCaches(). Anything else the title page starts fetching per title belongs here too.
  */
-async function warmTitlePage(ref: TitleRef, view: { profile: Profile; locale: string }) {
-  await Promise.all([getTitle(ref, view.locale), getPosterDeck(ref, view.profile.language)]);
+async function warmTitlePage(ref: TitleRef, view: { profile: Profile; locale: string; countries: string[] }) {
+  await Promise.all([
+    getTitle(ref, view.locale),
+    getPosterDeck(ref, view.profile.language),
+    // "Before you watch" (Sprint 19): age ratings in your countries and the title's topics.
+    getAgeRatings(ref, view.countries),
+    getTitleKeywords(ref),
+  ]);
 }
 
 /**
@@ -89,7 +96,7 @@ export async function warmCaches(profile: Profile, partner: Partner) {
       .slice(0, UP_NEXT_WARMED)
       .map((row) => ({ media_type: row.media_type as MediaType, tmdb_id: row.tmdb_id }));
     await Promise.all([
-      settleLimited(refs, 4, (ref) => warmTitlePage(ref, { profile, locale })),
+      settleLimited(refs, 4, (ref) => warmTitlePage(ref, { profile, locale, countries })),
       getAvailability(refs, countries),
       // Home's next episodes row and its list cards' "new episode" chips (Sprint 18).
       getEpisodeGuides(data.filter((row) => row.status === "watching" && row.media_type === "tv").map((row) => row.tmdb_id)),
