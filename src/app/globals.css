@@ -2525,3 +2525,65 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
   background-color: var(--ink);
   box-shadow: 0 0 0 1.5px var(--surface);
 }
+
+/* ==========================================================================================================
+ * Sprint 17: taste and stats. Milestone stickers (src/app/stats/sticker.tsx), the taste meter, Home's chip.
+ * A sticker carries three outlines; each skin shows one: a rosette with a hard ink shadow (Saturday Morning,
+ * and Scrapbook with its white die-cut edge and a soft drop), a BOOM! burst (POW!), a flat disc (Candy).
+ * ========================================================================================================== */
+[data-sticker] :is([data-shape="burst"], [data-shape="disc"]) {
+  display: none;
+}
+[data-sticker] {
+  filter: drop-shadow(var(--lift-sm) var(--lift-sm) 0 var(--outline));
+}
+[data-skin="scrapbook"] [data-sticker] {
+  filter: drop-shadow(0 4px 5px var(--shade));
+}
+[data-skin="comic"] [data-sticker] [data-shape="rosette"],
+[data-skin="candy"] [data-sticker] [data-shape="rosette"] {
+  display: none;
+}
+[data-skin="comic"] [data-sticker] [data-shape="burst"],
+[data-skin="candy"] [data-sticker] [data-shape="disc"] {
+  display: inline;
+}
+[data-skin="comic"] [data-sticker] {
+  filter: none;
+}
+/* Candy's stickers sit flat, pressed into a shade straight below, like its buttons. */
+[data-skin="candy"] [data-sticker] {
+  filter: drop-shadow(0 4px 0 color-mix(in oklab, var(--outline) 30%, transparent));
+}
+
+/* Earned stickers are stuck on at a slant (flat in Candy); the next ones wait faint and flat. */
+.sticker-item[data-earned="true"] .sticker-art {
+  rotate: var(--r, 0deg);
+}
+[data-skin="candy"] .sticker-item .sticker-art {
+  --r: 0deg;
+}
+.sticker-item[data-earned="false"] .sticker-art {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sticker-item[data-earned="true"] .sticker-art {
+    animation: pop 0.5s var(--ease-spring) calc(var(--i, 0) * 70ms) both;
+  }
+  /* The taste meter fills from the left. */
+  .taste-fill {
+    transform-origin: left center;
+    animation: taste-fill 0.8s var(--ease-spring) 0.15s both;
+  }
+}
+@keyframes taste-fill {
+  from {
+    scale: 0 1;
+  }
+}
+
+/* Home's chip: the sticker sits flat inside it. */
+.milestone-chip-art[data-sticker] {
+  filter: none;
+}

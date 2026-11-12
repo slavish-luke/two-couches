@@ -232,3 +232,12 @@ export function ChatIcon({ className }: { className?: string }) {
     </Glyph>
   );
 }
+
+/** An arrow down into a tray: save a file. */
+export function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.5}>
+      <path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14" />
+    </Glyph>
+  );
+}

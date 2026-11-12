@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type CSSProperties } from "react";
 import { ReviewSection } from "@/app/after-night/review-box";
+import { saveGuess } from "@/app/stats/actions";
 import { addToList, rateListItem, removeFromList, updateListItem, type ListChanges, type ListResult } from "@/app/list/actions";
 import { PlusIcon, StarIcon } from "@/components/icons";
 import { Stars } from "@/components/stars";
@@ -10,6 +11,7 @@ import { getMessages, type Messages } from "@/lib/i18n";
 import { cleanCategories, episodeAfter, formatDate, LIST_STATUSES, localDate, MAX_CATEGORY_LENGTH, MAX_NOTES_LENGTH } from "@/lib/list-rules";
 import type { ListItem } from "@/lib/list";
 import type { Reviews } from "@/lib/review-rules";
+import { shouldAskGuess, type Guess } from "@/lib/taste-rules";
 import type { TitleRef } from "@/lib/watch";
 
 type Person = { id: string; name: string };
@@ -29,7 +31,14 @@ type Props = {
   timeZone: string;
   /** Your review and what you may see of your partner's, when it's on the list. */
   reviews?: Reviews | null;
+  /** Each person's predicted rating while it's still to watch (null for too little data). */
+  predictions?: { me: PredictionLine | null; partner: PredictionLine | null } | null;
+  /** Rating guesses made on this title (yours veils your partner's stars until you've made one). */
+  guesses?: Guess[];
 };
+
+/** A predicted rating as the panel shows it: the average, how many ratings, and the genres they share. */
+type PredictionLine = { rating: number; count: number; genres: string };
 
 /** Status radios as chips (`.chip` shows aria-checked as selected). */
 const RADIO_CHIP = "chip disabled:opacity-60";
@@ -102,6 +111,10 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
   const update = (changes: ListChanges, onDone?: () => void) => run(() => updateListItem(item.id, changes), onDone);
   const added = formatDate(localDate(props.timeZone, new Date(item.created_at)), language);
   const showRatings = item.status === "watched" || Object.keys(item.ratings).length > 0;
+  const guesses = props.guesses ?? [];
+  const myGuess = guesses.find((g) => g.profile_id === me.id) ?? null;
+  const partnerGuess = partner ? (guesses.find((g) => g.profile_id === partner.id) ?? null) : null;
+  const predictions = props.predictions;
 
   return (
     <section className="card grid gap-6 sm:p-6" aria-busy={pending}>
@@ -149,27 +162,35 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
         </label>
       )}
 
+      {predictions && (predictions.me || predictions.partner) && (
+        <Predictions predictions={predictions} partnerName={partner?.name ?? null} language={language} t={t} />
+      )}
+
       {showRatings && (
         <div className="grid gap-2">
           <h3 className="text-lg font-bold">{t.title.panel.ratings}</h3>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-            <StarPicker
-              rating={item.ratings[me.id] ?? null}
-              disabled={pending}
-              onRate={(rating) => run(() => rateListItem(item.id, rating))}
-              t={t}
-            />
+            <span className="grid gap-1">
+              <StarPicker
+                rating={item.ratings[me.id] ?? null}
+                disabled={pending}
+                onRate={(rating) => run(() => rateListItem(item.id, rating))}
+                t={t}
+              />
+              {partner && partnerGuess?.guess && (
+                <span className="text-sm font-semibold text-muted">{t.stats.guess.theirs(partner.name, partnerGuess.guess)}</span>
+              )}
+            </span>
             {partner && (
-              <span className="flex flex-wrap items-center gap-2">
-                <NameTag name={partner.name} who="partner" />
-                {item.ratings[partner.id] ? (
-                  <span className="text-2xl leading-none">
-                    <Stars rating={item.ratings[partner.id]} who={partner.name} language={language} />
-                  </span>
-                ) : (
-                  <span className="text-sm font-semibold text-muted">{t.title.panel.notRated}</span>
-                )}
-              </span>
+              <PartnerRating
+                item={item}
+                partner={partner}
+                myGuess={myGuess}
+                pending={pending}
+                onGuess={(guess) => run(() => saveGuess(item.id, guess))}
+                language={language}
+                t={t}
+              />
             )}
           </div>
         </div>
@@ -194,6 +215,156 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
 }
 
 type Update = (changes: ListChanges, onDone?: () => void) => void;
+
+/**
+ * "Predicted ratings": for each of you without a rating yet, the average of your ratings of other titles
+ * in its genres, saying how many and which genres, so it's clear where the number comes from.
+ */
+function Predictions({
+  predictions,
+  partnerName,
+  language,
+  t,
+}: {
+  predictions: NonNullable<Props["predictions"]>;
+  partnerName: string | null;
+  language: string;
+  t: Messages;
+}) {
+  const p = t.stats.predict;
+  const decimal = new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const rows = [
+    { key: "me", who: "me" as const, name: t.common.you, line: predictions.me },
+    { key: "partner", who: "partner" as const, name: partnerName, line: predictions.partner },
+  ].filter((row) => row.name !== null);
+  return (
+    <div data-predictions className="grid gap-2">
+      <h3 className="text-lg font-bold">{p.heading}</h3>
+      <ul className="grid gap-2">
+        {rows.map(({ key, who, name, line }) => (
+          <li key={key} className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <NameTag name={name!} who={who} />
+            {line ? (
+              <>
+                <span
+                  role="img"
+                  aria-label={p.label(name!, decimal.format(line.rating))}
+                  className="inline-flex items-center gap-1 rounded-full border-2 border-dashed border-outline bg-surface px-2.5 py-0.5 font-bold"
+                >
+                  <span aria-hidden>{p.about(decimal.format(line.rating))}</span>
+                  <StarIcon filled className="size-[1.05em]" />
+                </span>
+                <span className="text-sm font-medium text-muted">{p.from(line.count, line.genres)}</span>
+              </>
+            ) : (
+              <span className="text-sm font-medium text-muted">{p.notEnough}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Your partner's stars, or "Guess first?" over them on a watched title they've rated that you haven't
+ * guessed yet: pick 1-5 or "Just show me", and the stars come out with your guess against them. A veil,
+ * not a secret: the rating itself is readable as ever.
+ */
+function PartnerRating(props: {
+  item: ListItem;
+  partner: Person;
+  myGuess: Guess | null;
+  pending: boolean;
+  onGuess: (guess: number | null) => void;
+  language: string;
+  t: Messages;
+}) {
+  const { item, partner, myGuess, pending, language, t } = props;
+  const g = t.stats.guess;
+  // Set when you guess here, so the stars land with a pop rather than just appearing.
+  const [revealing, setRevealing] = useState(false);
+  const [hover, setHover] = useState<number | null>(null);
+  const rating = item.ratings[partner.id];
+
+  if (shouldAskGuess(item, partner.id, myGuess)) {
+    return (
+      <div
+        data-guess-veil
+        className="grid gap-2 rounded-control border-[2.5px] border-dashed border-outline bg-accent-soft px-3 py-2.5"
+        aria-busy={pending}
+      >
+        <span className="flex flex-wrap items-center gap-2">
+          <NameTag name={partner.name} who="partner" />
+          <span className="font-bold">{g.prompt(partner.name)}</span>
+        </span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span role="group" aria-label={g.pick} className="flex" onMouseLeave={() => setHover(null)}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-label={g.starCount(n)}
+                disabled={pending}
+                onMouseEnter={() => setHover(n)}
+                onFocus={() => setHover(n)}
+                onBlur={() => setHover(null)}
+                onClick={() => {
+                  setRevealing(true);
+                  props.onGuess(n);
+                }}
+                className="grid size-10 place-items-center rounded-full transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-6 hover:scale-110 active:scale-90 disabled:opacity-60"
+              >
+                <StarIcon filled={n <= (hover ?? 0)} className="size-7" />
+              </button>
+            ))}
+          </span>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setRevealing(true);
+              props.onGuess(null);
+            }}
+            className="tap-area text-sm font-bold underline underline-offset-4 disabled:opacity-60"
+          >
+            {g.skip}
+          </button>
+        </span>
+      </div>
+    );
+  }
+
+  const off = myGuess?.guess && rating ? Math.abs(myGuess.guess - rating) : null;
+  return (
+    <span className="grid gap-1">
+      <span className="flex flex-wrap items-center gap-2">
+        <NameTag name={partner.name} who="partner" />
+        {rating ? (
+          <span
+            className={`text-2xl leading-none ${revealing ? "motion-safe:animate-[pop_0.5s_cubic-bezier(0.2,1.4,0.4,1)_both]" : ""}`}
+            style={{ "--r": "-4deg" } as CSSProperties}
+          >
+            <Stars rating={rating} who={partner.name} language={language} />
+          </span>
+        ) : (
+          <span className="text-sm font-semibold text-muted">{t.title.panel.notRated}</span>
+        )}
+      </span>
+      {myGuess?.guess && off !== null && (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold">
+          <span className="text-muted">{g.yours(myGuess.guess)}</span>
+          <span
+            data-guess-verdict={off === 0 ? "spot-on" : "off"}
+            className={`rounded-full border-2 border-outline px-2 leading-snug ${off === 0 ? "bg-stamp" : off === 1 ? "bg-accent-soft" : "bg-surface"}`}
+          >
+            {off === 0 ? g.spotOn : g.off(off)}
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
 
 function Progress(props: {
   item: ListItem;

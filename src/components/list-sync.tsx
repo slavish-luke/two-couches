@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 
 /**
  * Re-renders the page when either person changes the couple's list, reminders, dismissals, watch nights,
- * ready checks, reviews, wrap-ups, proposed times or prep lists, so an add on one screen appears on the other without reloading.
+ * ready checks, reviews, wrap-ups, rating guesses, proposed times or prep lists, so an add on one screen appears on the other without reloading.
  * review_signals stand in for your partner's hidden review (RLS keeps list_reviews from sending it until
  * you've written yours), so "{name} has written theirs" arrives live too. Renders nothing.
  */
@@ -24,7 +24,7 @@ export function ListSync({ coupleId }: { coupleId: string }) {
     const filter = `couple_id=eq.${coupleId}`;
 
     const channel = supabase.channel(`list:${coupleId}`);
-    for (const table of ["list_items", "list_ratings", "reminders", "dismissed_titles", "watch_nights", "ready_checks", "list_reviews", "review_signals", "night_wrapups", "night_proposals", "night_prep_items"]) {
+    for (const table of ["list_items", "list_ratings", "reminders", "dismissed_titles", "watch_nights", "ready_checks", "list_reviews", "review_signals", "night_wrapups", "night_proposals", "night_prep_items", "rating_guesses"]) {
       channel
         .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, refresh)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, refresh)

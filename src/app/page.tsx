@@ -23,6 +23,7 @@ import { AfterNight } from "./after-night/after-night";
 import { HomeSkeleton, ListSkeleton, PickLinkSkeleton } from "./home-skeleton";
 import { PickLink } from "./pick/pick-link";
 import { VisitChip } from "./settings/visit-chip";
+import { MilestoneChip } from "./stats/milestone-chip";
 import { NextNight } from "./watch-nights/next-night";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
@@ -147,6 +148,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             </span>
           )}
         </section>
+        <MilestoneChip />
 
         {/* No boundary of its own: the spotlight arrives with the aside, so nothing below it jumps when it does. */}
         {partner && (

@@ -15,3 +15,9 @@ To rebuild it: `pip install fonttools brotli`, open `https://fonts.googleapis.co
 ## Candy Shop: Dela Gothic One and Rubik
 
 Both come from Google Fonts through `next/font` with `preload: false`, and both cover Turkish without help. Checked on 2026-11-05 with fontTools in the files `next/font` serves (the face the browser picks for each letter by `unicode-range`): İ ı Ş ş Ğ ğ Ç ç Ö ö Ü ü are all in the cmap and drawn (İ is taller than I, so it has its dot). Dela Gothic One is a Japanese face: its CSS has 123 `@font-face` slices, but Latin text only downloads the `latin` (14 KB) and `latin-ext` (9 KB) files, which hold every Turkish letter.
+
+## The year in review image: Luckiest Guy as a TTF
+
+`recap-luckiest-guy.ttf` is Luckiest Guy cut down to Latin, Latin Extended-A and punctuation (52 KB), for the PNG that `src/app/stats/recap/[year]/route.tsx` draws with `next/og`. Satori reads only TTF, OTF and WOFF (not the WOFF2 that `next/font` serves) and runs on the server, so the image needs its own copy. Luckiest Guy has every Turkish letter (İ ı Ş ş Ğ ğ Ç ç Ö ö Ü ü), so the image is lettered in it throughout: Fredoka has no İ Ş ş Ğ ğ (checked 2026-11-12 in Google's current `latin` and `latin-ext` files, WOFF and WOFF2; on the site İ comes from `fredoka-idot.woff2`, but Ş ş Ğ ğ fall back to another face). Luckiest Guy is under the Apache License 2.0.
+
+To rebuild it: `pip install fonttools`, download `https://github.com/google/fonts/raw/main/apache/luckiestguy/LuckiestGuy-Regular.ttf` and run `python -I design/fonts/recap-font.py <LuckiestGuy-Regular.ttf> src/app/fonts/recap-luckiest-guy.ttf`.
