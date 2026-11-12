@@ -235,6 +235,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"moods": {
+                  Row: {
+                    "couple_id": string,"mood": string,"on_day": string,"profile_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"mood": string,"on_day": string,"profile_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"mood"?: string,"on_day"?: string,"profile_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "moods_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "moods_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"night_wrapups": {
                   Row: {
                     "couple_id": string,"done_at": string,"outcome": string,"profile_id": string,"watch_night_id": string
@@ -295,6 +321,32 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "push_subscriptions_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"rating_guesses": {
+                  Row: {
+                    "actual": number,"couple_id": string,"created_at": string,"guess": number | null,"list_item_id": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actual": number,"couple_id": string,"created_at"?: string,"guess"?: number | null,"list_item_id": string,"profile_id": string
+                  }
+                  Update: {
+                    "actual"?: number,"couple_id"?: string,"created_at"?: string,"guess"?: number | null,"list_item_id"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rating_guesses_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "rating_guesses_profile_id_fkey"
       columns: ["profile_id"]
 isOneToOne: false
       referencedRelation: "profiles"
@@ -426,6 +478,32 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"swipes": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"day": string,"liked": boolean,"media_type": string,"profile_id": string,"tmdb_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"day": string,"liked": boolean,"media_type": string,"profile_id": string,"tmdb_id": number
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"day"?: string,"liked"?: boolean,"media_type"?: string,"profile_id"?: string,"tmdb_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "swipes_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "swipes_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"title_texts": {
                   Row: {

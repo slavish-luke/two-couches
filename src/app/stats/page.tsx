@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Couches } from "@/components/couch";
-import { StarIcon } from "@/components/icons";
+import { ArrowIcon, DownloadIcon, StarIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { Poster } from "@/components/poster";
 import { Stars } from "@/components/stars";
@@ -12,13 +12,25 @@ import type { Messages } from "@/lib/i18n";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { getList } from "@/lib/list";
 import { localDate } from "@/lib/list-rules";
-import { getNightStarts } from "@/lib/nights";
 import { isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { computeStats, statsYears, type Period, type StatsEntry } from "@/lib/stats-rules";
+import { getGuesses, getNightsAt } from "@/lib/taste";
+import {
+  anniversary,
+  bothFive,
+  filmsInOrder,
+  firstNightDate,
+  guessScore,
+  stickers,
+  streaks,
+  tasteMatch,
+  watchedCount,
+} from "@/lib/taste-rules";
 import { tmdbLocale } from "@/lib/tmdb";
 import { titleHref } from "@/lib/watch";
 import { StatsSkeleton } from "./skeleton";
+import { Together, type TogetherData } from "./together";
 
 export const generateMetadata = localisedTitle("stats");
 
@@ -42,9 +54,11 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
 
   const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
-  const [entries, nightStarts, movieGenres, tvGenres] = await Promise.all([
+  const zones = { [profile.id]: profile.time_zone, ...(partner ? { [partner.id]: partner.time_zone } : {}) };
+  const [entries, nightsAt, guesses, movieGenres, tvGenres] = await Promise.all([
     getList(profile.couple_id, locales),
-    getNightStarts(profile.couple_id),
+    getNightsAt(profile.couple_id, zones, profile.time_zone),
+    getGuesses(profile.couple_id),
     getGenres("movie", locale).catch(() => []),
     getGenres("tv", locale).catch(() => []),
   ]);
@@ -54,7 +68,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
   const thisYear = Number(localDate(profile.time_zone, now).slice(0, 4));
   const years = statsYears(entries, thisYear);
   const period: Period = params.year === "all" ? "all" : years.includes(Number(params.year)) ? Number(params.year) : thisYear;
-  const stats = computeStats(entries, nightStarts, {
+  const stats = computeStats(entries, nightsAt.map((n) => n.starts_at), {
     period,
     meId: profile.id,
     partnerId: partner?.id ?? null,
@@ -64,6 +78,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
   const partnerName = partner ? partner.display_name || t.common.yourPartner : null;
   const nothingWatched = stats.films + stats.series === 0;
   const number = (value: number) => new Intl.NumberFormat(language).format(value);
+  const together = partner ? togetherData(entries, nightsAt, guesses, profile.id, partner.id, profile.time_zone, now) : null;
 
   return (
     <div className="grid gap-9">
@@ -83,6 +98,13 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
           ))}
         </nav>
         <p className="font-medium text-muted">{t.stats.intro(period === "all" ? null : period)}</p>
+        {period !== "all" && (
+          // The year as a picture to keep (drawn by ./recap/[year]).
+          <a href={`/stats/recap/${period}`} download={t.stats.recap.fileName(period)} className="btn-quiet w-fit text-sm">
+            <DownloadIcon className="size-4" />
+            {t.stats.recap.save(period)}
+          </a>
+        )}
       </div>
 
       {/* The headline numbers: the one spotlight on this screen. */}
@@ -138,8 +160,45 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
       {partner && partnerName && stats.added.me + stats.added.partner > 0 && (
         <AddedBar added={stats.added} partnerName={partnerName} t={t} />
       )}
+
+      {together && partnerName && <Together data={together} partnerName={partnerName} language={language} t={t} />}
     </div>
   );
+}
+
+/** Everything for the all-time "Just the two of you" part, from the list, the nights and the guesses. */
+function togetherData(
+  entries: StatsEntry[],
+  nights: Parameters<typeof streaks>[0],
+  guesses: Parameters<typeof guessScore>[0],
+  meId: string,
+  partnerId: string,
+  timeZone: string,
+  now: Date,
+): TogetherData {
+  const streak = streaks(nights, now, timeZone);
+  const films = filmsInOrder(entries);
+  const first = firstNightDate(nights, now);
+  const a = first ? anniversary(first, localDate(timeZone, now)) : null;
+  const titles = watchedCount(entries);
+  const happened = nights.filter((n) => Date.parse(n.starts_at) <= now.getTime()).length;
+  return {
+    taste: tasteMatch(entries, meId, partnerId),
+    streak,
+    films: { count: films.length, latest: films.at(-1) ?? null },
+    titles,
+    firstNight: first,
+    anniversary: a,
+    guesses: { me: guessScore(guesses, meId), partner: guessScore(guesses, partnerId) },
+    stickers: stickers({
+      nights: happened,
+      titles,
+      bestStreak: streak.best,
+      bothFive: bothFive(entries, meId, partnerId),
+      exactGuess: guesses.some((g) => g.guess !== null && g.guess === g.actual),
+      years: a?.years ?? 0,
+    }),
+  };
 }
 
 /** Titles finished each month: one column per month, the busiest labelled, every one hoverable. */
@@ -173,7 +232,8 @@ function MonthChart({ months, language, t }: { months: number[]; language: strin
             )}
             <span
               aria-hidden
-              className="pointer-events-none invisible absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-full border-[2.5px] border-outline bg-surface px-2.5 py-0.5 text-sm font-bold text-ink shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] group-hover:visible group-focus-visible:visible"
+              // Held inside the chart at either end, so a long month name can't push the page sideways.
+              className={`${i < 3 ? "left-0" : i > 8 ? "right-0" : ""} pointer-events-none invisible absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-full border-[2.5px] border-outline bg-surface px-2.5 py-0.5 text-sm font-bold text-ink shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)] group-hover:visible group-focus-visible:visible`}
             >
               {t.stats.months.count(name(i, "long"), count)}
             </span>
@@ -304,6 +364,15 @@ function Ratings({
           </div>
           <div className="sm:max-w-[calc(50%-0.375rem)]">{titleRow(stats.split)}</div>
         </div>
+      )}
+      {partner && (stats.split || stats.favourites.length > 0) && (
+        <Link
+          href="/stats/disagree"
+          className="tap-area group inline-flex w-fit items-center gap-1 font-bold underline underline-offset-4"
+        >
+          {t.stats.disagreeLink}
+          <ArrowIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
+        </Link>
       )}
     </section>
   );

@@ -17,6 +17,8 @@ import { countryName } from "@/lib/places";
 import { deckWith, getPosterDeck } from "@/lib/poster-deck";
 import { getDismissedKeys } from "@/lib/recommend";
 import { getReviews } from "@/lib/reviews";
+import { getItemGuesses, getRatedList } from "@/lib/taste";
+import { predictRating } from "@/lib/taste-rules";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getAvailability, getTitle } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
@@ -132,7 +134,12 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
 
       {profile.couple_id && (
         <Suspense>
-          <OnOurList titleRef={ref} seasons={title.seasons} seasonEpisodes={title.season_episodes} />
+          <OnOurList
+            titleRef={ref}
+            seasons={title.seasons}
+            seasonEpisodes={title.season_episodes}
+            genres={title.genre_ids.map((id, i) => ({ id, name: title.genres[i] ?? "" }))}
+          />
           <ListSync coupleId={profile.couple_id} />
         </Suspense>
       )}
@@ -157,10 +164,13 @@ async function OnOurList({
   titleRef,
   seasons,
   seasonEpisodes,
+  genres,
 }: {
   titleRef: TitleRef;
   seasons: number | null;
   seasonEpisodes: number[] | null;
+  /** The title's genres (TMDB IDs and names in the viewer's language), for the predicted ratings. */
+  genres: { id: number; name: string }[];
 }) {
   const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
   const coupleId = profile.couple_id!;
@@ -169,7 +179,12 @@ async function OnOurList({
     getCategories(coupleId),
     getDismissedKeys(coupleId),
   ]);
-  const reviews = item ? (await getReviews([item.id], profile.id))[item.id] : null;
+  const [reviews, taste] = item
+    ? await Promise.all([
+        getReviews([item.id], profile.id).then((byItem) => byItem[item.id]),
+        tasteExtras(coupleId, item, profile.id, partner?.id ?? null, genres, profile.language),
+      ])
+    : [null, null];
 
   return (
     <div className="grid gap-4">
@@ -184,12 +199,40 @@ async function OnOurList({
         language={profile.language}
         timeZone={profile.time_zone}
         reviews={reviews}
+        predictions={taste?.predictions ?? null}
+        guesses={taste?.guesses ?? []}
       />
       {!item && (
         <DismissButton titleRef={titleRef} dismissed={dismissed.has(titleKey(titleRef))} language={profile.language} long />
       )}
     </div>
   );
+}
+
+/**
+ * Sprint 17's parts of the panel: each person's predicted rating while the title is still to watch, and
+ * the rating guesses made on it (to veil your partner's stars until you've guessed).
+ */
+async function tasteExtras(
+  coupleId: string,
+  item: NonNullable<Awaited<ReturnType<typeof getListItem>>>,
+  meId: string,
+  partnerId: string | null,
+  genres: { id: number; name: string }[],
+  language: string,
+) {
+  const unwatched = item.status === "want" || item.status === "watching";
+  const [rated, guesses] = await Promise.all([
+    unwatched && genres.length > 0 ? getRatedList(coupleId) : null,
+    partnerId ? getItemGuesses(item.id) : [],
+  ]);
+  const names = new Intl.ListFormat(language, { type: "conjunction" });
+  const predict = (personId: string | null) => {
+    if (!rated || !personId || item.ratings[personId]) return null;
+    const p = predictRating(rated, personId, genres.map((g) => g.id), item.id);
+    return p && { rating: p.rating, count: p.count, genres: names.format(genres.filter((g) => p.genreIds.includes(g.id)).map((g) => g.name)) };
+  };
+  return { predictions: rated ? { me: predict(meId), partner: predict(partnerId) } : null, guesses };
 }
 
 async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {

@@ -1,13 +1,14 @@
-import { SkelChip, Skeleton, SkelPageTitle, SkelPoster, SkelText } from "@/components/skeleton";
+import { NBSP, SkelButton, SkelChip, Skeleton, SkelPageTitle, SkelPoster, SkelText } from "@/components/skeleton";
 
 /** Bar heights for the month chart's blank columns (percent): any shape, so long as it reads as a chart. */
 const MONTHS = [35, 55, 30, 70, 45, 85, 40, 60, 25, 75, 50, 40];
 const GENRES = [100, 80, 62, 45, 30];
 
 /**
- * Stats while it loads, sized for a year with something watched: the heading, year chips and intro, the
- * four tiles in the spotlight, the month chart, top genres, ratings (averages and two favourites) and who
- * added what. A year with nothing watched shows one shorter card instead of the charts.
+ * Stats while it loads, sized for a year with something watched: the heading, year chips, intro and "Save as
+ * an image", the four tiles in the spotlight, the month chart, top genres, ratings (averages and two
+ * favourites), who added what, then "Just the two of you" (four cards and the stickers). A year with nothing
+ * watched shows one shorter card instead of the charts.
  */
 export function StatsSkeleton() {
   return (
@@ -19,6 +20,7 @@ export function StatsSkeleton() {
           <SkelChip width="5.5rem" />
         </div>
         <SkelText className="font-medium" width="70%" />
+        <SkelButton quiet icon="size-4" width="14rem" className="w-fit text-sm" />
       </div>
 
       <div className="spotlight grid grid-cols-2 gap-4 p-5 sm:grid-cols-4 sm:p-6">
@@ -121,6 +123,72 @@ export function StatsSkeleton() {
         <div className="flex flex-wrap gap-x-5 gap-y-1.5 font-semibold">
           <SkelText width="5rem" />
           <SkelText width="6rem" />
+        </div>
+      </div>
+
+      {/* Just the two of you: taste match, weeks in a row, milestones, guesses, then the stickers. */}
+      <div className="grid gap-5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <SkelText bar="lettering" className="display text-[2rem]" width="16rem" />
+          <span className="strand w-16">{NBSP}</span>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="card grid content-start gap-3">
+            <SkelText bar="ink" className="display-ink text-2xl" width="55%" />
+            <SkelText bar="ink" className="display-ink text-[clamp(3rem,7vw,4rem)] leading-none" width="6rem" />
+            <span className="h-6 rounded-full border-[3px] border-outline bg-accent-soft" />
+            <span className="grid text-sm">
+              <SkelText width="95%" />
+              <SkelText width="70%" />
+            </span>
+            <SkelText className="font-bold" width="9rem" />
+          </div>
+          <div className="card grid content-start gap-3">
+            <SkelText bar="ink" className="display-ink text-2xl" width="60%" />
+            <span className="flex items-center gap-3">
+              <span className="size-14 shrink-0 rounded-full border-[3px] border-outline bg-accent-soft" />
+              <SkelText bar="ink" className="display-ink text-[clamp(2.2rem,5vw,2.8rem)] leading-none" width="7rem" />
+            </span>
+            <SkelText className="font-bold" width="6rem" />
+            <span className="grid text-sm">
+              <SkelText width="90%" />
+            </span>
+          </div>
+          <div className="card grid content-start gap-3">
+            <SkelText bar="ink" className="display-ink text-2xl" width="50%" />
+            <span className="grid gap-2 font-semibold">
+              <SkelText width="85%" />
+              <SkelText width="65%" />
+              <SkelText width="75%" />
+            </span>
+            <SkelText className="text-sm" width="80%" />
+          </div>
+          <div className="card grid content-start gap-3">
+            <SkelText bar="ink" className="display-ink text-2xl" width="65%" />
+            <span className="grid gap-2">
+              {["bg-me", "bg-partner"].map((fill) => (
+                <span key={fill} className="flex items-center gap-x-2.5">
+                  <span className={`w-14 rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${fill}`}>{NBSP}</span>
+                  <SkelText className="font-semibold" width="10rem" />
+                </span>
+              ))}
+            </span>
+          </div>
+        </div>
+        <div className="card grid gap-4">
+          <div className="grid gap-1">
+            <SkelText bar="ink" className="display-ink text-2xl" width="35%" />
+            <SkelText width="60%" />
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-5">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <span key={i} className="grid content-start justify-items-center gap-1.5">
+                <span className="size-22 rounded-full border-[3px] border-outline bg-accent-soft motion-safe:animate-pulse" />
+                <SkelText className="font-bold leading-tight" width="70%" />
+                <SkelText className="text-sm leading-snug" width="85%" />
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </Skeleton>
