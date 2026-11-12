@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { ChatIcon } from "@/components/icons";
+import { Translatable } from "@/components/translate";
 import { getMessages } from "@/lib/i18n";
 import { cleanChat, MAX_CHAT_LENGTH } from "@/lib/room-rules";
 
@@ -96,10 +97,26 @@ export function RoomChat({
                     >
                       {mine ? names.me : names.partner}
                     </span>
-                    {m.text}
-                    <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
-                      {time.format(m.at)}
-                    </time>
+                    {mine ? (
+                      <>
+                        {m.text}
+                        <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
+                          {time.format(m.at)}
+                        </time>
+                      </>
+                    ) : (
+                      // Sprint 21: your partner's message, in your language if you like.
+                      <Translatable text={m.text} language={language} compact>
+                        {(shown) => (
+                          <>
+                            {shown}
+                            <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
+                              {time.format(m.at)}
+                            </time>
+                          </>
+                        )}
+                      </Translatable>
+                    )}
                   </li>
                 );
               })

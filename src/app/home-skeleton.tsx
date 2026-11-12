@@ -124,7 +124,11 @@ function ListCardSkeleton() {
         <div className="grid min-w-0 content-start gap-1">
           <SkelText className="text-xl font-bold leading-tight sm:text-2xl" width="70%" />
           <SkelText className="text-[15px] font-medium" width="30%" />
-          <SkelText className="text-sm" width="25%" />
+          {/* "Added by" and the Someday button (Sprint 21) share the last row. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+            <SkelText className="text-sm" width="25%" />
+            <SkelButton quiet width="6.5rem" icon="size-4" className="tap-area px-2.5 py-0.5 text-sm" />
+          </div>
         </div>
       </div>
     </li>

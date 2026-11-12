@@ -7,6 +7,7 @@ import type { WatchNight } from "@/lib/nights";
 import { titleHref } from "@/lib/watch";
 import { ExternalIcon } from "@/components/icons";
 import { Sfx } from "@/components/sfx";
+import { TranslatedText } from "@/components/translate";
 import { usesOwnFiles } from "@/lib/ready-rules";
 import { CommentThread } from "../together/comment-thread";
 import { NightAlbum } from "../together/night-album";
@@ -118,7 +119,13 @@ export function NightCard(props: {
             {t.nights.room.open}
           </Link>
         )}
-        {night.notes && <p className="whitespace-pre-line text-sm">{night.notes}</p>}
+        {night.notes &&
+          (night.created_by === me.id ? (
+            <p className="whitespace-pre-line text-sm">{night.notes}</p>
+          ) : (
+            // Sprint 21: the note your partner wrote, in your language if you like.
+            <TranslatedText text={night.notes} language={language} className="whitespace-pre-line text-sm" compact />
+          ))}
 
         {actions && (
           <ReadyCheck

@@ -43,6 +43,10 @@ import { ContentGuidance } from "./guidance";
 import { TitleTogether } from "@/app/together/title-together";
 import { ListPanel } from "./list-panel";
 import { CastSkeleton, GuidanceSkeleton, ScoresSkeleton, TitleSkeleton, WhereToWatchSkeleton } from "./skeleton";
+import { SendTitle } from "@/app/list/send-title";
+import { SentCard } from "@/app/list/sent-card";
+import { SkelButton } from "@/components/skeleton";
+import { getSeasonReviews, getTitleSends } from "@/lib/shelf";
 
 export const generateMetadata = localisedTitle("title");
 
@@ -120,6 +124,12 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
                   {t.nights.plan}
                 </Link>
               )}
+              {profile.couple_id && (
+                // Sprint 21: send it to your partner with a note.
+                <Suspense fallback={<SkelButton quiet width="10.5rem" icon="size-4" />}>
+                  <SendForTitle titleRef={ref} title={title.title} />
+                </Suspense>
+              )}
               {title.trailer_key && (
                 <a
                   href={`https://www.youtube.com/watch?v=${title.trailer_key}`}
@@ -172,6 +182,22 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
   );
 }
 
+/** "Send to {name}", or "Sent: waiting for an answer" with "Take it back" while your send waits. */
+async function SendForTitle({ titleRef, title }: { titleRef: TitleRef; title: string }) {
+  const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
+  if (!profile.couple_id || !partner) return null;
+  const { fromMe } = await getTitleSends(profile.couple_id, profile.id, titleRef.media_type, titleRef.tmdb_id);
+  return (
+    <SendTitle
+      titleRef={titleRef}
+      title={title}
+      partnerName={partner.display_name || t.common.yourPartner}
+      language={profile.language}
+      waiting={fromMe && !fromMe.answer ? { id: fromMe.id } : null}
+    />
+  );
+}
+
 /** The poster as a deck of TMDB's posters to shuffle through, or just the poster when there's only one. */
 async function TitleDeck(props: {
   deck: Promise<string[]>;
@@ -204,16 +230,33 @@ async function OnOurList({
     getCategories(coupleId),
     getDismissedKeys(coupleId),
   ]);
-  const [reviews, taste, diary] = item
-    ? await Promise.all([
-        getReviews([item.id], profile.id).then((byItem) => byItem[item.id]),
-        tasteExtras(coupleId, item, profile.id, partner?.id ?? null, genres, profile.language),
-        getDiary(item.id),
-      ])
-    : [null, null, null];
+  const [reviews, taste, diary, seasonReviews, sends] = await Promise.all([
+    item && getReviews([item.id], profile.id).then((byItem) => byItem[item.id]),
+    item && tasteExtras(coupleId, item, profile.id, partner?.id ?? null, genres, profile.language),
+    item && getDiary(item.id),
+    item && titleRef.media_type === "tv" ? getSeasonReviews(item.id, profile.id) : null,
+    partner ? getTitleSends(coupleId, profile.id, titleRef.media_type, titleRef.tmdb_id) : null,
+  ]);
+  const partnerName = partner?.display_name || t.common.yourPartner;
+  // Sprint 21: what your partner sent you (waiting for your answer), or how they answered yours.
+  const toMe = sends?.toMe && !sends.toMe.answer ? sends.toMe : null;
+  const answered = sends?.fromMe?.answer ?? null;
 
   return (
     <div className="grid gap-4">
+      {toMe && (
+        <SentCard
+          send={{ ...toMe, title: "", poster_path: null }}
+          partnerName={partnerName}
+          language={profile.language}
+          onTitlePage
+        />
+      )}
+      {answered && !toMe && (
+        <p data-send-answer className="paper justify-self-start rounded-control border-[2.5px] border-outline px-3 py-1.5 text-sm font-semibold">
+          {t.shelf.send.theyAnswered[answered](partnerName)}
+        </p>
+      )}
       <ListPanel
         titleRef={titleRef}
         seasons={seasons}
@@ -221,13 +264,14 @@ async function OnOurList({
         item={item}
         categories={categories}
         me={{ id: profile.id, name: profile.display_name || t.common.you }}
-        partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
+        partner={partner && { id: partner.id, name: partnerName }}
         language={profile.language}
         timeZone={profile.time_zone}
         reviews={reviews}
         predictions={taste?.predictions ?? null}
         guesses={taste?.guesses ?? []}
         diary={diary}
+        seasonReviews={seasonReviews}
       />
       {!item && (
         <DismissButton titleRef={titleRef} dismissed={dismissed.has(titleKey(titleRef))} language={profile.language} long />
@@ -248,7 +292,7 @@ async function tasteExtras(
   genres: { id: number; name: string }[],
   language: string,
 ) {
-  const unwatched = item.status === "want" || item.status === "watching";
+  const unwatched = item.status === "want" || item.status === "watching" || item.status === "someday";
   const [rated, guesses] = await Promise.all([
     unwatched && genres.length > 0 ? getRatedList(coupleId) : null,
     partnerId ? getItemGuesses(item.id) : [],

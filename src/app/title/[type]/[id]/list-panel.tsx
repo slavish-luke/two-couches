@@ -4,7 +4,8 @@ import { useState, useTransition, type CSSProperties } from "react";
 import { ReviewSection } from "@/app/after-night/review-box";
 import { saveGuess } from "@/app/stats/actions";
 import { addToList, rateListItem, removeFromList, updateListItem, type ListChanges, type ListResult } from "@/app/list/actions";
-import { PlusIcon, StarIcon } from "@/components/icons";
+import { PlusIcon, ShelfIcon, StarIcon } from "@/components/icons";
+import { Translatable } from "@/components/translate";
 import { Stars } from "@/components/stars";
 import { NameTag } from "@/components/name-tag";
 import { getMessages, type Messages } from "@/lib/i18n";
@@ -14,6 +15,7 @@ import type { Reviews } from "@/lib/review-rules";
 import { shouldAskGuess, type Guess } from "@/lib/taste-rules";
 import type { TitleRef } from "@/lib/watch";
 import type { Rewatch, SeasonRatings } from "@/lib/diary-rules";
+import { startsWatching, type SeasonReviews } from "@/lib/shelf-rules";
 import { SeasonRatingsPanel, WatchHistory } from "./diary-panel";
 
 type Person = { id: string; name: string };
@@ -39,6 +41,8 @@ type Props = {
   guesses?: Guess[];
   /** Sprint 18: rewatches and ratings per season, when it's on the list. */
   diary?: { rewatches: Rewatch[]; seasons: SeasonRatings } | null;
+  /** Sprint 21: each season's hidden reviews, for series on the list. */
+  seasonReviews?: SeasonReviews | null;
 };
 
 /** A predicted rating as the panel shows it: the average, how many ratings, and the genres they share. */
@@ -147,6 +151,12 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
           </button>
         ))}
       </div>
+      {item.status === "someday" && (
+        <p data-shelf-note className="-mt-3 flex items-start gap-2 text-sm font-semibold text-muted">
+          <ShelfIcon className="mt-0.5 size-4 shrink-0" />
+          {t.shelf.shelf.onShelf}
+        </p>
+      )}
 
       {titleRef.media_type === "tv" && (
         <Progress item={item} seasons={seasons} seasonEpisodes={seasonEpisodes} pending={pending} update={update} t={t} />
@@ -200,7 +210,15 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
         </div>
       )}
       {props.diary && titleRef.media_type === "tv" && (
-        <SeasonRatingsPanel item={item} seasons={seasons} rated={props.diary.seasons} me={me} partner={partner} language={language} />
+        <SeasonRatingsPanel
+          item={item}
+          seasons={seasons}
+          rated={props.diary.seasons}
+          reviews={props.seasonReviews ?? {}}
+          me={me}
+          partner={partner}
+          language={language}
+        />
       )}
       {props.diary && (item.status === "watched" || props.diary.rewatches.length > 0) && (
         <WatchHistory
@@ -215,7 +233,7 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
       )}
 
       <Categories item={item} all={categories} pending={pending} update={update} t={t} />
-      <Notes item={item} pending={pending} update={update} t={t} />
+      <Notes item={item} pending={pending} update={update} language={language} t={t} />
       {props.reviews && (
         <ReviewSection itemId={item.id} reviews={props.reviews} partnerName={partner?.name ?? null} language={language} />
       )}
@@ -396,7 +414,7 @@ function Progress(props: {
   const [editing, setEditing] = useState(false);
   const progress = item.season && item.episode ? { season: item.season, episode: item.episode } : null;
   // Watching an episode means you've started the series.
-  const started = item.status === "want" ? { status: "watching" as const } : {};
+  const started = startsWatching(item.status) ? { status: "watching" as const } : {};
   const nextSeason = (progress?.season ?? 0) + 1;
   // The next episode, into the next season once TMDB says this one is done; null after the last one.
   const next = episodeAfter(progress, props.seasonEpisodes);
@@ -570,7 +588,7 @@ function Categories({ item, all, pending, update, t }: { item: ListItem; all: st
   );
 }
 
-function Notes({ item, pending, update, t }: { item: ListItem; pending: boolean; update: Update; t: Messages }) {
+function Notes({ item, pending, update, language, t }: { item: ListItem; pending: boolean; update: Update; language: string; t: Messages }) {
   // null until edited, so a note saved on the other screen shows up here.
   const [draft, setDraft] = useState<string | null>(null);
   const notes = draft ?? item.notes;
@@ -595,6 +613,18 @@ function Notes({ item, pending, update, t }: { item: ListItem; pending: boolean;
           className="field"
         />
       </label>
+      {/* Sprint 21: the shared note may be in either of your languages; a translation shows under the box. */}
+      {!dirty && item.notes && (
+        <Translatable text={item.notes} language={language}>
+          {(shown) =>
+            shown !== item.notes && (
+              <p className="paper whitespace-pre-line rounded-control border-[2.5px] border-dashed border-outline px-3 py-2 font-medium">
+                {shown}
+              </p>
+            )
+          }
+        </Translatable>
+      )}
       {dirty && (
         <div className="flex flex-wrap gap-2.5">
           <button className="btn" disabled={pending}>

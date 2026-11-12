@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useOptimistic, useState, useTransition } from "react";
+import { Translatable } from "@/components/translate";
 import { ChatIcon, CloseIcon, ReactionSticker } from "@/components/icons";
 import { getMessages } from "@/lib/i18n";
 import type { CommentRow } from "@/lib/together";
@@ -144,7 +145,14 @@ export function CommentThread(props: {
                       </button>
                     )}
                   </div>
-                  <p className="whitespace-pre-line font-medium [overflow-wrap:anywhere]">{comment.body}</p>
+                  {mine ? (
+                    <p className="whitespace-pre-line font-medium [overflow-wrap:anywhere]">{comment.body}</p>
+                  ) : (
+                    // Sprint 21: your partner's words, in your language if you like.
+                    <Translatable text={comment.body} language={language}>
+                      {(shown) => <p className="whitespace-pre-line font-medium [overflow-wrap:anywhere]">{shown}</p>}
+                    </Translatable>
+                  )}
                   {!temporary && (
                     <div className="flex flex-wrap items-center gap-1.5">
                       {reactionGroups(comment.reactions).map(({ kind, by }) => {

@@ -26,7 +26,9 @@ export function ListSync({ coupleId }: { coupleId: string }) {
     const channel = supabase.channel(`list:${coupleId}`);
     for (const table of ["list_items", "list_ratings", "reminders", "dismissed_titles", "watch_nights", "ready_checks", "list_reviews", "review_signals", "night_wrapups", "night_proposals", "night_prep_items", "rating_guesses", "rewatches", "rewatch_ratings", "season_ratings", "cant_wait",
       // Sprint 20: nudges, the day's question (signals carry your partner's hidden answer), comments, episode reactions, photos.
-      "nudges", "question_answers", "question_signals", "comments", "comment_reactions", "episode_reactions", "episode_signals", "night_photos"]) {
+      "nudges", "question_answers", "question_signals", "comments", "comment_reactions", "episode_reactions", "episode_signals", "night_photos",
+      // Sprint 21: titles sent to each other, season reviews (signals carry your partner's hidden one).
+      "title_sends", "season_reviews", "season_review_signals"]) {
       channel
         .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, refresh)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, refresh)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Translatable } from "@/components/translate";
 import { Couch } from "@/components/couch";
 import { getMessages } from "@/lib/i18n";
 import { MAX_ANSWER_LENGTH, type Reveal } from "@/lib/together-rules";
@@ -114,7 +115,9 @@ export function AnswerBox(props: {
             <span aria-hidden className="size-2.5 rounded-full border-2 border-outline bg-partner" />
             <span className="truncate">{partnerName}</span>
           </figcaption>
-          <blockquote className={`font-medium [overflow-wrap:anywhere] ${compact ? "" : "text-lg"}`}>{partner.value}</blockquote>
+          <Translatable text={partner.value} language={language}>
+            {(shown) => <blockquote className={`font-medium [overflow-wrap:anywhere] ${compact ? "" : "text-lg"}`}>{shown}</blockquote>}
+          </Translatable>
         </figure>
       ) : partner.state === "hidden" ? (
         // Theirs waits under a sheet until you've answered, like the hidden reviews.

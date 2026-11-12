@@ -5,7 +5,8 @@ import type { Database } from "./supabase/database.types";
 
 /**
  * The number on the installed app's icon (Badging API) for one person: alerts that arrived since they last
- * opened Coming soon, plus times their partner proposed that are waiting for their answer. Works with the
+ * opened Coming soon, plus times their partner proposed that are waiting for their answer, plus titles their
+ * partner sent them that they haven't answered (Sprint 21). Works with the
  * signed-in user's client (the layout) or the admin client (pushes). 0 on any error: the badge is an extra.
  */
 export async function appBadgeCount(
@@ -13,7 +14,7 @@ export async function appBadgeCount(
   person: { id: string; couple_id: string | null; alerts_seen_at: string },
 ) {
   if (!person.couple_id) return 0;
-  const [alerts, proposals] = await Promise.all([
+  const [alerts, proposals, sends] = await Promise.all([
     client
       .from("alerts")
       .select("id", { count: "exact", head: true })
@@ -25,10 +26,16 @@ export async function appBadgeCount(
       .eq("couple_id", person.couple_id)
       .eq("status", "open")
       .neq("proposed_by", person.id),
+    client
+      .from("title_sends")
+      .select("id", { count: "exact", head: true })
+      .eq("to_profile", person.id)
+      .is("answer", null),
   ]);
   if (alerts.error) console.error("Counting alerts for the app badge failed", alerts.error);
   if (proposals.error) console.error("Counting proposals for the app badge failed", proposals.error);
+  if (sends.error) console.error("Counting sent titles for the app badge failed", sends.error);
   const now = new Date();
   const waiting = (proposals.data ?? []).filter((p) => proposalView(p, person.id, now) === "answer").length;
-  return (alerts.count ?? 0) + waiting;
+  return (alerts.count ?? 0) + waiting + (sends.count ?? 0);
 }

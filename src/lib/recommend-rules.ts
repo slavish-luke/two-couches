@@ -13,8 +13,8 @@ export type SeedSource = TitleRef & {
 
 export type Seed = SeedSource & { weight: number };
 
-/** What an unrated title says: watching or finishing it is a mild yes, dropping it a no. */
-const UNRATED_WEIGHT: Record<ListStatus, number> = { watched: 0.5, watching: 0.5, want: 0.25, dropped: -1 };
+/** What an unrated title says: watching or finishing it is a mild yes, dropping it a no, "someday" barely a yes. */
+const UNRATED_WEIGHT: Record<ListStatus, number> = { watched: 0.5, watching: 0.5, want: 0.25, dropped: -1, someday: 0.1 };
 
 /**
  * How much a list title should pull suggestions towards (or, below zero, away from) things like it. Each
