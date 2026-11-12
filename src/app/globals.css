@@ -3068,3 +3068,38 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     animation: reaction-still 1.6s forwards;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------
+ * Sprint 21: list and notes.
+ * Home's list cards are a div with the title as a link stretched over the card (so the Someday button can
+ * sit on it): the focus ring goes round the whole card, as it did when the card was the link.
+ * "Send to {name}" opens a small modal dialog, sized like the swipe match's.
+ * ------------------------------------------------------------------------------------------------------- */
+[data-list-card] [data-item-title]:focus-visible {
+  outline: none;
+}
+[data-list-card]:has([data-item-title]:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.send-dialog {
+  width: min(28rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: var(--p-ink);
+}
+.send-dialog::backdrop {
+  background: color-mix(in srgb, var(--outline) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .send-dialog[open] > .card {
+    --r: 0deg;
+    animation: pop 0.35s var(--ease-spring);
+  }
+}

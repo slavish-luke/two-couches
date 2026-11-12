@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Couch } from "@/components/couch";
+import { Translatable } from "@/components/translate";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { MAX_REVIEW_LENGTH, type PartnerReview, type Reviews } from "@/lib/review-rules";
 import { saveReview } from "./actions";
@@ -52,7 +53,18 @@ export function ReviewField(props: {
  * What you may see of your partner's review: that they've written one, or the review itself. Nothing while
  * they haven't (your own box's hint says so).
  */
-export function PartnerReviewView({ name, review, t }: { name: string; review: PartnerReview; t: Messages }) {
+export function PartnerReviewView({
+  name,
+  review,
+  language,
+  t,
+}: {
+  name: string;
+  review: PartnerReview;
+  /** The viewer's language, for Translate (Sprint 21). */
+  language: string;
+  t: Messages;
+}) {
   const text = t.reviews.review;
   if (review.state === "none") return null;
   if (review.state === "hidden") {
@@ -71,7 +83,9 @@ export function PartnerReviewView({ name, review, t }: { name: string; review: P
           <span className="truncate">{text.partnerShown(name)}</span>
         </span>
       </figcaption>
-      <blockquote className="whitespace-pre-line font-medium">{review.body}</blockquote>
+      <Translatable text={review.body} language={language}>
+        {(shown) => <blockquote className="whitespace-pre-line font-medium">{shown}</blockquote>}
+      </Translatable>
     </figure>
   );
 }
@@ -129,7 +143,7 @@ export function ReviewSection(props: {
           {error}
         </p>
       )}
-      {props.partnerName && <PartnerReviewView name={props.partnerName} review={partner} t={t} />}
+      {props.partnerName && <PartnerReviewView name={props.partnerName} review={partner} language={props.language} t={t} />}
     </form>
   );
 }

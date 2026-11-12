@@ -2,7 +2,8 @@
 
 import { dateLocale } from "./places";
 
-export const LIST_STATUSES = ["want", "watching", "watched", "dropped"] as const;
+/** `someday` is the Someday shelf (Sprint 21): on the list, but kept out of Up next, Pick and alerts. */
+export const LIST_STATUSES = ["want", "watching", "watched", "dropped", "someday"] as const;
 
 export type ListStatus = (typeof LIST_STATUSES)[number];
 

@@ -64,7 +64,7 @@ export function seasonsToRate(
 ): number[] {
   const reached = progress?.season ?? 0;
   const finished = status === "watched" || status === "dropped";
-  const upTo = Math.min(finished ? Math.max(seasons ?? 0, reached) : status === "watching" ? reached : 0, MAX_SEASON);
+  const upTo = Math.min(finished ? Math.max(seasons ?? 0, reached) : status === "watching" || status === "someday" ? reached : 0, MAX_SEASON);
   const all = new Set<number>();
   for (let s = 1; s <= upTo; s++) all.add(s);
   for (const [season, byPerson] of Object.entries(rated)) if (Object.keys(byPerson).length) all.add(Number(season));

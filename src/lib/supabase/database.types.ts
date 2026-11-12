@@ -857,6 +857,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"season_review_signals": {
+                  Row: {
+                    "changed_at": string,"couple_id": string,"list_item_id": string,"profile_id": string,"season": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changed_at"?: string,"couple_id": string,"list_item_id": string,"profile_id": string,"season": number
+                  }
+                  Update: {
+                    "changed_at"?: string,"couple_id"?: string,"list_item_id"?: string,"profile_id"?: string,"season"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "season_review_signals_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "season_review_signals_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"season_reviews": {
+                  Row: {
+                    "body": string,"couple_id": string,"created_at": string,"list_item_id": string,"profile_id": string,"season": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"couple_id": string,"created_at"?: string,"list_item_id": string,"profile_id": string,"season": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "body"?: string,"couple_id"?: string,"created_at"?: string,"list_item_id"?: string,"profile_id"?: string,"season"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "season_reviews_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "season_reviews_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "country": string,"display_priority": number,"logo_path": string | null,"name": string,"provider_id": number,"refreshed_at": string
@@ -920,6 +972,44 @@ isOneToOne: false
     },{
       foreignKeyName: "swipes_profile_id_fkey"
       columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"title_sends": {
+                  Row: {
+                    "answer": string | null,"answered_at": string | null,"couple_id": string,"created_at": string,"from_profile": string,"id": string,"media_type": string,"note": string,"tmdb_id": number,"to_profile": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer"?: string | null,"answered_at"?: string | null,"couple_id": string,"created_at"?: string,"from_profile": string,"id"?: string,"media_type": string,"note"?: string,"tmdb_id": number,"to_profile": string
+                  }
+                  Update: {
+                    "answer"?: string | null,"answered_at"?: string | null,"couple_id"?: string,"created_at"?: string,"from_profile"?: string,"id"?: string,"media_type"?: string,"note"?: string,"tmdb_id"?: number,"to_profile"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "title_sends_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "title_sends_from_profile_fkey"
+      columns: ["from_profile"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "title_sends_media_type_tmdb_id_fkey"
+      columns: ["media_type","tmdb_id"]
+isOneToOne: false
+      referencedRelation: "titles"
+      referencedColumns: ["media_type","tmdb_id"]
+    },{
+      foreignKeyName: "title_sends_to_profile_fkey"
+      columns: ["to_profile"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -1046,6 +1136,9 @@ isOneToOne: false
                            },
 "has_reviewed":
 { Args: { "p_list_item_id": string }; Returns: boolean
+                           },
+"has_reviewed_season":
+{ Args: { "p_list_item_id": string,"p_season": number }; Returns: boolean
                            },
 "is_my_night_room":
 { Args: { "topic": string }; Returns: boolean

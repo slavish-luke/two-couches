@@ -269,3 +269,30 @@ export function WarningIcon({ className }: { className?: string }) {
     </Glyph>
   );
 }
+
+/** Sprint 21: two speech marks, an A and a curly letter: translate your partner's words. */
+export function TranslateIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M3.5 6h9M8 4v2M10.5 6c-.6 3.4-3 6.3-6.5 7.5M6 9.5c1.1 1.6 2.7 2.9 4.5 3.6M13 20l3.75-9L20.5 20M14.3 17h4.9" />
+    </Glyph>
+  );
+}
+
+/** Sprint 21: a shelf with a box on it: the Someday shelf. */
+export function ShelfIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M2.5 18h19M6 18v3M18 18v3M4.5 18v-7h7v7M4.5 14h7M14 18V5.5h3.5V18M14 9h3.5" />
+    </Glyph>
+  );
+}
+
+/** Sprint 21: a paper plane: send a title to your partner. */
+export function SendIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M21 3 3 10.5l7 3 3 7.5zM21 3 10 13.5" />
+    </Glyph>
+  );
+}

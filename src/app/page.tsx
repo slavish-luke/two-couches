@@ -9,7 +9,7 @@ import { Poster, posterMorph } from "@/components/poster";
 import { SearchBox } from "@/components/search-box";
 import { Stars } from "@/components/stars";
 import { VenueClock } from "@/components/venue-clock";
-import { ArrowIcon } from "@/components/icons";
+import { ArrowIcon, ShelfIcon } from "@/components/icons";
 import { getList, type ListEntry } from "@/lib/list";
 import { ALERT_STATUSES } from "@/lib/alert-rules";
 import { getGoneAlerts } from "@/lib/alerts";
@@ -36,6 +36,8 @@ import { TonightsQuestion } from "./together/tonights-question";
 import { NextNight } from "./watch-nights/next-night";
 import { EpisodeChip, NextEpisodes } from "./list/next-episodes";
 import { getEpisodeGuides } from "@/lib/diary";
+import { ShelfButton } from "./list/shelf-button";
+import { SentToYou } from "./list/sent-to-you";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -49,9 +51,13 @@ const VIEWS = {
   next: { statuses: ["watching", "want"] },
   watched: { statuses: ["watched"] },
   dropped: { statuses: ["dropped"] },
+  // Sprint 21: the Someday shelf. Not a tab (four don't fit a phone's row): a link under Up next opens it.
+  someday: { statuses: ["someday"] },
 } satisfies Record<string, { statuses: ListStatus[] }>;
 
 type View = keyof typeof VIEWS;
+
+const TAB_VIEWS = ["next", "watched", "dropped"] as const satisfies View[];
 
 /** The list's filters, as read from and written to the URL. */
 type Filters = { view: View; category: string | null; type: MediaType | null; both: boolean };
@@ -198,6 +204,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
           />
         )}
         <AfterNight />
+        <SentToYou />
         <TonightsQuestion />
 
         <div className="grid gap-4">
@@ -288,7 +295,7 @@ async function ListSection(props: {
 
       <nav aria-label={t.list.viewsLabel} className="@container">
         <ul className="grid grid-cols-3 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:pt-1">
-          {(Object.keys(VIEWS) as View[]).map((view) => (
+          {TAB_VIEWS.map((view) => (
             <li key={view} className="min-w-0">
               <Link
                 href={filtersHref(filters, { view })}
@@ -304,6 +311,20 @@ async function ListSection(props: {
           ))}
         </ul>
       </nav>
+
+      {filters.view === "someday" && (
+        <div data-shelf-head className="card grid justify-items-start gap-2">
+          <h2 className="display-ink flex items-center gap-2 text-[1.75rem] leading-none">
+            <ShelfIcon className="size-7" />
+            {t.shelf.shelf.heading}
+          </h2>
+          <p className="max-w-prose font-medium">{t.shelf.shelf.intro}</p>
+          <Link href={filtersHref(filters, { view: "next" })} className="tap-area inline-flex items-center gap-1 text-sm font-bold underline underline-offset-4">
+            <ArrowIcon className="size-4 rotate-180" />
+            {t.shelf.shelf.back}
+          </Link>
+        </div>
+      )}
 
       {entries.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -353,15 +374,16 @@ async function ListSection(props: {
               </Link>
             </>
           ) : (
-            <p className="text-muted">{t.list.empty[filters.view]}</p>
+            <p className="text-muted">{filters.view === "someday" ? t.shelf.shelf.empty : t.list.empty[filters.view]}</p>
           )}
         </div>
       ) : (
         <ul className="grid gap-4">
           {shown.map((entry, i) => (
             <li key={entry.id} className="tilt-row">
-              <Link
-                href={titleHref(entry)}
+              {/* The title is the card's link, stretched over the whole card; the shelf button sits above it. */}
+              <div
+                data-list-card
                 className="card group relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 p-3 transition-shadow duration-150 hover:shadow-[8px_8px_0_var(--outline)] sm:p-4"
               >
                 {/* Who can watch it rides on a tab over the poster's top edge (dots only: the name is read out). */}
@@ -390,7 +412,13 @@ async function ListSection(props: {
                   )}
                 </div>
                 <div className="grid min-w-0 content-start gap-1">
-                  <span data-item-title className="text-xl font-bold leading-tight group-hover:underline sm:text-2xl">{entry.title}</span>
+                  <Link
+                    href={titleHref(entry)}
+                    data-item-title
+                    className="text-xl font-bold leading-tight after:absolute after:inset-0 after:rounded-[inherit] after:content-[''] group-hover:underline sm:text-2xl"
+                  >
+                    {entry.title}
+                  </Link>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium">
                     <span>
                       {t.common.mediaType[entry.media_type]}
@@ -456,14 +484,30 @@ async function ListSection(props: {
                     </span>
                   )}
                   {entry.notes && <p className="line-clamp-2 max-w-prose text-sm">{entry.notes}</p>}
-                  <p className="text-sm text-muted">
-                    {addedLine(t, entry, me.id, partner, shortDate(localDate(props.timeZone, new Date(entry.created_at)), today, language))}
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                    <p className="text-sm text-muted">
+                      {addedLine(t, entry, me.id, partner, shortDate(localDate(props.timeZone, new Date(entry.created_at)), today, language))}
+                    </p>
+                    {(filters.view === "next" || filters.view === "someday") && (
+                      <ShelfButton itemId={entry.id} title={entry.title} onShelf={entry.status === "someday"} language={language} compact />
+                    )}
+                  </div>
                 </div>
-              </Link>
+              </div>
             </li>
           ))}
         </ul>
+      )}
+
+      {filters.view === "next" && entries.length > 0 && (
+        <Link href={filtersHref(filters, { view: "someday" })} data-shelf-link className="card group flex items-center gap-3 px-4 py-3">
+          <ShelfIcon className="size-6" />
+          <span className="font-bold group-hover:underline">{t.shelf.shelf.open}</span>
+          <span className="rounded-full border-2 border-outline bg-surface px-1.5 text-sm font-bold leading-snug text-ink">
+            {inView("someday").length}
+          </span>
+          <ArrowIcon className="ml-auto size-5" />
+        </Link>
       )}
     </section>
   );

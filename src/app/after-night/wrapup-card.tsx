@@ -196,7 +196,7 @@ export function WrapupCard(props: {
           t={t}
         />
         {partner && reviews.partner.state !== "none" && (
-          <PartnerReviewView name={partner.name} review={reviews.partner} t={t} />
+          <PartnerReviewView name={partner.name} review={reviews.partner} language={language} t={t} />
         )}
 
         {!item && <p className="text-sm text-muted">{text.notOnList}</p>}

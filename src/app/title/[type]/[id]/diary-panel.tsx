@@ -10,6 +10,8 @@ import { seasonsToRate, watchHistory, FIRST_WATCH_DATE, type Rewatch, type Seaso
 import { getMessages, type Messages } from "@/lib/i18n";
 import type { ListItem } from "@/lib/list";
 import { formatDate, localDate } from "@/lib/list-rules";
+import type { SeasonReviews } from "@/lib/shelf-rules";
+import { SeasonReview } from "./season-review";
 
 // Sprint 18's parts of the "On our list" panel: the watch history (rewatches) and ratings per season.
 
@@ -269,11 +271,15 @@ function LogRewatch(props: { today: string; pending: boolean; onCancel: () => vo
   );
 }
 
-/** Each season with your stars to give and your partner's beside them, for a series you've started. */
+/**
+ * Each season with your stars to give and your partner's beside them, for a series you've started, and
+ * (Sprint 21) each of your hidden reviews of it.
+ */
 export function SeasonRatingsPanel(props: {
   item: ListItem;
   seasons: number | null;
   rated: SeasonRatings;
+  reviews: SeasonReviews;
   me: Person;
   partner: Person | null;
   language: string;
@@ -283,7 +289,11 @@ export function SeasonRatingsPanel(props: {
   const d = t.diary.seasons;
   const { pending, error, run } = useAction();
   const progress = item.season && item.episode ? { season: item.season, episode: item.episode } : null;
-  const shown = seasonsToRate(item.status, progress, props.seasons, rated);
+  // Seasons with a review are offered too, even if neither of you has rated them.
+  const reviewed = Object.entries(props.reviews)
+    .filter(([, r]) => r.mine !== null || r.partner.state !== "none")
+    .map(([season]) => Number(season));
+  const shown = [...new Set([...seasonsToRate(item.status, progress, props.seasons, rated), ...reviewed])].sort((a, b) => a - b);
   if (shown.length === 0) return null;
 
   return (
@@ -304,6 +314,13 @@ export function SeasonRatingsPanel(props: {
               />
             </span>
             {partner && <TheirStars partner={partner} rating={rated[season]?.[partner.id]} language={language} t={t} />}
+            <SeasonReview
+              itemId={item.id}
+              season={season}
+              mine={props.reviews[season]?.mine ?? null}
+              partner={partner && { name: partner.name, review: props.reviews[season]?.partner ?? { state: "none" } }}
+              language={language}
+            />
           </li>
         ))}
       </ul>

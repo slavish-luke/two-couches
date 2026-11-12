@@ -53,6 +53,7 @@ const en = {
     watching: "Watching",
     watched: "Watched",
     dropped: "Dropped",
+    someday: "Someday",
   } satisfies Record<ListStatus, string>,
   /** Last episode watched, e.g. "S2 E5". */
   progress: (season: number, episode: number) => `S${season} E${episode}`,
@@ -138,6 +139,7 @@ const tr: typeof en = {
     watching: "İzleniyor",
     watched: "İzlendi",
     dropped: "Bırakıldı",
+    someday: "Bir gün",
   },
   progress: (season: number, episode: number) => `${season}. sezon ${episode}. bölüm`,
   yourPartner: "Partnerin",

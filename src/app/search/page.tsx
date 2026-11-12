@@ -12,6 +12,8 @@ import { getAvailability, searchTitles, type SearchResult } from "@/lib/titles";
 import { tmdbLocale } from "@/lib/tmdb";
 import { titleKey, type Watcher } from "@/lib/watch";
 import { SearchResultsSkeleton, SearchSkeleton } from "./skeleton";
+import { SendTitle } from "@/app/list/send-title";
+import { getOpenSends } from "@/lib/shelf";
 
 export const generateMetadata = localisedTitle("search");
 
@@ -37,6 +39,7 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
       <Suspense fallback={<SearchResultsSkeleton />}>
         <Results
           query={query}
+          myId={profile.id}
           locale={tmdbLocale(profile.language, profile.home_country)}
           coupleId={profile.couple_id}
           me={{ country: profile.country, services: profile.services }}
@@ -50,6 +53,7 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
 
 async function Results(props: {
   query: string;
+  myId: string;
   locale: string;
   coupleId: string | null;
   me: Watcher;
@@ -69,7 +73,9 @@ async function Results(props: {
     }
   }
 
-  const onList = props.coupleId && results.length > 0 ? await getListKeys(props.coupleId) : null;
+  const [onList, sent] = props.coupleId && results.length > 0
+    ? await Promise.all([getListKeys(props.coupleId), partner ? getOpenSends(props.coupleId, props.myId) : null])
+    : [null, null];
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
   // Started now, awaited by each badge, so results render before availability is known.
   const availability = getAvailability(results, them ? [me.country, them.country] : [me.country]);
@@ -121,7 +127,19 @@ async function Results(props: {
               {[r.release_date?.slice(0, 4), t.common.mediaType[r.media_type]].filter(Boolean).join(" · ")}
             </span>
           }
-        />
+        >
+          {/* Sprint 21: send it to your partner with a note. */}
+          {sent && (
+            <SendTitle
+              titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }}
+              title={r.title}
+              partnerName={card.partnerName}
+              language={language}
+              waiting={sent.get(titleKey(r)) ?? null}
+              compact
+            />
+          )}
+        </TitleCard>
       ))}
     </ul>
   );

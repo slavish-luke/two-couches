@@ -6,6 +6,7 @@ import { getI18n } from "@/lib/i18n/server";
 import { getListItem } from "@/lib/list";
 import { isProgress, localDate, type Progress } from "@/lib/list-rules";
 import { cleanReview, MAX_REVIEW_LENGTH, nightEndsAt } from "@/lib/review-rules";
+import { startsWatching } from "@/lib/shelf-rules";
 import { requireCoupleProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import type { MediaType } from "@/lib/watch";
@@ -135,7 +136,7 @@ export async function saveWrapup(nightId: string, input: WrapupInput): Promise<R
     if (progress) {
       // Watching an episode means you've started the series.
       steps.push(() =>
-        updateListItem(item.id, { progress, ...(item.status === "want" && { status: "watching" as const }) }),
+        updateListItem(item.id, { progress, ...(startsWatching(item.status) && { status: "watching" as const }) }),
       );
     }
     if (rate) steps.push(() => rateListItem(item.id, rating ?? null));
