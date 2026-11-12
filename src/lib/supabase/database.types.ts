@@ -287,6 +287,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"free_evenings": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"free": boolean,"on_day": string,"profile_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"free"?: boolean,"on_day": string,"profile_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"free"?: boolean,"on_day"?: string,"profile_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "free_evenings_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "free_evenings_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"list_items": {
                   Row: {
                     "added_by": string | null,"categories": (string)[],"couple_id": string,"created_at": string,"episode": number | null,"id": string,"media_type": string,"notes": string,"season": number | null,"status": string,"tmdb_id": number,"updated_at": string,"watched_on": string | null
@@ -1037,14 +1063,14 @@ isOneToOne: false
                   ]
                 },"titles": {
                   Row: {
-                    "backdrop_path": string | null,"episodes": number | null,"genre_ids": (number)[],"media_type": string,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"season_episodes": (number)[] | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
+                    "backdrop_path": string | null,"episodes": number | null,"genre_ids": (number)[],"media_type": string,"origin_countries": (string)[] | null,"original_language": string | null,"original_title": string,"poster_path": string | null,"refreshed_at": string,"release_date": string | null,"runtime": number | null,"season_episodes": (number)[] | null,"seasons": number | null,"tmdb_id": number,"vote_average": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type": string,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"season_episodes"?: (number)[] | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
+                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type": string,"origin_countries"?: (string)[] | null,"original_language"?: string | null,"original_title": string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"season_episodes"?: (number)[] | null,"seasons"?: number | null,"tmdb_id": number,"vote_average"?: number | null
                   }
                   Update: {
-                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type"?: string,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"season_episodes"?: (number)[] | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
+                    "backdrop_path"?: string | null,"episodes"?: number | null,"genre_ids"?: (number)[],"media_type"?: string,"origin_countries"?: (string)[] | null,"original_language"?: string | null,"original_title"?: string,"poster_path"?: string | null,"refreshed_at"?: string,"release_date"?: string | null,"runtime"?: number | null,"season_episodes"?: (number)[] | null,"seasons"?: number | null,"tmdb_id"?: number,"vote_average"?: number | null
                   }
                   Relationships: [
                     

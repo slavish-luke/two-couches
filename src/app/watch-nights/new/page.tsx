@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NightFormSkeleton } from "../skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
-import { suggestStart } from "@/lib/night-rules";
+import { isDateString } from "@/lib/list-rules";
+import { addDays, isTimeString, suggestStart, zonedParts } from "@/lib/night-rules";
 import { titleOptions } from "@/lib/nights";
 import { isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
@@ -23,7 +24,10 @@ export default function NewWatchNightPage({ searchParams }: PageProps<"/watch-ni
   );
 }
 
-/** Opened from a title page (`?type=movie&id=603`), the form starts with that title picked. */
+/**
+ * Opened from a title page (`?type=movie&id=603`), the form starts with that title picked. Home's "You're
+ * both free tonight" passes `?date=2026-11-12&time=20:00` (on your clock, today or tomorrow) to start there.
+ */
 async function NewWatchNight({ searchParams }: Pick<PageProps<"/watch-nights/new">, "searchParams">) {
   const [profile, partner, params, { language, t }] = await Promise.all([
     requireProfile(),
@@ -49,7 +53,12 @@ async function NewWatchNight({ searchParams }: Pick<PageProps<"/watch-nights/new
 
   const now = new Date();
   const zones = partner ? [profile.time_zone, partner.time_zone] : [profile.time_zone];
-  const start = suggestStart(now, zones, profile.time_zone);
+  const today = zonedParts(now, profile.time_zone).date;
+  const asked =
+    isDateString(params.date) && isTimeString(params.time) && (params.date === today || params.date === addDays(today, 1))
+      ? { date: params.date, time: params.time }
+      : null;
+  const start = asked ?? suggestStart(now, zones, profile.time_zone);
   const picked = ref && (extra || options.some((o) => o.key === titleKey(ref))) ? titleKey(ref) : "";
 
   return (

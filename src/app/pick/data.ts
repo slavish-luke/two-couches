@@ -4,6 +4,8 @@ import { localDate } from "@/lib/list-rules";
 import { isMood, type Mood, type PickCandidate, type Swipes } from "@/lib/pick-rules";
 import { getForYou } from "@/lib/recommend";
 import { createClient } from "@/lib/supabase/server";
+import { getOrigins } from "@/lib/time";
+import { madeIn } from "@/lib/time-rules";
 import { getAvailability, getTitle, settleLimited } from "@/lib/titles";
 import { titleKey, whoCanWatch, type Availability, type MediaType, type TitleRef, type Watcher } from "@/lib/watch";
 
@@ -53,6 +55,8 @@ export async function listCandidates(couple: Couple): Promise<PickItem[]> {
 const CHECKED_PER_TYPE = 15;
 /** At most this many suggestions get their runtime looked up (one TMDB call each the first time). */
 const MAX_RUNTIMES = 16;
+/** With "Made in our countries" on, more are looked up, since most drop out on where they were made. */
+const MAX_RUNTIMES_MADE = 30;
 
 /**
  * The For you suggestions for films and series together, best first, with who can watch each and its
@@ -62,8 +66,16 @@ const MAX_RUNTIMES = 16;
  * TMDB's recommendations differ a little by language, so they're chosen with both of your locales in a
  * fixed order (the same on both screens, so both get the same picks and the same swipe deck), then named
  * in the viewer's own language.
+ *
+ * With `origins` (Sprint 22's "Made in our countries"), only suggestions whose TMDB origin country is one of
+ * them are kept; that comes with each title's details (getTitle()), so more of them are looked up.
  */
-export async function forYouCandidates(couple: Couple, today: string, everything: boolean): Promise<PickItem[]> {
+export async function forYouCandidates(
+  couple: Couple,
+  today: string,
+  everything: boolean,
+  origins?: string[],
+): Promise<PickItem[]> {
   const types: MediaType[] = ["movie", "tv"];
   const shared = couple.locales.toSorted();
   const [found, list] = await Promise.all([
@@ -81,15 +93,16 @@ export async function forYouCandidates(couple: Couple, today: string, everything
     .map((s) => ({ s, availability: byTitle[titleKey(s)] ?? {} }))
     .map(({ s, availability }) => ({ s, availability, verdict: whoCanWatch(couple.me, couple.partner, availability).verdict }))
     .filter(({ verdict }) => everything || verdict === "both")
-    .slice(0, MAX_RUNTIMES);
+    .slice(0, origins ? MAX_RUNTIMES_MADE : MAX_RUNTIMES);
 
   const titles = await settleLimited(checked, 8, ({ s }) =>
     getTitle({ media_type: s.media_type, tmdb_id: s.tmdb_id }, couple.locales[0]),
   );
-  return checked.map(({ s, availability, verdict }, i) => {
+  return checked.flatMap(({ s, availability, verdict }, i): PickItem[] => {
     const outcome = titles[i];
     const title = outcome.status === "fulfilled" ? outcome.value : null;
-    return {
+    if (origins && !madeIn(title?.origin_countries, origins)) return [];
+    return [{
       media_type: s.media_type,
       tmdb_id: s.tmdb_id,
       source: "forYou",
@@ -105,8 +118,17 @@ export async function forYouCandidates(couple: Couple, today: string, everything
       episode: null,
       because: listTitles.get(titleKey(s.because)) ?? s.because.title,
       availability,
-    };
+    }];
   });
+}
+
+/**
+ * Sprint 22's "Made in our countries": only the candidates whose TMDB origin country is one of `origins`
+ * (getOrigins() fills in titles cached before it knew). Titles it can't tell about are left out.
+ */
+export async function madeInOurs<C extends TitleRef>(candidates: C[], origins: string[], locale: string): Promise<C[]> {
+  const byTitle = await getOrigins(candidates, locale);
+  return candidates.filter((c) => madeIn(byTitle.get(titleKey(c)), origins));
 }
 
 /** Someone whose mood counts: their profile ID and the time zone their day runs in. */

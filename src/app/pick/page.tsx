@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense, type CSSProperties } from "react";
 import { AddButton } from "@/components/add-button";
 import { Couches } from "@/components/couch";
-import { ArrowIcon } from "@/components/icons";
+import { ArrowIcon, GlobeIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { Poster } from "@/components/poster";
 import { PosterTab } from "@/components/poster-tab";
@@ -27,12 +27,13 @@ import {
   QUICK_MINUTES,
   type Mood,
 } from "@/lib/pick-rules";
-import { isCountry } from "@/lib/places";
+import { countryName, isCountry } from "@/lib/places";
+import { ourCountries } from "@/lib/time-rules";
 import { getPartner, requireProfile } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
 import { streamableFor, titleHref, type Watcher } from "@/lib/watch";
 import { MoodSync } from "./couple-changes";
-import { forYouCandidates, getMoods, listCandidates, type PickItem } from "./data";
+import { forYouCandidates, getMoods, listCandidates, madeInOurs, type PickItem } from "./data";
 import { tagsFor } from "./describe";
 import { MoodCheck } from "./mood-check";
 import { PickCardSkeleton, PickSkeleton } from "./skeleton";
@@ -51,14 +52,16 @@ export default function PickPage({ searchParams }: PageProps<"/pick">) {
 /**
  * What's in the URL: `?time=120` (or `late`), `all=1` to include what only one of you can watch, `n` for
  * "Another". `surprise=1` (Home's "Surprise us") isn't kept in links: it only shuffles the pick in once.
+ * `made=1` (Sprint 22) keeps to titles made in one of your home countries.
  */
-type PickState = { time: string | null; everything: boolean; another: number };
+type PickState = { time: string | null; everything: boolean; made: boolean; another: number };
 
 function pickHref(state: PickState, changes: Partial<PickState>) {
   const next = { ...state, ...changes };
   const params = new URLSearchParams();
   if (next.time) params.set("time", next.time);
   if (next.everything) params.set("all", "1");
+  if (next.made) params.set("made", "1");
   if (next.another > 0) params.set("n", String(next.another));
   const query = params.toString();
   return query ? `/pick?${query}` : "/pick";
@@ -82,9 +85,13 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
   const choice = parseTimeChoice(params.time);
   // Without a partner's country nothing is watchable by both, so everything counts.
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
+  // Both of your home countries, sorted, so both screens keep to the same titles.
+  const homes = ourCountries([profile.home_country, partner?.home_country]);
+  const homeNames = homes.map((code) => countryName(code, language)).join(t.time.made.or);
   const state: PickState = {
     time: choice ? (choice.kind === "late" ? "late" : String(choice.minutes)) : null,
     everything: params.all === "1" || !them,
+    made: params.made === "1" && homes.length > 0,
     another: parseAnother(params.n),
   };
   const partnerName = partner?.display_name || t.common.yourPartner;
@@ -167,6 +174,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
             />
           </label>
           {state.everything && them && <input type="hidden" name="all" value="1" />}
+          {state.made && <input type="hidden" name="made" value="1" />}
           <button className="btn-quiet py-2">{text.time.go}</button>
         </Form>
       </section>
@@ -174,15 +182,31 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
       {summary && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-lg font-bold">{summary}</p>
-          {them && minutes !== null && (
-            <Link
-              href={pickHref(state, { everything: !state.everything, another: 0 })}
-              className="chip"
-              aria-pressed={!state.everything}
-            >
-              <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
-              {text.bothOnly}
-            </Link>
+          {minutes !== null && (them || homes.length > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {them && (
+                <Link
+                  href={pickHref(state, { everything: !state.everything, another: 0 })}
+                  className="chip"
+                  aria-pressed={!state.everything}
+                >
+                  <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
+                  {text.bothOnly}
+                </Link>
+              )}
+              {homes.length > 0 && (
+                <Link
+                  href={pickHref(state, { made: !state.made, another: 0 })}
+                  className="chip"
+                  aria-pressed={state.made}
+                  title={t.time.made.names(homeNames)}
+                >
+                  <GlobeIcon className="size-4" />
+                  {homes.length > 1 ? t.time.made.ours : t.time.made.one(homeNames)}
+                  {homes.length > 1 && <span className="sr-only"> ({t.time.made.names(homeNames)})</span>}
+                </Link>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -202,6 +226,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
             }}
             minutes={minutes}
             state={state}
+            homes={homes}
             moods={[moods.mine, moods.theirs]}
             surprise={params.surprise === "1"}
             now={now}
@@ -235,6 +260,8 @@ async function PickResult(props: {
   couple: Parameters<typeof listCandidates>[0];
   minutes: number;
   state: PickState;
+  /** Both of your home countries, for "Made in our countries". */
+  homes: string[];
   /** Both of your moods today (yours first), or null where there's none. */
   moods: (Mood | null)[];
   /** Arrived from "Surprise us": the pick shuffles in. */
@@ -250,13 +277,16 @@ async function PickResult(props: {
   // Both moods feed the seed (sorted), so both screens still land on the same pick.
   const options = { minutes, everything: state.everything, seed: pickSeed(day, props.moods), moods: moodsOf(props.moods) };
 
-  const list = await listCandidates(couple);
+  const whole = await listCandidates(couple);
+  // "Made in our countries": the same titles on both screens, whoever is looking (homes are sorted).
+  const origins = state.made ? props.homes : undefined;
+  const list = origins ? await madeInOurs(whole, origins, couple.locales[0]) : whole;
   let candidates = list;
   let failed = false;
   // The list's titles of known length come first, so suggestions are only loaded once they've all had a turn.
   if (state.another >= listOnlyCount(list, options)) {
     try {
-      candidates = [...list, ...(await forYouCandidates(couple, day, state.everything))];
+      candidates = [...list, ...(await forYouCandidates(couple, day, state.everything, origins))];
     } catch (error) {
       console.error("Loading suggestions for the pick failed", error);
       failed = true;
@@ -270,9 +300,14 @@ async function PickResult(props: {
       <div className="card grid justify-items-center gap-3 px-6 py-10 text-center">
         <Couches size={56} />
         <p className="display-ink text-2xl">{t.pick.empty.heading(t.title.runtime(minutes))}</p>
-        {list.length === 0 && <p className="max-w-[48ch] text-muted">{t.pick.empty.noList}</p>}
+        {whole.length === 0 && <p className="max-w-[48ch] text-muted">{t.pick.empty.noList}</p>}
         {failed && <p className="max-w-[48ch] text-muted">{t.pick.failed}</p>}
         <div className="flex flex-wrap justify-center gap-3 pt-1">
+          {state.made && (
+            <Link href={pickHref(state, { made: false, another: 0 })} className="btn-quiet">
+              {t.time.made.anyCountry}
+            </Link>
+          )}
           {!state.everything && (
             <Link href={pickHref(state, { everything: true, another: 0 })} className="btn-quiet">
               {t.pick.empty.tryEverything}

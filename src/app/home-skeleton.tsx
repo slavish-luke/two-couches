@@ -1,5 +1,5 @@
 import { Couch } from "@/components/couch";
-import { SkelButton, SkelChip, SkelField, Skeleton, SkelPoster, SkelTab, SkelText } from "@/components/skeleton";
+import { NBSP, SkelButton, SkelChip, SkelField, Skeleton, SkelPoster, SkelTab, SkelText } from "@/components/skeleton";
 import { QuestionSkeleton } from "./together/question-skeleton";
 import { NightCardSkeleton } from "./watch-nights/night-skeleton";
 
@@ -25,12 +25,17 @@ export function HomeSkeleton() {
                 <SkelText bar="ink" className="display-ink text-[clamp(2rem,26cqi,3.5rem)] leading-none" width="70%" />
                 <SkelText className="text-sm font-semibold" width="45%" />
               </div>
+              {/* Sprint 22: free time, busy hours or asleep (ClockState). */}
+              <span className="inline-block w-[62%] rounded-full border-2 border-outline bg-surface px-2 text-[min(0.8125rem,8.4cqi)] font-bold leading-snug">
+                {NBSP}
+              </span>
             </div>
           ))}
           <span className="absolute -top-3.5 left-1/2 w-16 -translate-x-1/2 -rotate-6 rounded-full border-[3px] border-outline bg-accent px-2.5 pb-0.5 pt-1 text-sm leading-none shadow-[3px_3px_0_var(--outline)] sm:pb-1 sm:pt-1.5 sm:text-base">
             {" "}
           </span>
         </div>
+        <FreeTonightSkeleton />
 
         <div className="spotlight grid -rotate-1 gap-4 p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -57,6 +62,18 @@ export function HomeSkeleton() {
         <ListSkeleton />
       </div>
     </Skeleton>
+  );
+}
+
+/** Sprint 22's "Tonight" card (FreeTonight) before either of you has said: the toggle and your partner's line. */
+function FreeTonightSkeleton() {
+  return (
+    <div data-free-tonight className="card grid gap-3 px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+        <SkelChip width="10.5rem" className="py-1 text-[15px]" />
+        <SkelText className="text-[15px] font-semibold" width="11rem" />
+      </div>
+    </div>
   );
 }
 

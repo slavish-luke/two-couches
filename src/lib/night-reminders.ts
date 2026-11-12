@@ -1,4 +1,5 @@
 import "server-only";
+import { appBadgeCount } from "./app-badge";
 import { getMessages } from "./i18n";
 import { formatDay, formatTime } from "./night-rules";
 import { titleNameFor } from "./nights";
@@ -16,6 +17,7 @@ type Person = {
   language: string;
   country: string | null;
   time_zone: string;
+  alerts_seen_at: string;
   push_subscriptions: { id: string; endpoint: string; p256dh: string; auth: string }[];
 };
 
@@ -39,6 +41,7 @@ function reminderMessage(
   to: Person,
   partner: Person | undefined,
   now: Date,
+  badge: number,
 ): PushMessage {
   const all = getMessages(to.language);
   const t = all.nights;
@@ -53,6 +56,8 @@ function reminderMessage(
     body: [title ?? t.push.noTitle, times, night.notes && t.push.reminder.note(night.notes)].filter(Boolean).join("\n"),
     url: "/watch-nights",
     tag: `night-${night.id}`,
+    // Sprint 22: the app icon's count (appBadgeCount()) rides along, like every other push's.
+    badge,
   };
 }
 
@@ -98,7 +103,9 @@ export async function runNightReminders(contact: string, now = new Date()): Prom
 
   const { data: people, error: peopleError } = await admin
     .from("profiles")
-    .select("id, couple_id, display_name, language, country, time_zone, push_subscriptions(id, endpoint, p256dh, auth)")
+    .select(
+      "id, couple_id, display_name, language, country, time_zone, alerts_seen_at, push_subscriptions(id, endpoint, p256dh, auth)",
+    )
     .in("couple_id", [...new Set(ours.map(({ night }) => night.couple_id))]);
   if (peopleError) throw peopleError;
 
@@ -108,8 +115,11 @@ export async function runNightReminders(contact: string, now = new Date()): Prom
     const ref = isMediaType(night.media_type) && night.tmdb_id ? { media_type: night.media_type, tmdb_id: night.tmdb_id } : null;
     const to = await Promise.all(
       members.map(async (person) => {
-        const title = ref && (await titleNameFor(admin, ref, person));
-        const message = reminderMessage(night, title, person, members.find((p) => p.id !== person.id), now);
+        const [title, badge] = await Promise.all([
+          ref ? titleNameFor(admin, ref, person) : null,
+          appBadgeCount(admin, person),
+        ]);
+        const message = reminderMessage(night, title, person, members.find((p) => p.id !== person.id), now, badge);
         const devices = await sendPush(admin, person.push_subscriptions, message, contact);
         return { profile: person.id, devices, message };
       }),

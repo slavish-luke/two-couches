@@ -31,6 +31,11 @@ export type DiscoverQuery = {
   sort: Sort;
   /** TMDB's page, from 1. */
   page: number;
+  /**
+   * Sprint 22: only titles made in one of these countries (TMDB origin country, any of them). Left out of
+   * Browse's unfiltered requests, so warmCaches() still asks for the same URLs.
+   */
+  origins?: string[];
 };
 
 export type DiscoverPage = { results: SearchResult[]; totalPages: number };
@@ -85,6 +90,7 @@ export async function discoverTitles(query: DiscoverQuery, locale: string): Prom
     params[`${dateField}.gte`] = `${query.decade}-01-01`;
     if (end < today) params[`${dateField}.lte`] = end;
   }
+  if (query.origins?.length) params.with_origin_country = query.origins.join("|");
   if (query.minRating) params["vote_average.gte"] = query.minRating;
   // A handful of votes makes for a meaningless average.
   if (query.sort === "rated") params["vote_count.gte"] = "200";

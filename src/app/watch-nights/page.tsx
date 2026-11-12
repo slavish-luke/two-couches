@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { getMyFeedCreatedAt } from "@/app/calendar/feed";
 import { CalendarSubscribe } from "@/app/calendar/subscribe";
 import { Couches } from "@/components/couch";
-import { PlusIcon } from "@/components/icons";
+import { ArrowIcon, PlusIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
 import { WatchNightsSkeleton } from "./skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
@@ -139,7 +139,14 @@ async function WatchNights() {
 
       {past.length > 0 && (
         <section className="grid gap-4">
-          <h2 className="display text-[2rem]">{t.nights.past}</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+            <h2 className="display text-[2rem]">{t.nights.past}</h2>
+            {/* Sprint 22: every night you've had, as a timeline. */}
+            <Link href="/watch-nights/all" className="group tap-area inline-flex items-center gap-1.5 font-bold underline underline-offset-4">
+              {t.time.timeline.link}
+              <ArrowIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
+            </Link>
+          </div>
           {/* Nights that are over: flat paper, no shadow, so they sit back behind what's coming. */}
           <ul className="grid gap-3">
             {past.map((night) => (

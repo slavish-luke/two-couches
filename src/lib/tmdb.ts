@@ -121,6 +121,8 @@ type DetailsCommon = {
   backdrop_path: string | null;
   genres: { id: number; name: string }[];
   vote_average: number;
+  /** ISO 3166-1 codes (Sprint 22: "Made in one of our countries"). */
+  origin_country?: string[];
   videos?: {
     results: { key: string; site: string; type: string; official: boolean; iso_639_1: string }[];
   };

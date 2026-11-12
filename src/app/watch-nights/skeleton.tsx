@@ -30,7 +30,10 @@ export function WatchNightsSkeleton() {
       <CalendarPanelSkeleton />
 
       <section className="grid gap-4">
-        <SkelText bar="lettering" className="display text-[2rem]" width="6rem" />
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+          <SkelText bar="lettering" className="display text-[2rem]" width="6rem" />
+          <SkelText className="font-bold" width="8.5rem" />
+        </div>
         <ul className="grid gap-3">
           {[0, 1].map((i) => (
             <NightCardSkeleton key={i} listing actions={false} className="paper rounded-panel border-[3px] border-outline/70 p-4" />

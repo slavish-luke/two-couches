@@ -280,11 +280,33 @@ export function NextEpisodeIcon({ className }: { className?: string }) {
   );
 }
 
+// Sprint 22: time together.
+
+/** A crescent moon: "I'm free tonight", and someone probably asleep under their clock. */
+export function MoonIcon({ className, filled = false }: { className?: string; filled?: boolean }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill={filled ? "var(--pop)" : "none"} />
+    </Glyph>
+  );
+}
+
 /** Sprint 21: two speech marks, an A and a curly letter: translate your partner's words. */
 export function TranslateIcon({ className }: { className?: string }) {
   return (
     <Glyph className={className} strokeWidth={2.25}>
       <path d="M3.5 6h9M8 4v2M10.5 6c-.6 3.4-3 6.3-6.5 7.5M6 9.5c1.1 1.6 2.7 2.9 4.5 3.6M13 20l3.75-9L20.5 20M14.3 17h4.9" />
+    </Glyph>
+  );
+}
+
+/** A little sofa: free time under a clock. */
+export function SofaIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3" />
+      <path d="M3 13a2 2 0 0 1 4 0v1h10v-1a2 2 0 0 1 4 0v4H3z" />
+      <path d="M5 17v2M19 17v2" />
     </Glyph>
   );
 }
@@ -295,6 +317,16 @@ export function PersonIcon({ className }: { className?: string }) {
     <Glyph className={className} strokeWidth={2.25}>
       <circle cx="12" cy="8.5" r="4" />
       <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
+    </Glyph>
+  );
+}
+
+/** A clock face with its hands at work time: busy hours under a clock. */
+export function BusyIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
     </Glyph>
   );
 }
@@ -313,6 +345,16 @@ export function SendIcon({ className }: { className?: string }) {
   return (
     <Glyph className={className} strokeWidth={2.25}>
       <path d="M21 3 3 10.5l7 3 3 7.5zM21 3 10 13.5" />
+    </Glyph>
+  );
+}
+
+/** A globe: "Made in our countries". */
+export function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className} strokeWidth={2.25}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z" />
     </Glyph>
   );
 }
