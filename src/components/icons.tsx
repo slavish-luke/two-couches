@@ -62,6 +62,15 @@ export function PlusIcon({ className }: { className?: string }) {
   );
 }
 
+/** A cross, for taking something off a list. */
+export function CloseIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className}>
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+    </Glyph>
+  );
+}
+
 export function CheckIcon({ className }: { className?: string }) {
   return (
     <Glyph className={className}>

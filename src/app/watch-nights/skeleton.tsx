@@ -74,6 +74,13 @@ export function NightFormSkeleton({ editing = false }: { editing?: boolean }) {
           </Labelled>
 
           <div className="grid gap-4">
+            {/* One time or a few (new nights only). */}
+            {!editing && (
+              <div className="flex flex-wrap gap-2">
+                <SkelChip width="6.5rem" />
+                <SkelChip width="11rem" />
+              </div>
+            )}
             <div className="flex flex-wrap items-end gap-3">
               <Labelled>
                 <SkelField className="w-[10.5rem]" />
@@ -97,7 +104,7 @@ export function NightFormSkeleton({ editing = false }: { editing?: boolean }) {
                 ))}
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm font-semibold">
-                {["2.5rem", "2.5rem", "17rem", "7rem", "13rem"].map((width, i) => (
+                {["2.5rem", "2.5rem", "16rem", "8rem", "14rem", "10rem", "3rem"].map((width, i) => (
                   <SkelText key={i} width={width} />
                 ))}
               </div>

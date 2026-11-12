@@ -9,11 +9,13 @@ import { ListSync } from "@/components/list-sync";
 import { WatchNightsSkeleton } from "./skeleton";
 import { getI18n, localisedTitle } from "@/lib/i18n/server";
 import { formatDayLong } from "@/lib/night-rules";
-import { getWatchNights, type WatchNight } from "@/lib/nights";
+import { getProposals, getWatchNights, type WatchNight } from "@/lib/nights";
+import { proposalView } from "@/lib/planning-rules";
 import { dateLocale, isCountry } from "@/lib/places";
 import { getPartner, requireProfile } from "@/lib/session";
 import { tmdbLocale } from "@/lib/tmdb";
 import { NightCard } from "./night-card";
+import { ProposalCard } from "./proposal-card";
 
 export const generateMetadata = localisedTitle("watchNights");
 
@@ -32,10 +34,11 @@ async function WatchNights() {
 
   const locale = tmdbLocale(profile.language, profile.home_country ?? profile.country);
   const locales = partner?.country ? [locale, tmdbLocale(partner.language, partner.home_country)] : [locale];
-  const [upcoming, past, feedCreatedAt] = await Promise.all([
+  const [upcoming, past, feedCreatedAt, proposals] = await Promise.all([
     getWatchNights(profile.couple_id, locales),
     getWatchNights(profile.couple_id, locales, { past: true, limit: 5 }),
     getMyFeedCreatedAt(profile.id),
+    getProposals(profile.couple_id, locales),
   ]);
   const feedMadeOn =
     feedCreatedAt &&
@@ -50,6 +53,13 @@ async function WatchNights() {
   const now = new Date();
   const me = { id: profile.id, name: t.common.you, timeZone: profile.time_zone };
   const them = partner && { id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone };
+  // Times your partner suggested (to pick from) first, then your own.
+  const suggested = proposals
+    .flatMap((proposal) => {
+      const view = proposalView(proposal, profile.id, now);
+      return view === "hidden" ? [] : [{ proposal, view }];
+    })
+    .sort((a, b) => Number(b.view === "answer") - Number(a.view === "answer"));
 
   // Upcoming nights grouped by day, on your own calendar.
   const days = new Map<string, WatchNight[]>();
@@ -71,6 +81,25 @@ async function WatchNights() {
           {t.nights.plan}
         </Link>
       </div>
+
+      {suggested.length > 0 && (
+        <section className="grid gap-5">
+          <h2 className="display text-[2rem]">{t.nights.proposal.section}</h2>
+          <ul className="grid gap-5">
+            {suggested.map(({ proposal, view }) => (
+              <ProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                view={view}
+                me={me}
+                partner={them}
+                now={now.getTime()}
+                language={language}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="grid gap-5">
         <h2 className="display text-[2rem]">{t.nights.upcoming}</h2>
