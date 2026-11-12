@@ -533,6 +533,84 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"rewatch_ratings": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"profile_id": string,"rating": number,"rewatch_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"profile_id": string,"rating": number,"rewatch_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"profile_id"?: string,"rating"?: number,"rewatch_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rewatch_ratings_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "rewatch_ratings_rewatch_id_couple_id_fkey"
+      columns: ["rewatch_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "rewatches"
+      referencedColumns: ["id","couple_id"]
+    }
+                  ]
+                },"rewatches": {
+                  Row: {
+                    "added_by": string | null,"couple_id": string,"created_at": string,"id": string,"list_item_id": string,"watched_on": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "added_by"?: string | null,"couple_id": string,"created_at"?: string,"id"?: string,"list_item_id": string,"watched_on": string
+                  }
+                  Update: {
+                    "added_by"?: string | null,"couple_id"?: string,"created_at"?: string,"id"?: string,"list_item_id"?: string,"watched_on"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rewatches_added_by_fkey"
+      columns: ["added_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "rewatches_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    }
+                  ]
+                },"season_ratings": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"list_item_id": string,"profile_id": string,"rating": number,"season": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"list_item_id": string,"profile_id": string,"rating": number,"season": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"list_item_id"?: string,"profile_id"?: string,"rating"?: number,"season"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "season_ratings_list_item_id_couple_id_fkey"
+      columns: ["list_item_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "list_items"
+      referencedColumns: ["id","couple_id"]
+    },{
+      foreignKeyName: "season_ratings_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "country": string,"display_priority": number,"logo_path": string | null,"name": string,"provider_id": number,"refreshed_at": string
