@@ -1,6 +1,6 @@
 import { Skeleton, SkelPageTitle, SkelText } from "@/components/skeleton";
 
-/** The watch room while it loads: back link, heading and the night's line, then the player panel and the people panel. */
+/** The watch room while it loads: back link, heading and the night's line, then the player panel, the people panel and the chat. */
 export function WatchRoomSkeleton() {
   return (
     <Skeleton wide className="grid gap-6">
@@ -11,7 +11,10 @@ export function WatchRoomSkeleton() {
       </div>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <span aria-hidden className="card block min-h-72 sm:aspect-video" />
-        <span aria-hidden className="card block h-44" />
+        <div className="grid gap-5">
+          <span aria-hidden className="card block h-44" />
+          <span aria-hidden className="card block h-52" />
+        </div>
       </div>
     </Skeleton>
   );

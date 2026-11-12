@@ -2403,3 +2403,86 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     scale: 1.03 0.95;
   }
 }
+
+/* ==========================================================================================================
+ * Sprint 14: watch room together (src/app/watch-nights/[id]/watch). Reaction stickers float up over the
+ * video, and short messages about the partner's actions slide in over it. All of it lives inside
+ * [data-room-stage], the element that goes full screen, so it shows there too. With reduced motion a
+ * sticker shows still for a moment and fades.
+ * ========================================================================================================== */
+@keyframes reaction-float {
+  0% {
+    opacity: 0;
+    scale: 0.2;
+    translate: -50% 0;
+    rotate: -14deg;
+  }
+  12% {
+    opacity: 1;
+    scale: 1.15;
+    rotate: 6deg;
+  }
+  24% {
+    scale: 1;
+    rotate: -4deg;
+  }
+  55% {
+    translate: calc(-50% + var(--sway, 0px)) -120%;
+    rotate: 5deg;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 0.9;
+    translate: -50% -240%;
+    rotate: -3deg;
+  }
+}
+
+@keyframes reaction-still {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10%,
+  85% {
+    opacity: 1;
+  }
+}
+
+@keyframes room-toast-in {
+  from {
+    opacity: 0;
+    translate: -14px 0;
+    scale: 0.9;
+  }
+}
+
+[data-reaction] {
+  translate: -50% 0;
+  animation: reaction-still 1.6s linear both;
+}
+
+/* "Waiting for…" in the middle of the picture: a paper note tipped like the spotlights. */
+[data-room-waiting] {
+  --r: -1deg;
+  rotate: var(--r);
+}
+
+[data-room-stage]::backdrop {
+  background: black;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-reaction] {
+    animation: reaction-float 2.4s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+  }
+  [data-room-toast] {
+    animation: room-toast-in 0.35s var(--ease-spring) both;
+  }
+  [data-room-waiting] {
+    animation: pop 0.5s var(--ease-spring) both;
+  }
+}
