@@ -3255,3 +3255,102 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------
+   Sprint 26: Motion on the list. Add flies onto the list (a poster in flight, the List tab's "+1"), a stamp
+   for watched and a fall for dropped (the rubber stamp, a stamped card's tint), tabs that deal the cards
+   (a list clipped sideways while cards fly in), stars that cheer (the "Same!" / "Close!" / "Ooh, a split"
+   sticker). The moves themselves are WAAPI in src/lib/list-motion.ts; the lab is design/labs/motion-lab.html.
+   --------------------------------------------------------------------------------------------------------- */
+
+/* A poster flying to the List tab, in the fx layer. */
+.lm-flyer {
+  object-fit: cover;
+  border: 3px solid var(--outline);
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--outline);
+}
+
+/* The "+1" sticker that pops on the List tab. */
+.lm-plus {
+  padding: 3px 7px 2px;
+  border: 2.5px solid var(--outline);
+  border-radius: 999px;
+  background: var(--pop);
+  color: var(--p-ink);
+  box-shadow: 2px 2px 0 var(--outline);
+  font: 700 14px/1 var(--font-skin-body);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The rubber stamp: the status word, tipped, in a ring of its own colour. Decoration (aria-hidden). */
+.lm-stamp {
+  position: absolute;
+  left: 58%;
+  top: 50%;
+  /* Over the card's buttons (z-10). */
+  z-index: 20;
+  translate: -50% -50%;
+  rotate: -12deg;
+  padding: 6px 12px 3px;
+  border: 4px solid currentColor;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--p-surface) 72%, transparent);
+  color: var(--accent);
+  font: 400 clamp(22px, 7cqi, 30px) / 1 var(--font-skin-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.lm-stamp[data-kind="dropped"] {
+  color: var(--danger);
+}
+
+/* A card that's been stamped watched, on its way to the Watched tab. */
+.lm-done {
+  background-color: color-mix(in srgb, var(--p-surface) 78%, var(--accent-soft));
+}
+
+/* While cards deal in from the side, their list clips sideways so they never widen the page. */
+.lm-dealing {
+  overflow-x: clip;
+  overflow-clip-margin: 16px;
+}
+
+/* The verdict once you've both rated: a sticker beside the stars. "Same!" is on the burst colour. */
+.lm-verdict {
+  display: inline-block;
+  padding: 6px 12px 4px;
+  border: 3px solid var(--outline);
+  border-radius: 12px;
+  background: var(--p-surface);
+  color: var(--p-ink);
+  box-shadow: 3px 3px 0 var(--outline);
+  font: 400 1.25rem/1 var(--font-skin-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  rotate: -6deg;
+}
+
+.lm-verdict[data-verdict="same"] {
+  background: var(--stamp);
+  color: var(--on-stamp);
+  -webkit-text-stroke: 1.5px var(--outline);
+  paint-order: stroke fill;
+}
+
+/* Skins whose display face has its own lower case keep it (see the uppercase rule in CLAUDE.md). */
+:is([data-skin="scrapbook"], [data-skin="candy"]) :is(.lm-stamp, .lm-verdict) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* POW!: square panels, no hard shadow. */
+[data-skin="comic"] :is(.lm-verdict, .lm-plus) {
+  border-radius: 4px;
+  box-shadow: none;
+}

@@ -37,6 +37,8 @@ import { NextNight } from "./watch-nights/next-night";
 import { EpisodeChip, NextEpisodes } from "./list/next-episodes";
 import { getEpisodeGuides } from "@/lib/diary";
 import { ShelfButton } from "./list/shelf-button";
+import { LeaveButtons } from "./list/leave-buttons";
+import { DealIn } from "@/components/deal-in";
 import { SentToYou } from "./list/sent-to-you";
 import { formatTime } from "@/lib/night-rules";
 import { getFreeEvenings } from "@/lib/time";
@@ -356,6 +358,8 @@ async function ListSection(props: {
   return (
     <section className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <h1 className="sr-only">{t.common.nav.list}</h1>
+      {/* Sprint 26: switching views deals the new cards in. */}
+      <DealIn scope="home" tab={filters.view} />
 
       <nav aria-label={t.list.viewsLabel} className="@container">
         <ul className="grid grid-cols-3 gap-2 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:pt-1">
@@ -364,10 +368,12 @@ async function ListSection(props: {
               <Link
                 href={filtersHref(filters, { view })}
                 aria-current={filters.view === view ? "page" : undefined}
+                data-deal-tab="home"
+                data-deal-to={view}
                 className="tab relative flex items-center justify-center gap-2 max-sm:px-1.5 max-sm:pb-1 max-sm:pt-2 max-sm:text-[min(1.35rem,4.6cqi)]"
               >
                 <span className="truncate">{t.list.views[view]}</span>
-                <span className="rounded-full border-2 border-outline bg-surface px-1.5 font-sans text-sm font-bold leading-snug text-ink max-sm:absolute max-sm:-right-1.5 max-sm:-top-2.5 max-sm:rotate-6 max-sm:text-xs">
+                <span data-deal-count className="rounded-full border-2 border-outline bg-surface px-1.5 font-sans text-sm font-bold leading-snug text-ink max-sm:absolute max-sm:-right-1.5 max-sm:-top-2.5 max-sm:rotate-6 max-sm:text-xs">
                   {inView(view).length}
                 </span>
               </Link>
@@ -383,7 +389,7 @@ async function ListSection(props: {
             {t.shelf.shelf.heading}
           </h2>
           <p className="max-w-prose font-medium">{t.shelf.shelf.intro}</p>
-          <Link href={filtersHref(filters, { view: "next" })} className="tap-area inline-flex items-center gap-1 text-sm font-bold underline underline-offset-4">
+          <Link href={filtersHref(filters, { view: "next" })} data-deal-tab="home" data-deal-to="next" className="tap-area inline-flex items-center gap-1 text-sm font-bold underline underline-offset-4">
             <ArrowIcon className="size-4 rotate-180" />
             {t.shelf.shelf.back}
           </Link>
@@ -553,7 +559,10 @@ async function ListSection(props: {
                       {addedLine(t, entry, me.id, partner, shortDate(localDate(props.timeZone, new Date(entry.created_at)), today, language))}
                     </p>
                     {(filters.view === "next" || filters.view === "someday") && (
-                      <ShelfButton itemId={entry.id} title={entry.title} onShelf={entry.status === "someday"} language={language} compact />
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        {filters.view === "next" && <LeaveButtons itemId={entry.id} title={entry.title} language={language} />}
+                        <ShelfButton itemId={entry.id} title={entry.title} onShelf={entry.status === "someday"} language={language} compact />
+                      </span>
                     )}
                   </div>
                 </div>
@@ -564,7 +573,7 @@ async function ListSection(props: {
       )}
 
       {filters.view === "next" && entries.length > 0 && (
-        <Link href={filtersHref(filters, { view: "someday" })} data-shelf-link className="card group flex items-center gap-3 px-4 py-3">
+        <Link href={filtersHref(filters, { view: "someday" })} data-shelf-link data-deal-tab="home" data-deal-to="someday" className="card group flex items-center gap-3 px-4 py-3">
           <ShelfIcon className="size-6" />
           <span className="font-bold group-hover:underline">{t.shelf.shelf.open}</span>
           <span className="rounded-full border-2 border-outline bg-surface px-1.5 text-sm font-bold leading-snug text-ink">

@@ -6,7 +6,8 @@ import { StarPicker } from "@/app/title/[type]/[id]/list-panel";
 import { NameTag } from "@/components/name-tag";
 import { CheckIcon } from "@/components/icons";
 import { Poster } from "@/components/poster";
-import { Stars } from "@/components/stars";
+import { LiveStars } from "@/components/live-stars";
+import { RatingVerdict } from "@/components/rating-verdict";
 import { getMessages } from "@/lib/i18n";
 import { formatDate } from "@/lib/list-rules";
 import { formatDay } from "@/lib/night-rules";
@@ -179,10 +180,18 @@ export function WrapupCard(props: {
             {partner && partnerRating && (
               <span className="flex flex-wrap items-center gap-2">
                 <NameTag name={partner.name} who="partner" />
-                <span className="text-2xl leading-none">
-                  <Stars rating={partnerRating} who={partner.name} language={language} />
-                </span>
+                {/* Sprint 26: arriving while you're looking, it drops in; then the verdict against your stars. */}
+                <LiveStars
+                  memory={`wrapup:${night.id}:${partner.id}`}
+                  rating={partnerRating}
+                  who={partner.name}
+                  language={language}
+                  className="text-2xl leading-none"
+                />
               </span>
+            )}
+            {partner && (
+              <RatingVerdict memory={`wrapup:${night.id}`} mine={rating} theirs={partnerRating} language={language} host="li" />
             )}
           </div>
         </div>

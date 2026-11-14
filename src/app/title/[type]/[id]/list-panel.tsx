@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition, type CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, useTransition, type CSSProperties } from "react";
 import { ReviewSection } from "@/app/after-night/review-box";
 import { saveGuess } from "@/app/stats/actions";
 import { addToList, rateListItem, removeFromList, updateListItem, type ListChanges, type ListResult } from "@/app/list/actions";
 import { PlusIcon, ShelfIcon, StarIcon } from "@/components/icons";
 import { Translatable } from "@/components/translate";
-import { Stars } from "@/components/stars";
 import { NameTag } from "@/components/name-tag";
+import { LiveStars } from "@/components/live-stars";
+import { RatingVerdict } from "@/components/rating-verdict";
+import { cheerStars, stampPanel, type LeaveKind } from "@/lib/list-motion";
 import { getMessages, type Messages } from "@/lib/i18n";
 import { cleanCategories, episodeAfter, formatDate, LIST_STATUSES, localDate, MAX_CATEGORY_LENGTH, MAX_NOTES_LENGTH } from "@/lib/list-rules";
 import type { ListItem } from "@/lib/list";
@@ -123,6 +125,8 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
   const myGuess = guesses.find((g) => g.profile_id === me.id) ?? null;
   const partnerGuess = partner ? (guesses.find((g) => g.profile_id === partner.id) ?? null) : null;
   const predictions = props.predictions;
+  // Sprint 26: choosing Watched or Dropped slams a stamp onto the panel (there's no list to leave here).
+  const [stamp, setStamp] = useState<{ kind: LeaveKind; n: number } | null>(null);
 
   return (
     <section className="card grid gap-6 sm:p-6" aria-busy={pending}>
@@ -137,19 +141,31 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
         </p>
       </div>
 
-      <div role="radiogroup" aria-label={t.title.panel.status} className="flex flex-wrap gap-2">
-        {LIST_STATUSES.map((status) => (
-          <button
-            key={status}
-            role="radio"
-            aria-checked={item.status === status}
-            disabled={pending}
-            onClick={() => item.status !== status && update({ status })}
-            className={RADIO_CHIP}
-          >
-            {t.common.statuses[status]}
-          </button>
-        ))}
+      <div className="relative">
+        <div role="radiogroup" aria-label={t.title.panel.status} className="flex flex-wrap gap-2">
+          {LIST_STATUSES.map((status) => (
+            <button
+              key={status}
+              role="radio"
+              aria-checked={item.status === status}
+              disabled={pending}
+              onClick={() => {
+                if (item.status === status) return;
+                if (status !== "watched" && status !== "dropped") return update({ status });
+                setStamp((s) => ({ kind: status, n: (s?.n ?? 0) + 1 }));
+                run(async () => {
+                  const result = await updateListItem(item.id, { status });
+                  if (result.error) setStamp(null);
+                  return result;
+                });
+              }}
+              className={RADIO_CHIP}
+            >
+              {t.common.statuses[status]}
+            </button>
+          ))}
+        </div>
+        {stamp && <PanelStamp key={stamp.n} kind={stamp.kind} word={t.list.stamp[stamp.kind]} onDone={() => setStamp(null)} />}
       </div>
       {item.status === "someday" && (
         <p data-shelf-note className="-mt-3 flex items-start gap-2 text-sm font-semibold text-muted">
@@ -205,6 +221,10 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
                 language={language}
                 t={t}
               />
+            )}
+            {/* Never while "Guess first?" veils your partner's stars. */}
+            {partner && !shouldAskGuess(item, partner.id, myGuess) && (
+              <RatingVerdict memory={item.id} mine={item.ratings[me.id]} theirs={item.ratings[partner.id]} language={language} host="section" />
             )}
           </div>
         </div>
@@ -376,16 +396,19 @@ function PartnerRating(props: {
     <span className="grid gap-1">
       <span className="flex flex-wrap items-center gap-2">
         <NameTag name={partner.name} who="partner" />
-        {rating ? (
-          <span
-            className={`text-2xl leading-none ${revealing ? "motion-safe:animate-[pop_0.5s_cubic-bezier(0.2,1.4,0.4,1)_both]" : ""}`}
-            style={{ "--r": "-4deg" } as CSSProperties}
-          >
-            <Stars rating={rating} who={partner.name} language={language} />
-          </span>
-        ) : (
-          <span className="text-sm font-semibold text-muted">{t.title.panel.notRated}</span>
-        )}
+        {/* Sprint 26: a rating that arrives while you're looking drops in star by star. */}
+        <span
+          className={`text-2xl leading-none ${revealing ? "motion-safe:animate-[pop_0.5s_cubic-bezier(0.2,1.4,0.4,1)_both]" : ""}`}
+          style={{ "--r": "-4deg" } as CSSProperties}
+        >
+          <LiveStars
+            memory={`${item.id}:${partner.id}`}
+            rating={rating}
+            who={partner.name}
+            language={language}
+            fallback={<span className="text-sm font-semibold text-muted">{t.title.panel.notRated}</span>}
+          />
+        </span>
       </span>
       {myGuess?.guess && off !== null && (
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold">
@@ -491,24 +514,25 @@ function Progress(props: {
 }
 
 /**
- * Your own 1-5 rating: big cartoon stars that pop in, one after another, when you choose. Choosing your
- * current rating again clears it.
+ * Your own 1-5 rating: big cartoon stars that pop in, one after another, when you choose (Sprint 26: five
+ * stars burst into sparkles and, at Wild, do a wave; src/lib/list-motion.ts). Choosing your current rating
+ * again clears it.
  */
 export function StarPicker({ rating, disabled, onRate, t }: { rating: number | null; disabled: boolean; onRate: (rating: number | null) => void; t: Messages }) {
   const [hover, setHover] = useState<number | null>(null);
-  // The stars up to the one just chosen pop; `round` replays it on every choice.
-  const [popped, setPopped] = useState({ upTo: 0, round: 0 });
+  const row = useRef<HTMLSpanElement>(null);
   const shown = hover ?? rating ?? 0;
 
   return (
     <span className="flex flex-wrap items-center gap-2">
       <NameTag name={t.common.you} who="me" />
-      <span role="radiogroup" aria-label={t.title.panel.yourRating} className="flex" onMouseLeave={() => setHover(null)}>
+      <span ref={row} role="radiogroup" aria-label={t.title.panel.yourRating} className="flex" onMouseLeave={() => setHover(null)}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
             type="button"
             role="radio"
+            data-star
             aria-checked={rating === n}
             aria-label={t.title.panel.starCount(n)}
             title={rating === n ? t.title.panel.clearRating : undefined}
@@ -517,21 +541,45 @@ export function StarPicker({ rating, disabled, onRate, t }: { rating: number | n
             onClick={() => {
               // Choosing your current rating again clears it.
               const next = rating === n ? null : n;
-              setPopped((p) => ({ upTo: next ?? 0, round: p.round + 1 }));
+              const buttons = [...(row.current?.querySelectorAll<HTMLElement>("[data-star]") ?? [])];
+              cheerStars(
+                buttons.map((b) => b.firstElementChild as HTMLElement),
+                buttons,
+                next ?? 0,
+                rating ?? 0,
+              );
               onRate(next);
             }}
             className="grid size-11 place-items-center rounded-full transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-6 hover:scale-110 active:scale-90 disabled:opacity-60"
           >
-            <span
-              key={n <= popped.upTo ? `${n}-${popped.round}` : n}
-              style={{ "--r": "0deg", animationDelay: `${(n - 1) * 45}ms` } as CSSProperties}
-              className={`grid place-items-center ${n <= popped.upTo ? "motion-safe:animate-[pop_0.45s_cubic-bezier(0.2,1.4,0.4,1)_both]" : ""}`}
-            >
+            <span className="grid place-items-center">
               <StarIcon filled={n <= shown} className="size-9" />
             </span>
           </button>
         ))}
       </span>
+    </span>
+  );
+}
+
+/** The stamp slammed onto the panel when it's marked watched or dropped; gone again after a moment. */
+function PanelStamp({ kind, word, onDone }: { kind: LeaveKind; word: string; onDone: () => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const done = useRef(onDone);
+  useLayoutEffect(() => {
+    done.current = onDone;
+  });
+  useLayoutEffect(() => {
+    const mark = ref.current;
+    const panel = mark?.closest("section");
+    if (!mark || !panel) return;
+    void stampPanel(mark, panel, kind).then(() => {
+      if (mark.isConnected) done.current();
+    });
+  }, [kind]);
+  return (
+    <span ref={ref} aria-hidden data-kind={kind} className="lm-stamp opacity-0">
+      {word}
     </span>
   );
 }

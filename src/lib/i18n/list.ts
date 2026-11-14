@@ -19,7 +19,7 @@ const en = {
     noMatches: "Nothing matches these filters",
     clearFilters: "Clear filters",
     next: "Everything's watched or dropped. Search for something new.",
-    watched: "Nothing watched yet. Mark a title watched from its page.",
+    watched: "Nothing watched yet. Tap Watched on a title in Up next, or mark it on its page.",
     dropped: "Nothing dropped.",
   },
   /** Follows "Watching · ", e.g. "up to S2 E5". */
@@ -28,6 +28,14 @@ const en = {
   addedBy: (name: string, date: string) => `${name} · ${date}`,
   addedOn: (date: string) => `Added ${date}`,
   notRated: "Not rated",
+  /** Sprint 26: an Up next card's quick moves, and the rubber stamp they slam on. */
+  leave: {
+    watched: "Watched",
+    watchedLabel: (title: string) => `Mark ${title} watched`,
+    drop: "Drop",
+    dropLabel: (title: string) => `Drop ${title}`,
+  },
+  stamp: { watched: "Watched!", dropped: "Dropped" },
   search: {
     heading: "Search",
     failed: "Search isn't working right now. Try again in a minute.",
@@ -71,7 +79,7 @@ const tr: typeof en = {
     noMatches: "Bu filtrelere uyan bir şey yok",
     clearFilters: "Filtreleri temizle",
     next: "Hepsi izlendi ya da bırakıldı. Yeni bir şey ara.",
-    watched: "Henüz izlenen bir şey yok. Bir yapımı kendi sayfasından izlendi olarak işaretle.",
+    watched: "Henüz izlenen bir şey yok. Sıradakilerden birinde İzledik'e dokun ya da yapımın sayfasından işaretle.",
     dropped: "Bırakılan bir şey yok.",
   },
   upTo: (progress: string) => `en son ${progress}`,
@@ -79,6 +87,13 @@ const tr: typeof en = {
   addedBy: (name: string, date: string) => `${name} · ${date}`,
   addedOn: (date: string) => `Eklendi: ${date}`,
   notRated: "Puanlanmadı",
+  leave: {
+    watched: "İzledik",
+    watchedLabel: (title: string) => `İzlendi olarak işaretle: ${title}`,
+    drop: "Bırak",
+    dropLabel: (title: string) => `Bırak: ${title}`,
+  },
+  stamp: { watched: "İzlendi!", dropped: "Bırakıldı" },
   search: {
     heading: "Arama",
     failed: "Arama şu an çalışmıyor. Bir dakika sonra tekrar dene.",
