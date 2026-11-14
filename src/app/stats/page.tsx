@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { Couches } from "@/components/couch";
 import { ArrowIcon, DownloadIcon, StarIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
+import { RollIn } from "@/components/roll-in";
+import { RollText } from "@/components/roll-text";
 import { Poster } from "@/components/poster";
 import { Stars } from "@/components/stars";
 import { getGenres } from "@/lib/browse";
@@ -86,6 +88,8 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
   return (
     <div className="grid gap-9">
       <ListSync coupleId={profile.couple_id} />
+      {/* Numbers roll in once per visit (Sprint 28), again for another year. */}
+      <RollIn key={String(period)} />
       <div className="grid gap-4">
         <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.stats.heading}</h1>
         <nav aria-label={t.stats.periodsLabel} className="flex flex-wrap gap-2">
@@ -111,7 +115,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
       </div>
 
       {/* The headline numbers: the one spotlight on this screen. */}
-      <dl className="spotlight grid grid-cols-2 gap-4 p-5 sm:grid-cols-4 sm:p-6">
+      <dl data-roll-group className="spotlight grid grid-cols-2 gap-4 p-5 sm:grid-cols-4 sm:p-6">
         {(
           [
             ["films", number(stats.films)],
@@ -130,7 +134,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
                   {t.stats.atLeast}
                 </span>
               )}
-              {value}
+              <RollText text={value} />
               {(key === "films" || key === "series") && stats.rewatches[key] > 0 && (
                 <span className="mt-1 block font-sans text-sm font-semibold normal-case tracking-normal text-muted">
                   {t.diary.stats.including(stats.rewatches[key])}
@@ -216,7 +220,7 @@ function MonthChart({ months, language, t }: { months: number[]; language: strin
   const name = (i: number, month: "long" | "narrow") =>
     new Intl.DateTimeFormat(language, { month, timeZone: "UTC" }).format(new Date(Date.UTC(2000, i, 1)));
   return (
-    <section className="card grid gap-4">
+    <section data-roll-group className="card grid gap-4">
       <h2 className="display-ink text-2xl">{t.stats.months.heading}</h2>
       <ol className="grid h-40 grid-cols-12 items-end gap-1 border-b-[3px] border-outline sm:gap-2">
         {months.map((count, i) => (
@@ -234,6 +238,7 @@ function MonthChart({ months, language, t }: { months: number[]; language: strin
             {count > 0 && (
               <span
                 aria-hidden
+                data-bar-y
                 style={{ height: `calc(${(count / max) * 100}% - ${i === busiest ? "1.75rem" : "0px"})` }}
                 className="-mb-[3px] min-h-3 w-full max-w-9 origin-bottom rounded-t-control border-[3px] border-outline bg-accent transition duration-200 ease-(--ease-spring) group-hover:scale-y-105 group-hover:-rotate-2 group-focus-visible:-rotate-2"
               />
@@ -262,7 +267,7 @@ function GenreBars({ genres, t }: { genres: { id: number; name: string; count: n
   if (genres.length === 0) return null;
   const max = genres[0].count;
   return (
-    <section className="card grid gap-4">
+    <section data-roll-group className="card grid gap-4">
       <h2 className="display-ink text-2xl">{t.stats.genres.heading}</h2>
       <ol className="grid gap-3">
         {genres.map((genre) => (
@@ -270,6 +275,7 @@ function GenreBars({ genres, t }: { genres: { id: number; name: string; count: n
             <span className="truncate font-semibold">{genre.name}</span>
             <span className="flex items-center gap-2.5">
               <span
+                data-bar-x
                 style={{ width: `${(genre.count / max) * 100}%` }}
                 className="h-7 min-w-7 max-w-[calc(100%-2.5rem)] rounded-full border-[3px] border-outline bg-accent shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
               />
@@ -394,13 +400,14 @@ function AddedBar({ added, partnerName, t }: { added: { me: number; partner: num
     { key: "partner", name: partnerName, count: added.partner, color: "bg-partner" },
   ].filter((part) => part.count > 0);
   return (
-    <section className="card grid gap-4">
+    <section data-roll-group className="card grid gap-4">
       <div className="grid gap-1">
         <h2 className="display-ink text-2xl">{t.stats.added.heading}</h2>
         <p className="text-muted">{t.stats.added.intro}</p>
       </div>
       <div
         role="img"
+        data-clip-x
         aria-label={parts.map((part) => t.stats.added.total(part.name, part.count)).join(", ")}
         className="flex h-10 overflow-hidden rounded-full border-[3px] border-outline shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
       >

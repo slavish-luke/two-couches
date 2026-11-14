@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { Celebrate, type MilestoneItem } from "@/components/celebrate";
 import { ArrowIcon } from "@/components/icons";
 import { NameTag } from "@/components/name-tag";
+import { RollText } from "@/components/roll-text";
+import { isFilmMilestone, isNewBestStreak, milestoneKey } from "@/lib/moments";
 import type { Messages } from "@/lib/i18n";
 import { formatDate } from "@/lib/list-rules";
 import type { StatsEntry } from "@/lib/stats-rules";
@@ -40,6 +43,7 @@ export function Together({
   const s = t.stats;
   return (
     <section aria-labelledby="together" className="grid gap-5">
+      <Celebrate items={milestoneItems(data)} />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h2 id="together" className="display text-[2rem]">
           {s.together.heading}
@@ -57,11 +61,34 @@ export function Together({
   );
 }
 
+/**
+ * The milestones on this part that get confetti the first time this device sees them (Sprint 28): today's
+ * anniversary, a new best streak, a round film number and every sticker earned from now on.
+ */
+function milestoneItems(data: TogetherData): MilestoneItem[] {
+  const items: MilestoneItem[] = [];
+  if (data.anniversary?.isToday) {
+    items.push({ id: milestoneKey.anniversary(data.anniversary.years), target: '[data-ms="anniversary"]' });
+  }
+  if (isNewBestStreak(data.streak.current, data.streak.best)) {
+    items.push({ id: milestoneKey.streak(data.streak.current), target: '[data-ms="streak"] svg' });
+  }
+  if (data.films.latest && isFilmMilestone(data.films.count)) {
+    items.push({ id: milestoneKey.film(data.films.count), target: '[data-ms="film"]' });
+  }
+  for (const sticker of data.stickers) {
+    if (sticker.earned) {
+      items.push({ id: milestoneKey.sticker(sticker.id), target: `[data-ms="sticker:${sticker.id}"] .sticker-art`, seed: true });
+    }
+  }
+  return items;
+}
+
 function TasteCard({ taste, language, t }: { taste: TogetherData["taste"]; language: string; t: Messages }) {
   const s = t.stats.taste;
   const shown = taste.percent;
   return (
-    <section data-taste className="card grid content-start gap-3">
+    <section data-taste data-roll-group className="card grid content-start gap-3">
       <h3 className="display-ink text-2xl">{s.heading}</h3>
       {shown === null ? (
         <>
@@ -72,6 +99,7 @@ function TasteCard({ taste, language, t }: { taste: TogetherData["taste"]; langu
             className="h-6 overflow-hidden rounded-full border-[3px] border-outline bg-surface"
           >
             <span
+              data-bar-x
               style={{ width: `${(taste.shared / TASTE_MIN_SHARED) * 100}%` }}
               className="block h-full border-r-[3px] border-outline bg-accent-soft"
             />
@@ -81,7 +109,11 @@ function TasteCard({ taste, language, t }: { taste: TogetherData["taste"]; langu
       ) : (
         <>
           <p className="display-ink text-[clamp(3rem,7vw,4rem)] leading-none">
-            {new Intl.NumberFormat(language, { style: "percent" }).format(shown / 100)}
+            <span className="sr-only">{new Intl.NumberFormat(language, { style: "percent" }).format(shown / 100)}</span>
+            {/* Counts up beside the meter (Sprint 28); screen readers get the copy above. */}
+            <span aria-hidden data-count data-to={shown} data-format="percent" className="inline-block">
+              {new Intl.NumberFormat(language, { style: "percent" }).format(shown / 100)}
+            </span>
           </p>
           <div
             role="img"
@@ -90,6 +122,7 @@ function TasteCard({ taste, language, t }: { taste: TogetherData["taste"]; langu
           >
             <span
               style={{ "--w": `${shown}%` } as CSSProperties}
+              data-meter
               className="taste-fill block h-full w-(--w) border-r-[3px] border-outline bg-stamp"
             />
           </div>
@@ -112,12 +145,14 @@ function TasteCard({ taste, language, t }: { taste: TogetherData["taste"]; langu
 function StreakCard({ streak, t }: { streak: TogetherData["streak"]; t: Messages }) {
   const s = t.stats.streak;
   return (
-    <section className="card grid content-start gap-3">
+    <section data-roll-group className="card grid content-start gap-3">
       <h3 className="display-ink text-2xl">{s.heading}</h3>
       {streak.current > 0 ? (
-        <p className="flex items-center gap-3">
+        <p data-ms="streak" className="flex items-center gap-3">
           <StickerArt id="streak" className="size-14 shrink-0 -rotate-6" />
-          <span className="display-ink text-[clamp(2.2rem,5vw,2.8rem)] leading-none">{s.current(streak.current)}</span>
+          <span className="display-ink text-[clamp(2.2rem,5vw,2.8rem)] leading-none">
+            <RollText text={s.current(streak.current)} value={String(streak.current)} />
+          </span>
         </p>
       ) : (
         <p className="font-medium">{s.none}</p>
@@ -130,23 +165,23 @@ function StreakCard({ streak, t }: { streak: TogetherData["streak"]; t: Messages
 
 function MilestonesCard({ data, language, t }: { data: TogetherData; language: string; t: Messages }) {
   const s = t.stats.milestones;
-  const items: string[] = [];
-  if (data.films.latest) items.push(s.film(data.films.count, data.films.latest.title));
-  if (data.titles > 0) items.push(s.titles(data.titles));
-  if (data.firstNight) items.push(s.firstNight(formatDate(data.firstNight, language)));
+  const items: { line: string; ms?: string }[] = [];
+  if (data.films.latest) items.push({ line: s.film(data.films.count, data.films.latest.title), ms: "film" });
+  if (data.titles > 0) items.push({ line: s.titles(data.titles) });
+  if (data.firstNight) items.push({ line: s.firstNight(formatDate(data.firstNight, language)) });
   const a = data.anniversary;
   return (
     <section className="card grid content-start gap-3">
       <h3 className="display-ink text-2xl">{s.heading}</h3>
       {a?.isToday && (
-        <p className="w-fit -rotate-1 rounded-control border-[3px] border-outline bg-pop px-3 py-1.5 font-bold shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]">
+        <p data-ms="anniversary" className="w-fit -rotate-1 rounded-control border-[3px] border-outline bg-pop px-3 py-1.5 font-bold shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]">
           {s.anniversaryToday(a.years)}
         </p>
       )}
       {items.length > 0 ? (
         <ul className="grid gap-2">
-          {items.map((line) => (
-            <li key={line} className="flex items-baseline gap-2 font-semibold">
+          {items.map(({ line, ms }) => (
+            <li key={line} data-ms={ms} className="flex items-baseline gap-2 font-semibold">
               <span aria-hidden className="size-2.5 shrink-0 translate-y-[-0.1em] rounded-full border-2 border-outline bg-accent" />
               <span className="min-w-0 [overflow-wrap:anywhere]">{line}</span>
             </li>
@@ -211,6 +246,7 @@ function StickerShelf({ stickers, t }: { stickers: Sticker[]; t: Messages }) {
           <li
             key={sticker.id}
             data-earned={sticker.earned}
+            data-ms={`sticker:${sticker.id}`}
             style={{ "--i": i, "--r": `${i % 2 ? 5 : -5}deg` } as CSSProperties}
             className="sticker-item grid content-start justify-items-center gap-1.5 text-center"
           >

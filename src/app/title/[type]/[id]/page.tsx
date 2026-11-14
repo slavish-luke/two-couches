@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { BothLands } from "@/components/both-lands";
 import { Burst } from "@/components/burst";
 import { DismissButton } from "@/components/dismiss-button";
 import { GoneTag } from "@/components/gone-badge";
@@ -341,6 +342,8 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
   }[verdict];
 
   return (
+    // "We can both watch it" lands once per visit (Sprint 28); the wrapper has no box of its own.
+    <BothLands both={verdict === "both"}>
     <section className="grid gap-6" aria-labelledby="where-to-watch">
       <h2 id="where-to-watch" className="display text-[2rem]">
         {t.title.whereToWatch}
@@ -349,7 +352,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
       {verdict === "both" ? (
         // The screen's moment, and only when you can both watch it.
         <div className="spotlight grid items-center gap-x-6 gap-y-3 p-5 sm:-rotate-1 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-6">
-          <span aria-hidden className="justify-self-center">
+          <span aria-hidden data-both-burst className="justify-self-center">
             <Burst className="size-32 sm:size-36" textClass="text-[22px] sm:text-[25px]">
               {t.common.watchBadge.stamp}
             </Burst>
@@ -382,7 +385,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
       {reminded && verdict !== "both" && (
         <RemindButton titleRef={titleRef} reminded={reminded.has(titleKey(titleRef))} language={profile.language} long />
       )}
-      <div className="grid gap-6 sm:grid-cols-2 sm:gap-5">
+      <div data-where-cols className="relative grid gap-6 sm:grid-cols-2 sm:gap-5">
         <CountryColumn
           who={t.common.you}
           isMe
@@ -407,6 +410,7 @@ async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
         )}
       </div>
     </section>
+    </BothLands>
   );
 }
 
@@ -433,8 +437,8 @@ function CountryColumn(props: {
   const paidStyle = isMe ? "bg-me-soft" : "bg-partner-soft";
 
   return (
-    <section className="card grid content-start gap-5">
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+    <section data-where-col className="card grid content-start gap-5">
+      <div data-where-head className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <h3
           title={country}
           className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-3 py-0.5 text-lg font-bold ${isMe ? "bg-me" : "bg-partner"}`}
@@ -459,6 +463,9 @@ function CountryColumn(props: {
                 return (
                   <li
                     key={p.provider_id}
+                    data-svc={p.provider_id}
+                    data-svc-name={p.name}
+                    data-pays={pays || undefined}
                     className={`flex items-center gap-2 rounded-full border-[2.5px] border-outline py-1 pl-1 pr-3 text-sm font-semibold ${
                       pays ? `${paidStyle} shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]` : "bg-surface"
                     }`}
