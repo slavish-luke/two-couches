@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { PopcornLoader } from "./popcorn-loader";
 
 /*
  * The pieces every page's loading state is drawn from. Each one is the real thing's class with a no-break
@@ -27,6 +28,8 @@ export function Skeleton({ wide = false, className = "", children }: { wide?: bo
   return (
     <div aria-busy data-wide={wide || undefined} className={className}>
       {children}
+      {/* Popcorn on slow loads (Sprint 28): drawn in a fixed layer outside the page, so it adds no box here. */}
+      <PopcornLoader />
     </div>
   );
 }

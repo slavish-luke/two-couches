@@ -3255,3 +3255,162 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------
+   Sprint 28: Big moments (motion lab "both", "popcorn", "stats", "confetti").
+   - "We can both watch it" lands: <BothLands> (src/components/both-lands.tsx) holds the services and the
+     burst hidden until it plays (`data-landed="wait"`), and for a moment before hydration.
+   - Popcorn while it loads: <PopcornLoader> in every page skeleton, a fixed stage over the skeleton.
+   - Numbers that roll in: <RollIn>/<RollText> hold each `[data-roll-group]` at its start until it plays.
+   - Confetti for milestones: <Celebrate>; nothing here (it only uses the fx layer).
+   Only transform, opacity and clip-path move; reduced motion never holds anything back.
+   --------------------------------------------------------------------------------------------------------- */
+@keyframes s28-hold-opacity {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+@keyframes s28-hold-y {
+  from,
+  to {
+    transform: scaleY(0);
+  }
+}
+@keyframes s28-hold-x {
+  from,
+  to {
+    transform: scaleX(0);
+  }
+}
+@keyframes s28-hold-clip {
+  from,
+  to {
+    clip-path: inset(-12px 100% -12px -12px);
+  }
+}
+
+/* The burst lands by script here, not with its usual pop. */
+[data-both-lands] [data-both-burst] .burst {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Before hydration (at most 1.2 s, so nothing stays hidden without script) and while waiting to play. */
+  [data-both-lands]:not([data-landed]) :is([data-svc], [data-both-burst]) {
+    animation: s28-hold-opacity 1.2s;
+  }
+  [data-both-lands][data-landed="wait"] :is([data-svc], [data-both-burst]) {
+    opacity: 0;
+  }
+
+  [data-roll-group]:not([data-roll-state]) [data-d] > span:first-child,
+  [data-roll-group]:not([data-roll-state]) [data-count] {
+    animation: s28-hold-opacity 1.2s;
+  }
+  [data-roll-group]:not([data-roll-state]) [data-bar-y] {
+    animation: s28-hold-y 1.2s;
+  }
+  [data-roll-group]:not([data-roll-state]) :is([data-bar-x], [data-meter]) {
+    animation: s28-hold-x 1.2s;
+  }
+  [data-roll-group]:not([data-roll-state]) [data-clip-x] {
+    animation: s28-hold-clip 1.2s;
+  }
+  [data-roll-state="wait"] [data-d] > span:first-child,
+  [data-roll-state="wait"] [data-count] {
+    opacity: 0;
+  }
+  [data-roll-state="wait"] [data-bar-y] {
+    transform: scaleY(0);
+  }
+  [data-roll-state="wait"] :is([data-bar-x], [data-meter]) {
+    transform: scaleX(0);
+  }
+  [data-roll-state="wait"] [data-clip-x] {
+    clip-path: inset(-12px 100% -12px -12px);
+  }
+  /* The taste meter fills by script (Sprint 17's CSS fill is replaced). */
+  [data-taste] .taste-fill[data-meter] {
+    animation: none;
+  }
+}
+
+/* The taste match fills from your colour through "both" to your partner's. */
+[data-taste] .taste-fill[data-meter] {
+  background-image: linear-gradient(90deg, var(--me), var(--stamp) 50%, var(--partner));
+}
+
+[data-bar-x],
+[data-meter] {
+  transform-origin: left center;
+}
+
+/* Odometer digits: each digit's strip turns inside the digit's own box while it rolls. */
+[data-d] {
+  position: relative;
+}
+[data-d][data-rolling] {
+  /* The window is one line tall (the glyph band), never wider than the digit's own box. */
+  clip-path: inset(max(0px, calc((100% - 1lh) / 2)) -0.5em);
+}
+.odo-strip {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.odo-strip > span {
+  display: block;
+}
+
+/* The line drawn between the service you both pay for on each side. */
+.both-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+.both-line path {
+  fill: none;
+  stroke: var(--stamp);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.both-line path[data-under] {
+  stroke: var(--outline);
+  stroke-width: 8;
+}
+
+/* Popcorn: a small stage over the middle of the skeleton, under the header and the tab bar. */
+.popcorn-loader {
+  position: fixed;
+  left: 50%;
+  top: 46%;
+  z-index: 15;
+  width: min(320px, calc(100vw - 48px));
+  height: 120px;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.popcorn-seat {
+  position: absolute;
+  bottom: 0;
+  transform-origin: 50% 100%;
+}
+.popcorn-seat > .couch {
+  display: block;
+}
+@media (prefers-reduced-motion: reduce) {
+  .popcorn-loader {
+    display: none;
+  }
+}
