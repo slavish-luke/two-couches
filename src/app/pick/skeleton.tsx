@@ -9,7 +9,7 @@ export function SwipeSkeleton() {
         <SkelText className="text-sm font-bold" width="7rem" />
         <SkelPageTitle width="15rem" />
         <SkelParagraph lines={3} smLines={2} className="max-w-[60ch] text-base font-medium sm:text-lg" />
-        <SkelChip width="15rem" className="justify-self-start" />
+        <SkelChip width="17.5rem" className="justify-self-start" />
       </div>
       <SwipeDeckSkeleton />
       <MoodCheckSkeleton />

@@ -137,7 +137,8 @@ export function ListSkeleton() {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <SkelChip width="11rem" />
+        {/* "We can both watch", with its couches switch (BothSwitch). */}
+        <SkelChip width="13.5rem" />
         <SkelChip width="5rem" />
         <SkelChip width="5rem" />
       </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AvailabilityBadge } from "@/components/availability-badge";
+import { BothSwitch } from "@/components/both-switch";
 import { Couch, Couches } from "@/components/couch";
 import { GoneBadge } from "@/components/gone-badge";
 import { ListSync } from "@/components/list-sync";
@@ -394,7 +395,7 @@ async function ListSection(props: {
         <div className="flex flex-wrap gap-2">
           {partner && (
             <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-current={filters.both ? "true" : undefined}>
-              <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
+              <BothSwitch />
               {t.list.bothFilter}
             </Link>
           )}

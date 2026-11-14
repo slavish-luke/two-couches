@@ -7,8 +7,10 @@ import { preconnect } from "react-dom";
 import { AppNav } from "@/components/app-nav";
 import { Couches } from "@/components/couch";
 import { FlightDeck } from "@/components/flight-deck";
+import { Ground } from "@/components/ground";
 import { HtmlLang } from "@/components/html-lang";
 import { Intro } from "@/components/intro";
+import { MotionEffects } from "@/components/motion-effects";
 import { OfflineChip } from "@/components/offline-chip";
 import { AppBadge, PwaSetup } from "@/components/pwa";
 import { WarmUp } from "@/components/warm-up";
@@ -89,6 +91,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col font-sans text-[17px] leading-relaxed">
         <PwaSetup />
+        <Ground />
+        <MotionEffects />
         {/* Stays put while pages whoosh and peel beneath it. */}
         <header style={{ viewTransitionName: "site-header" }} className="relative z-20">
           <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-2 px-4 pb-2 pt-4 sm:gap-4 sm:px-6 lg:px-8 lg:pt-5">

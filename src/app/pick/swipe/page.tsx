@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { BothSwitch } from "@/components/both-switch";
 import { Couches } from "@/components/couch";
 import { BackIcon } from "@/components/icons";
 import type { Messages } from "@/lib/i18n";
@@ -65,7 +66,7 @@ async function Swipe({ searchParams }: Pick<PageProps<"/pick/swipe">, "searchPar
             className="chip justify-self-start"
             aria-current={!everything ? "true" : undefined}
           >
-            <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
+            <BothSwitch />
             {t.pick.bothOnly}
           </Link>
         )}

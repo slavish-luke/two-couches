@@ -3255,3 +3255,264 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------
+   Sprint 25: Motion foundations (Phase 10; the spec is design/labs/motion-lab.html). The Motion level is
+   <html data-motion="calm|lively|wild"> (Settings → On this device → Motion); everything that moves on its
+   own is inside `prefers-reduced-motion: no-preference`, which always wins. Scripts: src/lib/motion-touches.ts
+   (jelly buttons, ink chips, the both couches, trading cards), src/lib/lettering.ts (headings that land),
+   src/lib/ground.ts (flare, shooting stars, <html data-hidden> while the tab is hidden).
+   --------------------------------------------------------------------------------------------------------- */
+
+/* Particles: fx.ts draws every skin's shape, the skin shows one. */
+[data-skin="scrapbook"] .fx-particle [data-shape],
+[data-skin="comic"] .fx-particle [data-shape],
+[data-skin="candy"] .fx-particle [data-shape] {
+  display: none;
+}
+[data-skin="scrapbook"] .fx-particle [data-shape="sticker"],
+[data-skin="comic"] .fx-particle [data-shape="burst"],
+[data-skin="candy"] .fx-particle [data-shape="sprinkle"] {
+  display: inline;
+}
+
+/*
+ * The ground (<Ground>): fixed behind everything and clipped to the screen. Sunburst's rays live here instead
+ * of on body::before, on a disc big enough to cover the screen from their pivot (above the top centre)
+ * whichever way it turns. Calm keeps them still, as they always were.
+ */
+.ground {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+.ground-rays,
+.ground-stars {
+  display: none;
+}
+[data-skin="saturday"]:not([data-palette="nightowl"]) body:has(> [data-ground])::before {
+  background: none;
+}
+[data-skin="saturday"]:not([data-palette="nightowl"]) .ground-rays {
+  --reach: calc(50vw + 112vh);
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: calc(var(--reach) * 2);
+  height: calc(var(--reach) * 2);
+  margin: calc(var(--reach) * -1) 0 0 calc(var(--reach) * -1);
+  background: repeating-conic-gradient(from 0deg, var(--ray) 0 6deg, transparent 6deg 12deg);
+}
+@supports (width: hypot(3px, 4px)) {
+  [data-skin="saturday"]:not([data-palette="nightowl"]) .ground-rays {
+    --reach: hypot(50vw, 112vh);
+  }
+}
+/* Night Owl: a second sky, offset from body::before's, that twinkles against it (Lively and Wild). */
+[data-skin="saturday"][data-palette="nightowl"]:not([data-motion="calm"]) .ground-stars {
+  display: block;
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background:
+    radial-gradient(circle at 22% 38%, var(--star) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 58% 12%, var(--star) 0 2px, transparent 3px),
+    radial-gradient(circle at 84% 70%, var(--star) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 40% 90%, var(--star) 0 2px, transparent 3px);
+  background-size: 340px 340px;
+  background-position: 170px 110px;
+}
+.ground-shooting-star {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 120px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, rgb(from var(--star) r g b));
+  transform-origin: 100% 50%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion="lively"] .ground-rays {
+    animation: ground-drift 240s linear infinite;
+  }
+  [data-motion="wild"] .ground-rays {
+    animation: ground-drift 90s linear infinite;
+  }
+  /* Wild also turns the rays as the page scrolls (half a turn top to bottom), on top of the drift. */
+  @supports (animation-timeline: scroll()) {
+    [data-motion="wild"] .ground-rays {
+      animation:
+        ground-drift 90s linear infinite,
+        ground-scroll linear both;
+      animation-timeline: auto, scroll(root);
+    }
+  }
+  [data-skin="saturday"][data-palette="nightowl"]:not([data-motion="calm"]) body::before {
+    animation: ground-twinkle 3.6s ease-in-out infinite alternate;
+  }
+  [data-skin="saturday"][data-palette="nightowl"]:not([data-motion="calm"]) .ground-stars {
+    animation: ground-twinkle 3.6s ease-in-out -1.8s infinite alternate;
+  }
+  /* Nothing loops in a hidden tab. */
+  html[data-hidden] .ground *,
+  html[data-hidden] body::before {
+    animation-play-state: paused;
+  }
+}
+@keyframes ground-drift {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes ground-scroll {
+  to {
+    transform: rotate(180deg);
+  }
+}
+@keyframes ground-twinkle {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ink chips: a chip being chosen fills with its chosen colour from the tap point (clip-path on ::before). */
+.chip[data-ink] {
+  position: relative;
+  isolation: isolate;
+}
+.chip[data-ink]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--accent);
+  clip-path: circle(0 at 50% 50%);
+  pointer-events: none;
+}
+[data-skin="candy"] .chip[data-ink]::before {
+  background: var(--cdy-pick);
+}
+
+/*
+ * "We can both watch" (<BothSwitch>): the two couches on a little track, apart when off, side by side on the
+ * bubblegum when the chip is on. data-going holds the new state between a tap and the new page.
+ */
+.both-switch {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 54px;
+  height: 24px;
+  margin-block: -3px;
+  border: 2px solid var(--outline);
+  border-radius: 999px;
+  background: var(--p-surface);
+  transition: background-color 0.25s;
+}
+.both-seat {
+  position: absolute;
+  top: 3px;
+  line-height: 0;
+}
+.both-seat[data-seat="me"] {
+  left: 3px;
+}
+.both-seat[data-seat="partner"] {
+  right: 3px;
+}
+.both-switch .couch {
+  animation: none;
+}
+:is([aria-current="true"], [aria-current="page"], [aria-pressed="true"]) > .both-switch:not([data-going="off"]),
+.both-switch[data-going="on"] {
+  background: var(--stamp);
+}
+:is([aria-current="true"], [aria-current="page"], [aria-pressed="true"]) > .both-switch:not([data-going="off"]) [data-seat="me"],
+.both-switch[data-going="on"] [data-seat="me"] {
+  transform: translateX(5px);
+}
+:is([aria-current="true"], [aria-current="page"], [aria-pressed="true"]) > .both-switch:not([data-going="off"]) [data-seat="partner"],
+.both-switch[data-going="on"] [data-seat="partner"] {
+  transform: translateX(-5px);
+}
+
+/*
+ * Trading-card posters (TitleCard, cast cards): the frame tilts towards a mouse (an inline transform, so the
+ * poster's own view-transition name is untouched), with a sheen that follows it and, at Wild, holo foil on
+ * titles you can both watch. Keyboard focus on the title shows the sheen too. The tab stays on top.
+ */
+[data-title-card] .poster-frame[data-tilt] {
+  translate: none;
+}
+[data-title-card] .poster-frame::before,
+[data-title-card] .poster-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--radius-poster);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+[data-title-card] .poster-frame::after {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgb(255 255 255 / 0.55), transparent 55%);
+  mix-blend-mode: soft-light;
+}
+[data-title-card] .poster-frame::before {
+  background: conic-gradient(
+    from var(--hx, 0deg) at var(--mx, 50%) var(--my, 50%),
+    var(--blush),
+    var(--pop),
+    var(--partner),
+    var(--accent),
+    var(--blush)
+  );
+  mix-blend-mode: color-dodge;
+}
+[data-title-card] .poster-frame[data-tilt]::after,
+[data-title-card]:has([data-item-title]:focus-visible) .poster-frame::after {
+  opacity: 1;
+}
+[data-motion="wild"] [data-title-card] .poster-frame[data-tilt]:has(.poster-tab-both)::before {
+  opacity: 0.38;
+}
+[data-title-card] .poster-tab {
+  z-index: 2;
+}
+
+/*
+ * Headings that land: while the letters fly, the real heading is transparent (still read out once) and an
+ * aria-hidden copy in the fx layer carries one inline-block per letter. Wild waves them under a mouse.
+ */
+[data-lettering="hidden"] {
+  opacity: 0 !important;
+}
+[data-lettering="copy"] [data-word] {
+  display: inline-block;
+  white-space: nowrap;
+}
+[data-lettering="copy"] [data-letter] {
+  display: inline-block;
+  transform-origin: 50% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion="wild"] [data-lettering="copy"][data-waving] [data-letter] {
+    animation: lettering-wave 1.2s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -90ms);
+  }
+}
+@keyframes lettering-wave {
+  50% {
+    transform: translateY(-0.12em) rotate(-3deg);
+  }
+}

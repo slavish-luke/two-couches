@@ -18,7 +18,7 @@ const SERVICE_TILES = 18;
 
 /**
  * Settings while it loads, section by section for a paired profile: the heading, the profile and services
- * panels, Travelling, the advisor, then "On this device" (appearance, notifications, install, data saver)
+ * panels, Travelling, the advisor, then "On this device" (appearance, notifications, install, data saver, motion)
  * and sign out.
  */
 export function SettingsSkeleton() {
@@ -153,6 +153,20 @@ export function SettingsSkeleton() {
             </div>
           </Panel>
         </div>
+        {/* Motion (MotionSettings): three tiles, each a level and its line, then the reduced-motion hint. */}
+        <Panel intro={[2, 1]}>
+          <div className="grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="grid content-start gap-1 rounded-panel border-[3px] border-outline bg-surface px-3.5 py-3">
+                  <SkelText className="text-lg font-bold leading-snug" width="4.5rem" />
+                  <SkelParagraph className="text-[15px] font-medium leading-snug" lines={2} smLines={3} />
+                </span>
+              ))}
+            </div>
+            <SkelText className="text-sm font-medium" width="70%" />
+          </div>
+        </Panel>
       </div>
 
       <div className="mt-2 flex justify-end">

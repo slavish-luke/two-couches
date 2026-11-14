@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type CSSProperties } from "react";
 import { AddButton } from "@/components/add-button";
+import { BothSwitch } from "@/components/both-switch";
 import { Couches } from "@/components/couch";
 import { ArrowIcon, GlobeIcon } from "@/components/icons";
 import { ListSync } from "@/components/list-sync";
@@ -190,7 +191,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
                   className="chip"
                   aria-current={!state.everything ? "true" : undefined}
                 >
-                  <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
+                  <BothSwitch />
                   {text.bothOnly}
                 </Link>
               )}

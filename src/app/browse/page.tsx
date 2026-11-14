@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { BothSwitch } from "@/components/both-switch";
 import { Couches } from "@/components/couch";
 import { CountryChip } from "@/components/country-chip";
 import { ArrowIcon, BackIcon, GlobeIcon } from "@/components/icons";
@@ -256,7 +257,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
           <div className="flex flex-wrap gap-2">
             {filters.both !== null && (
               <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-current={filters.both ? "true" : undefined}>
-                <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
+                <BothSwitch />
                 {t.browse.bothToggle}
               </Link>
             )}

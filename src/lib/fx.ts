@@ -65,7 +65,7 @@ function particle(kind: ParticleKind, size: number, color: string): SVGSVGElemen
     kind === "heart"
       ? `<path d="${heartPath(0, 0, 6)}" fill="${color}" ${stroke}/>`
       : `<path data-shape="sparkle" d="${sparklePath(0, 0, 9)}" fill="${color}" ${stroke}/>` +
-        `<circle data-shape="sticker" r="6.5" fill="${color}" stroke="var(--paper)" stroke-width="2.5"/>` +
+        `<circle data-shape="sticker" r="6.5" fill="${color}" stroke="var(--p-surface)" stroke-width="2.5"/>` +
         `<path data-shape="burst" d="${starPath(0, 0, 9, 4.5)}" fill="${color}" ${stroke}/>` +
         `<rect data-shape="sprinkle" x="-2.2" y="-7" width="4.4" height="14" rx="2.2" fill="${color}" ${stroke}/>`;
   return el;

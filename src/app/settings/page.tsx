@@ -7,6 +7,7 @@ import { Advisor } from "./advisor";
 import { AppearanceSettings } from "./appearance-settings";
 import { DataSaverSettings } from "./data-saver-settings";
 import { InstallSettings } from "./install-settings";
+import { MotionSettings } from "./motion-settings";
 import { NotificationSettings } from "./notification-settings";
 import { SettingsForm } from "./settings-form";
 import { SignOutButton } from "./sign-out-button";
@@ -115,6 +116,9 @@ async function Settings({ searchParams }: Pick<PageProps<"/settings">, "searchPa
             <DataSaverSettings language={language} />
           </Panel>
         </div>
+        <Panel heading={t.motion.setting.heading} intro={t.motion.setting.intro}>
+          <MotionSettings language={language} />
+        </Panel>
       </section>
 
       <div className="mt-2 flex justify-end">

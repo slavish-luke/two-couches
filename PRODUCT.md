@@ -53,7 +53,7 @@ Decided 2026-11-04 (binding): the app is **bright, pop and cartoony**: bold colo
 2. **Shared space, not a tool.** It should feel like a room the two of them share, personal and warm, rather than an admin panel for a watchlist.
 3. **Films lead.** Real posters and title art are the richest material available; the interface frames them rather than competing.
 4. **Both clocks, both languages.** Nothing assumes one country, one time zone or one language.
-5. **Calm by default, joy at the right moments.** Everyday scanning stays fast and clear; celebration and motion are spent on the shared moments.
+5. **Alive by default, still on request.** The app moves a lot out of the box (Wild, chosen by the user on 2026-11-14 in `design/labs/motion-lab.html`): buttons jelly, posters tilt like trading cards, page titles land letter by letter, the rays drift, and the shared moments get the biggest celebrations. Each device has a Motion dial (Settings → On this device: Calm, Lively, Wild), and the device's reduced-motion setting always wins. Motion never slows a task down: it runs alongside the action, never before it, and everyday scanning stays fast and clear at every level.
 
 ## Accessibility & Inclusion
 No product-specific requirement beyond good practice: keyboard use on PC, readable contrast in every theme, and motion that respects `prefers-reduced-motion`.

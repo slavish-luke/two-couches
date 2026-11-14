@@ -27,7 +27,7 @@ export function BrowseSkeleton() {
         <section className="grid content-start gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <SkelText bar="lettering" className="display text-[clamp(2rem,4vw,2.8rem)]" width="15rem" />
           <div className="flex flex-wrap gap-2">
-            <SkelChip width="12rem" />
+            <SkelChip width="14.5rem" />
             <SkelChip width="13rem" />
             <span className="mx-1 w-[3px] self-stretch rounded-full bg-outline/25" />
             <SkelChip logo width="7rem" />
