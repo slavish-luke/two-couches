@@ -255,7 +255,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
           {rows.length > 0 && <h2 className="display text-[clamp(2rem,4vw,2.8rem)]">{t.browse.streamingNow}</h2>}
           <div className="flex flex-wrap gap-2">
             {filters.both !== null && (
-              <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-pressed={filters.both}>
+              <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-current={filters.both ? "true" : undefined}>
                 <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
                 {t.browse.bothToggle}
               </Link>
@@ -264,7 +264,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
               <Link
                 href={filtersHref(filters, { made: !filters.made })}
                 className="chip"
-                aria-pressed={filters.made}
+                aria-current={filters.made ? "true" : undefined}
                 title={t.time.made.names(homeNames)}
               >
                 <GlobeIcon className="size-4" />
@@ -280,7 +280,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
                 key={s.provider_id}
                 href={filtersHref(filters, { service: filters.service === s.provider_id ? null : s.provider_id })}
                 className="chip py-0.5 pl-1"
-                aria-pressed={filters.service === s.provider_id}
+                aria-current={filters.service === s.provider_id ? "true" : undefined}
                 title={whose[s.whose]}
               >
                 {s.logo_path ? (

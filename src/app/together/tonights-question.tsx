@@ -5,6 +5,8 @@ import { getI18n } from "@/lib/i18n/server";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getQuestionDays } from "@/lib/together";
 import { questionIndex, utcDay } from "@/lib/together-rules";
+import { SkelChip } from "@/components/skeleton";
+import { TrayItem } from "@/components/tray-item";
 import { AnswerBox } from "./answer-box";
 import { QuestionSkeleton } from "./question-skeleton";
 
@@ -15,7 +17,17 @@ import { QuestionSkeleton } from "./question-skeleton";
  */
 export function TonightsQuestion() {
   return (
-    <Suspense fallback={<QuestionSkeleton />}>
+    // On phones the card is a chip in Home's tray (TrayItem), so it loads as one.
+    <Suspense
+      fallback={
+        <div data-tray-item className="lg:basis-full">
+          <SkelChip width="11rem" className="lg:hidden" />
+          <div className="hidden lg:block">
+            <QuestionSkeleton />
+          </div>
+        </div>
+      }
+    >
       <QuestionCard />
     </Suspense>
   );
@@ -31,24 +43,26 @@ async function QuestionCard() {
   const question = text.questions[index] ?? text.questions[0];
 
   return (
-    <section data-question-card aria-labelledby="tonights-question" className="card grid gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 id="tonights-question" className="display-ink text-2xl">
-          {text.heading}
-        </h2>
-        <Link href="/questions" className="tap-area group inline-flex items-center gap-1 text-sm font-bold underline underline-offset-4">
-          {text.history}
-          <ArrowIcon className="size-3.5 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
-        </Link>
-      </div>
-      <p className="text-xl font-bold leading-snug">{question}</p>
-      <AnswerBox
-        day={day}
-        mine={today?.mine?.body ?? null}
-        partner={today?.partner ?? { state: "none" }}
-        partnerName={partner.display_name || t.common.yourPartner}
-        language={language}
-      />
-    </section>
+    <TrayItem summary={text.heading} attention={!today?.mine}>
+      <section data-question-card aria-labelledby="tonights-question" className="card grid gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <h2 id="tonights-question" className="display-ink text-2xl">
+            {text.heading}
+          </h2>
+          <Link href="/questions" className="tap-area group inline-flex items-center gap-1 text-sm font-bold underline underline-offset-4">
+            {text.history}
+            <ArrowIcon className="size-3.5 transition-transform duration-200 ease-(--ease-spring) group-hover:translate-x-1" />
+          </Link>
+        </div>
+        <p className="text-xl font-bold leading-snug">{question}</p>
+        <AnswerBox
+          day={day}
+          mine={today?.mine?.body ?? null}
+          partner={today?.partner ?? { state: "none" }}
+          partnerName={partner.display_name || t.common.yourPartner}
+          language={language}
+        />
+      </section>
+    </TrayItem>
   );
 }

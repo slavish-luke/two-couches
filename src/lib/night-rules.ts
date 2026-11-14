@@ -132,13 +132,29 @@ export function hoursOfDay(date: string, timeZone: string) {
   return [...starts.values()];
 }
 
-/** The first great slot from `after` on, within a week, as a local date and time; else 8 pm today. */
+/**
+ * Where a new night's form starts, as a local date and time: the first great slot from `after` on, within a
+ * week. Far-apart zones can have none (13 hours apart, one person's evening is the other's early morning),
+ * so then the first hour when nobody is asleep with the most free time on the clocks; 8 pm today only when
+ * every hour of the week has someone asleep.
+ */
 export function suggestStart(after: Date, timeZones: string[], timeZone: string) {
   const today = zonedParts(after, timeZone).date;
+  let fallback: { slot: Date; free: number } | null = null;
   for (let day = 0; day < 7; day++) {
     const date = addDays(today, day);
-    const slot = hoursOfDay(date, timeZone).find((h) => h > after && rateSlot(h, timeZones) === "great");
-    if (slot) return { date, time: zonedParts(slot, timeZone).time };
+    for (const slot of hoursOfDay(date, timeZone)) {
+      if (slot <= after) continue;
+      const fits = timeZones.map((zone) => fitFor(slot, zone));
+      if (fits.every((f) => f === "free")) return { date, time: zonedParts(slot, timeZone).time };
+      if (fits.includes("asleep")) continue;
+      const free = fits.filter((f) => f === "free").length;
+      if (!fallback || free > fallback.free) fallback = { slot, free };
+    }
+  }
+  if (fallback) {
+    const { date, time } = zonedParts(fallback.slot, timeZone);
+    return { date, time };
   }
   return { date: today, time: "20:00" };
 }

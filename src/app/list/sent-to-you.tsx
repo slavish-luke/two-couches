@@ -3,6 +3,7 @@ import { getI18n } from "@/lib/i18n/server";
 import { getPartner, requireProfile } from "@/lib/session";
 import { getWaitingSends } from "@/lib/shelf";
 import { tmdbLocale } from "@/lib/tmdb";
+import { TrayItem } from "@/components/tray-item";
 import { SentCard } from "./sent-card";
 
 /**
@@ -26,11 +27,16 @@ async function SentCards() {
   if (sends.length === 0) return null;
   const name = partner.display_name || t.common.yourPartner;
 
+  const summary = sends.length === 1 ? t.list.tray.sentOne(name, sends[0].title) : t.list.tray.sentMany(name, sends.length);
+
+  // Folded into Home's "Waiting for you" tray on phones (TrayItem); as it was from lg up.
   return (
-    <section data-sent-to-you aria-label={t.shelf.send.label} className="grid gap-3">
-      {sends.map((send) => (
-        <SentCard key={send.id} send={send} partnerName={name} language={profile.language} />
-      ))}
-    </section>
+    <TrayItem summary={summary} attention>
+      <section data-sent-to-you aria-label={t.shelf.send.label} className="grid gap-3">
+        {sends.map((send) => (
+          <SentCard key={send.id} send={send} partnerName={name} language={profile.language} />
+        ))}
+      </section>
+    </TrayItem>
   );
 }

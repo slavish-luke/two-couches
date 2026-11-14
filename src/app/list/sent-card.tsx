@@ -60,7 +60,7 @@ export function SentCard({
           <span className="truncate">{t.from(partnerName)}</span>
         </span>
         {!onTitlePage && (
-          <Link href={titleHref(send)} className="text-lg font-bold leading-tight hover:underline [overflow-wrap:anywhere]">
+          <Link href={titleHref(send)} className="tap-area text-lg font-bold leading-tight hover:underline [overflow-wrap:anywhere]">
             {send.title}
           </Link>
         )}

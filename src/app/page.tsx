@@ -43,6 +43,7 @@ import { getFreeEvenings } from "@/lib/time";
 import { isFreeOn, tonightFor, tonightSlot } from "@/lib/time-rules";
 import { ClockState } from "./time/clock-state";
 import { FreeTonight } from "./time/free-tonight";
+import { TrayItem } from "@/components/tray-item";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -129,7 +130,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
         <section
           aria-label={t.list.people.label}
           data-clocks
-          className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3"
+          className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3 lg:-order-4"
         >
           <span className="sr-only">{t.together.mood[mood]}</span>
           {people.map((person, i) => {
@@ -170,7 +171,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
                 >
                   <span className="truncate">{isMe ? t.common.you : person.display_name || t.list.people.noName}</span>
                   {person.country && (
-                    <span title={countryName(person.country, profile.language)} className="shrink-0 opacity-75">
+                    <span title={countryName(person.country, profile.language)} className="shrink-0 font-normal">
                       · {person.country}
                     </span>
                   )}
@@ -206,54 +207,73 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
             />
           )}
         </section>
-        {theirs && partnerTonight && (
-          <FreeTonight
-            coupleId={profile.couple_id}
-            mine={isFreeOn(freeRows, profile.id, myTonight.day)}
-            partner={{
-              name: theirs.display_name || t.common.yourPartner,
-              free: isFreeOn(freeRows, theirs.id, partnerTonight.day),
-            }}
-            slot={
-              tonight && {
-                href: `/watch-nights/new?date=${tonight.date}&time=${tonight.time}`,
-                mine: formatTime(tonight.at, profile.time_zone, language),
-                theirs: formatTime(tonight.at, theirs.time_zone, language),
-              }
-            }
-            language={language}
-          />
-        )}
-        <MilestoneChip />
-
-        {/* No boundary of its own: the spotlight arrives with the aside, so nothing below it jumps when it does. */}
+        {/* Sprint 24 (home order lab, option C). Phones: the next night as a strip, then "Waiting for you": the
+            cards that wait for you folded to chips (TrayItem), then search and Pick and the streak chip; Next
+            episodes go below the list. From lg up the tray is display: contents and the lg:order classes keep
+            the aside as it was: clocks, Tonight, streak, next night, the cards, search and Pick. */}
         {partner && (
-          <NextNight
-            coupleId={profile.couple_id}
-            me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
-            partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
-            locales={
-              partner.country
-                ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
-                : [tmdbLocale(profile.language, profile.home_country)]
-            }
-          />
+          <div className="lg:-order-1">
+            <NextNight
+              coupleId={profile.couple_id}
+              me={{ id: profile.id, name: t.common.you, timeZone: profile.time_zone }}
+              partner={{ id: partner.id, name: partner.display_name || t.common.yourPartner, timeZone: partner.time_zone }}
+              locales={
+                partner.country
+                  ? [tmdbLocale(profile.language, profile.home_country), tmdbLocale(partner.language, partner.home_country)]
+                  : [tmdbLocale(profile.language, profile.home_country)]
+              }
+            />
+          </div>
         )}
-        <AfterNight />
-        <SentToYou />
-        <TonightsQuestion />
 
-        <div className="grid gap-4">
+        <div data-tray className="group/tray flex flex-wrap items-start gap-2 lg:contents">
+          <p className="display hidden basis-full text-xl group-has-[[data-tray-item]]/tray:block lg:hidden!">{t.list.tray.label}</p>
+          <AfterNight />
+          <SentToYou />
+          <TonightsQuestion />
+          {theirs && partnerTonight && (
+            <TrayItem
+              className="lg:-order-3"
+              summary={freeSummary(t, isFreeOn(freeRows, profile.id, myTonight.day), isFreeOn(freeRows, theirs.id, partnerTonight.day), theirs.display_name || t.common.yourPartner)}
+              attention={isFreeOn(freeRows, theirs.id, partnerTonight.day) && !isFreeOn(freeRows, profile.id, myTonight.day)}
+            >
+              <FreeTonight
+                coupleId={profile.couple_id}
+                mine={isFreeOn(freeRows, profile.id, myTonight.day)}
+                partner={{
+                  name: theirs.display_name || t.common.yourPartner,
+                  free: isFreeOn(freeRows, theirs.id, partnerTonight.day),
+                }}
+                slot={
+                  tonight && {
+                    href: `/watch-nights/new?date=${tonight.date}&time=${tonight.time}`,
+                    mine: formatTime(tonight.at, profile.time_zone, language),
+                    theirs: formatTime(tonight.at, theirs.time_zone, language),
+                  }
+                }
+                language={language}
+              />
+            </TrayItem>
+          )}
+        </div>
+
+        <div className="grid gap-4 lg:order-1">
           <SearchBox language={language} />
           <Suspense fallback={<PickLinkSkeleton />}>
             <PickLink />
           </Suspense>
         </div>
+        <div className="empty:hidden lg:-order-2">
+          <MilestoneChip />
+        </div>
       </aside>
 
-      <div className="min-w-0 lg:col-span-7 xl:col-span-8">
+      <div className="flex min-w-0 flex-col lg:col-span-7 lg:block xl:col-span-8">
         <ListSync coupleId={profile.couple_id} />
-        <NextEpisodes />
+        {/* Below the list on phones (Sprint 24); above it beside the aside. */}
+        <div className="order-last mt-8 empty:hidden lg:mt-0">
+          <NextEpisodes />
+        </div>
         <Suspense fallback={<ListSkeleton />}>
           <ListSection
             coupleId={profile.couple_id}
@@ -277,6 +297,14 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       </div>
     </div>
   );
+}
+
+/** The "Tonight" card's chip on phones: what's true of tonight so far. */
+function freeSummary(t: Messages, mine: boolean, theirs: boolean, name: string) {
+  if (mine && theirs) return t.time.free.both.heading;
+  if (theirs) return t.time.free.partner.free(name);
+  if (mine) return t.time.free.mine.on;
+  return t.list.tray.freeAsk;
 }
 
 async function ListSection(props: {
@@ -365,7 +393,7 @@ async function ListSection(props: {
       {entries.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {partner && (
-            <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-pressed={filters.both}>
+            <Link href={filtersHref(filters, { both: !filters.both })} className="chip" aria-current={filters.both ? "true" : undefined}>
               <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
               {t.list.bothFilter}
             </Link>
@@ -375,7 +403,7 @@ async function ListSection(props: {
               key={type}
               href={filtersHref(filters, { type: filters.type === type ? null : type })}
               className="chip"
-              aria-pressed={filters.type === type}
+              aria-current={filters.type === type ? "true" : undefined}
             >
               {t.common.mediaTypePlural[type]}
             </Link>
@@ -386,7 +414,7 @@ async function ListSection(props: {
               key={name}
               href={filtersHref(filters, { category: filters.category === name ? null : name })}
               className="chip"
-              aria-pressed={filters.category === name}
+              aria-current={filters.category === name ? "true" : undefined}
             >
               {name}
             </Link>

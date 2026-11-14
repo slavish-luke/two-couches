@@ -91,7 +91,7 @@ export function AppearanceSettings({ language }: { language: string }) {
               </span>
               <span className="grid px-1 pb-0.5 leading-tight">
                 <span className="font-bold">{t.skins[option_]}</span>
-                <span className="text-sm opacity-85">{t.skinNotes[option_]}</span>
+                <span className="text-sm">{t.skinNotes[option_]}</span>
               </span>
             </ChoiceTile>
           ))}

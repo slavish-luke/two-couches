@@ -115,7 +115,7 @@ function RatingTag(props: {
     >
       <span className={`flex min-w-0 items-center gap-1 border-r-[2.5px] border-outline px-2.5 font-bold ${props.isMe ? "bg-me" : "bg-partner"}`}>
         <span className="truncate">{props.who}</span>
-        <span className="shrink-0 opacity-75">· {props.country}</span>
+        <span className="shrink-0 font-normal">· {props.country}</span>
       </span>
       <span className={`flex items-center px-2.5 ${props.rating ? "font-bold" : "text-muted"}`}>
         {props.rating ? props.rating.rating : props.none}

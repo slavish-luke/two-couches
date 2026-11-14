@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Order Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  /* Sprint 24, task 4: Home on phones. The blocks are real captures of Home at 390px (Sunburst, English, test
+     data, 14 Nov 2026), cut at each block's edges (home-order/*.webp). Folded strips are drawn here in the
+     skin's style; they are the proposal, not app code. */
+  :root { --lab-bg: #141318; --lab-panel: #1d1c23; --lab-ink: #f1eff6; --lab-muted: #a5a2b4; --lab-line: #2d2b36;
+          --ink: #1d1630; --paper: #fffaf0; --sun: #ffd23f; --grape: #6a4cf5; --me: #ff8a65; --partner: #5bc0f8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--lab-bg); color: var(--lab-ink); font-family: Fredoka, system-ui, sans-serif; }
+  button, select { font: inherit; }
+  .lab-head { padding: 20px 24px 8px; display: grid; gap: 6px; }
+  .lab-head h1 { margin: 0; font: 400 24px "Luckiest Guy", sans-serif; letter-spacing: .03em; color: var(--sun); }
+  .lab-head p { margin: 0; color: var(--lab-muted); font-size: 14px; max-width: 86ch; }
+  .wrap { display: flex; flex-wrap: wrap; gap: 24px; padding: 16px 24px 40px; align-items: flex-start; }
+  .controls { flex: 1 1 380px; max-width: 560px; display: grid; gap: 14px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; }
+  .presets button { border: 1.5px solid var(--lab-line); border-radius: 999px; background: transparent; color: var(--lab-ink); padding: 6px 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .presets button[aria-pressed="true"] { background: var(--sun); color: var(--ink); border-color: var(--sun); }
+  .preset-note { color: var(--lab-muted); font-size: 14px; min-height: 2.6em; }
+  .readout { background: var(--lab-panel); border: 1.5px solid var(--lab-line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+  .readout b { font-size: 22px; color: var(--sun); }
+  .rows { display: grid; gap: 6px; }
+  .row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; background: var(--lab-panel); border: 1.5px solid var(--lab-line); border-radius: 10px; padding: 6px 8px; }
+  .row.list { border-color: var(--sun); }
+  .row .name { font-weight: 600; font-size: 14px; }
+  .row .name small { display: block; color: var(--lab-muted); font-weight: 400; font-size: 12px; }
+  .row .arrows { display: flex; flex-direction: column; gap: 2px; }
+  .row .arrows button { width: 28px; height: 20px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-ink); border-radius: 6px; cursor: pointer; line-height: 1; padding: 0; font-size: 11px; }
+  .row select { background: var(--lab-bg); color: var(--lab-ink); border: 1.5px solid var(--lab-line); border-radius: 8px; padding: 4px 6px; font-size: 13px; }
+  .copy { justify-self: start; border: 1.5px solid var(--lab-line); border-radius: 999px; background: transparent; color: var(--lab-ink); padding: 6px 12px; font-weight: 600; cursor: pointer; }
+  #summary { font-size: 12px; color: var(--lab-muted); word-break: break-word; }
+
+  /* The phone: 390 x 844, header at the top, tab bar at the bottom. */
+  .phone { flex: 0 0 auto; width: 414px; padding: 12px; border-radius: 44px; background: #000; box-shadow: 0 0 0 2px #333; }
+  .screen { position: relative; width: 390px; height: 844px; border-radius: 34px; overflow: hidden;
+            background: var(--sun) repeating-conic-gradient(from 0deg at 50% -10%, rgba(255,255,255,.18) 0 6deg, transparent 6deg 12deg); }
+  .scroller { position: absolute; inset: 0; overflow-y: auto; padding-bottom: 84px; scrollbar-width: none; }
+  .scroller::-webkit-scrollbar { display: none; }
+  .scroller img { display: block; width: 390px; height: auto; }
+  .fold { margin: 6px 16px 10px; display: flex; align-items: center; gap: 10px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 16px;
+          box-shadow: 4px 4px 0 var(--ink); padding: 10px 12px; font-weight: 600; font-size: 15px; line-height: 1.25; }
+  .fold .dot { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid var(--ink); display: grid; place-items: center; font-size: 15px; background: var(--sun); }
+  .fold .txt { flex: 1; min-width: 0; }
+  .fold .txt small { display: block; font-weight: 500; font-size: 13px; color: #5d5670; }
+  .fold .go { font-size: 20px; }
+  .fold.grape { background: var(--grape); color: #fff; }
+  .fold.grape small { color: #ece7ff; }
+  .tray { margin: 6px 16px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tray .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--paper); color: var(--ink); border: 2.5px solid var(--ink); border-radius: 999px; padding: 5px 11px; font-weight: 600; font-size: 14px; box-shadow: 3px 3px 0 var(--ink); }
+  .tray .chip i { font-style: normal; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--ink); background: var(--me); }
+  .tray-label { margin: 10px 16px 0; font: 400 15px "Luckiest Guy", sans-serif; letter-spacing: .03em; color: var(--paper); -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill; text-shadow: 2px 2px 0 var(--ink); text-transform: uppercase; }
+  .marker { position: relative; height: 0; }
+  .marker span { position: absolute; left: 8px; top: -11px; background: var(--ink); color: var(--sun); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; z-index: 2; }
+  .fold-line { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed rgba(29,22,48,.55); pointer-events: none; z-index: 3; }
+  .fold-line span { position: absolute; right: 8px; top: -10px; background: rgba(29,22,48,.75); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 999px; }
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 76px; background: var(--paper); border-top: 3px solid var(--ink); display: flex; justify-content: space-around; align-items: center; font-weight: 700; font-size: 12px; color: var(--ink); }
+  .tabbar span:first-child { background: var(--grape); color: #fff; border-radius: 999px; padding: 8px 14px; border: 3px solid var(--ink); }
+  @media (prefers-reduced-motion: no-preference) { .scroller { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<header class="lab-head">
+  <h1>Home order lab</h1>
+  <p>Home at iPhone width, cut into its real blocks (captured 14 Nov 2026 with the test couple). Today the list starts 3.7 screens down. Pick a preset or set each block yourself: full, folded to a one-line strip, below the list, or hidden on phones. Wide screens aren't affected: there the list has its own column.</p>
+</header>
+<div class="wrap">
+  <section class="controls" aria-label="Layout">
+    <div class="presets" role="group" aria-label="Presets"></div>
+    <p class="preset-note" id="preset-note"></p>
+    <div class="readout" aria-live="polite"><span>The list starts</span><b id="screens"></b><span id="px"></span></div>
+    <div class="rows" id="rows"></div>
+    <button class="copy" type="button" id="copy">Copy this layout</button>
+    <p id="summary"></p>
+  </section>
+  <div class="phone"><div class="screen"><div class="scroller" id="scroller"></div><nav class="tabbar" aria-hidden="true"><span>List</span><span>Browse</span><span>Soon</span><span>Nights</span><span>Stats</span></nav></div></div>
+</div>
+<script>
+// Each block: its capture's height in CSS px (home-order/<id>.webp is 2x) and how it reads folded.
+const BLOCKS = {
+  clocks:          { name: "Clocks", note: "both times, h apart, asleep / free", h: 223, fold: { icon: "🕗", text: "6:46 AM for you · 7:46 PM for Alex", small: "13 h apart · Alex: free time" } },
+  tonight:         { name: "Tonight", note: "I'm free tonight (Phase 9)", h: 274, fold: { icon: "✓", text: "You're both free tonight", small: "Plan a night ›" } },
+  streak:          { name: "Streak chip", note: "2 weeks in a row", h: 57, fold: { icon: "🔥", text: "2 weeks in a row", small: "" } },
+  "next-night":    { name: "Next watch night", note: "with ready check, prep list, comments", h: 751, fold: { icon: "🌙", text: "Parasite · in 9 h 14 min", small: "4:00 PM for you · 5:00 AM for Alex · Ready check ›", grape: true } },
+  wrapup:          { name: "How was it?", note: "after a night, until you save it", h: 562, fold: { icon: "★", text: "How was Amélie?", small: "Rate it and write a review ›" } },
+  sent:            { name: "Sent to you", note: "a title from your partner", h: 240, fold: { icon: "✉", text: "Alex sent you Pulp Fiction", small: "Add it, keep it for someday, or wave it off ›" } },
+  question:        { name: "Tonight's question", note: "answers hidden until both", h: 370, fold: { icon: "?", text: "Tonight's question", small: "Which actor would you watch in anything? ›" } },
+  "search-pick":   { name: "Search and Pick", note: "search box, Pick, Surprise us, Swipe", h: 301, fold: { icon: "🎲", text: "Pick something for tonight", small: "Surprise us · Swipe together · Search" } },
+  "next-episodes": { name: "Next episodes", note: "series you're watching", h: 168, fold: { icon: "▶", text: "Next episodes: Breaking Bad S2 E5", small: "+1 more ready to watch" } },
+};
+const HEADER_H = 78, SCREEN = 844 - 76; // what's visible above the tab bar
+const LIST = "list";
+const STATES = { full: "Full", fold: "Folded", tray: "In a 'Waiting for you' tray", below: "Below the list", hide: "Hidden on phones" };
+
+const PRESETS = {
+  now: { label: "Today", note: "Home as it is: every block in full, the list last.",
+    order: ["clocks", "tonight", "streak", "next-night", "wrapup", "sent", "question", "search-pick", "next-episodes", LIST], state: {} },
+  listFirst: { label: "A · List first", note: "Clocks and a one-line next night, then the list. Everything else follows the list in full, as it is today.",
+    order: ["clocks", "next-night", LIST, "sent", "wrapup", "tonight", "question", "search-pick", "next-episodes", "streak"],
+    state: { "next-night": "fold", sent: "below", wrapup: "below", tonight: "below", question: "below", "search-pick": "below", "next-episodes": "below", streak: "below" } },
+  folded: { label: "B · Fold what waits", note: "Same order as today, but each card is a one-line strip that opens where it is; Search and Pick stay full. The streak chip moves to Stats.",
+    order: ["clocks", "tonight", "next-night", "wrapup", "sent", "question", "search-pick", "next-episodes", LIST, "streak"],
+    state: { tonight: "fold", "next-night": "fold", wrapup: "fold", sent: "fold", question: "fold", "next-episodes": "fold", streak: "hide" } },
+  tray: { label: "C · Waiting-for-you tray", note: "Clocks and the next night as a strip, then one tray of small chips for what's waiting for you (how was it, sent to you, tonight's question, tonight). Then search and Pick, then the list.",
+    order: ["clocks", "next-night", "wrapup", "sent", "question", "tonight", "search-pick", LIST, "next-episodes", "streak"],
+    state: { "next-night": "fold", wrapup: "tray", sent: "tray", question: "tray", tonight: "tray", "next-episodes": "below", streak: "below" } },
+};
+
+let order, state, preset;
+function load(name) { preset = name; order = [...PRESETS[name].order]; state = { ...PRESETS[name].state }; render(); }
+
+function stripFor(id) {
+  const f = BLOCKS[id].fold;
+  const el = document.createElement("div");
+  el.className = "fold" + (f.grape ? " grape" : "");
+  el.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="txt"></span><span class="go" aria-hidden="true">›</span>`;
+  el.querySelector(".dot").textContent = f.icon;
+  el.querySelector(".txt").textContent = f.text;
+  if (f.small) { const s = document.createElement("small"); s.textContent = f.small; el.querySelector(".txt").append(s); }
+  return el;
+}
+
+function render() {
+  for (const b of document.querySelectorAll(".presets button")) b.setAttribute("aria-pressed", String(b.dataset.preset === preset));
+  document.getElementById("preset-note").textContent = preset ? PRESETS[preset].note : "Your own layout.";
+  const sc = document.getElementById("scroller");
+  sc.replaceChildren();
+  const add = (el) => sc.append(el);
+  const img = (id) => { const i = new Image(); i.src = "home-order/" + id + ".webp"; i.alt = BLOCKS[id]?.name || "Our list"; i.width = 390; i.height = id === LIST ? 760 : id === "header" ? HEADER_H : BLOCKS[id].h; return i; };
+  add(img("header"));
+  const listAt = order.indexOf(LIST);
+  const before = order.slice(0, listAt), after = order.slice(listAt + 1);
+  // Blocks a preset or row put below the list go after it whatever their place.
+  const above = before.filter((id) => state[id] !== "below" && state[id] !== "hide");
+  const below = [...before.filter((id) => state[id] === "below"), ...after.filter((id) => state[id] !== "hide")];
+  let trayDone = false;
+  const place = (id) => {
+    const s = state[id] || "full";
+    if (s === "tray") {
+      if (trayDone) return; trayDone = true;
+      const label = document.createElement("p"); label.className = "tray-label"; label.textContent = "Waiting for you"; add(label);
+      const tray = document.createElement("div"); tray.className = "tray";
+      for (const t of order.filter((x) => state[x] === "tray")) { const c = document.createElement("span"); c.className = "chip"; c.innerHTML = "<i></i>"; c.append(BLOCKS[t].fold.text); tray.append(c); }
+      add(tray); return;
+    }
+    add(s === "fold" ? stripFor(id) : img(id));
+  };
+  for (const id of above) place(id);
+  const marker = document.createElement("div"); marker.className = "marker"; marker.innerHTML = "<span>The list starts here</span>"; add(marker);
+  add(img(LIST));
+  for (const id of below) place(id);
+  const line = document.createElement("div"); line.className = "fold-line"; line.style.top = SCREEN + "px"; line.innerHTML = "<span>end of the first screen</span>"; sc.append(line);
+  sc.scrollTop = 0;
+  requestAnimationFrame(() => {
+    const y = marker.offsetTop;
+    document.getElementById("screens").textContent = (y / SCREEN).toFixed(1) + " screens down";
+    document.getElementById("px").textContent = y + " px from the top on an iPhone (" + (y <= SCREEN ? "on the first screen" : "after " + Math.ceil(y / SCREEN - 1) + " scroll" + (Math.ceil(y / SCREEN - 1) === 1 ? "" : "s")) + ")";
+  });
+  renderRows();
+  document.getElementById("summary").textContent = summary();
+}
+
+function renderRows() {
+  const rows = document.getElementById("rows");
+  rows.replaceChildren();
+  order.forEach((id, i) => {
+    const row = document.createElement("div");
+    row.className = "row" + (id === LIST ? " list" : "");
+    const arrows = document.createElement("div"); arrows.className = "arrows";
+    for (const [dir, sym, label] of [[-1, "▲", "Up"], [1, "▼", "Down"]]) {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = sym; b.setAttribute("aria-label", label + ": " + (BLOCKS[id]?.name || "Our list"));
+      b.disabled = i + dir < 0 || i + dir >= order.length;
+      b.onclick = () => { [order[i], order[i + dir]] = [order[i + dir], order[i]]; preset = null; render(); };
+      arrows.append(b);
+    }
+    const name = document.createElement("div"); name.className = "name";
+    name.textContent = id === LIST ? "Our list (Up next, Watched, Dropped)" : BLOCKS[id].name;
+    if (id !== LIST) { const s = document.createElement("small"); s.textContent = BLOCKS[id].note; name.append(s); }
+    row.append(arrows, name);
+    if (id !== LIST) {
+      const sel = document.createElement("select"); sel.setAttribute("aria-label", "How " + BLOCKS[id].name + " shows");
+      for (const [v, l] of Object.entries(STATES)) { const o = document.createElement("option"); o.value = v; o.textContent = l; sel.append(o); }
+      sel.value = state[id] || "full";
+      sel.onchange = () => { state[id] = sel.value; preset = null; render(); };
+      row.append(sel);
+    } else row.append(document.createElement("span"));
+    rows.append(row);
+  });
+}
+
+function summary() {
+  return "Layout: " + order.map((id) => id === LIST ? "LIST" : id + (state[id] && state[id] !== "full" ? " (" + state[id] + ")" : "")).join(" → ");
+}
+
+const presetBox = document.querySelector(".presets");
+for (const [k, p] of Object.entries(PRESETS)) {
+  const b = document.createElement("button"); b.type = "button"; b.dataset.preset = k; b.textContent = p.label; b.onclick = () => load(k); presetBox.append(b);
+}
+document.getElementById("copy").onclick = async () => {
+  const t = summary();
+  try { await navigator.clipboard.writeText(t); document.getElementById("copy").textContent = "Copied"; }
+  catch { document.getElementById("summary").focus?.(); }
+  setTimeout(() => (document.getElementById("copy").textContent = "Copy this layout"), 1500);
+};
+load(location.hash.slice(1) in PRESETS ? location.hash.slice(1) : "now");
+</script>
+</body>
+</html>

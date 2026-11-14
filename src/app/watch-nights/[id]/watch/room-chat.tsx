@@ -43,7 +43,7 @@ export function RoomChat({
 }) {
   const text = getMessages(language).nights.room.chat;
   const id = useId();
-  const log = useRef<HTMLOListElement>(null);
+  const log = useRef<HTMLDivElement>(null);
   // Times keep the plain language (12-hour English), like the rest of the app.
   const time = new Intl.DateTimeFormat(language, { hour: "numeric", minute: "2-digit" });
 
@@ -77,51 +77,54 @@ export function RoomChat({
 
       {open && (
         <>
-          <ol
+          {/* The log role goes on a wrapper: on the <ol> itself it would hide the list from screen readers. */}
+          <div
             id={`${id}-body`}
             ref={log}
             role="log"
             aria-live="polite"
             aria-labelledby={`${id}-heading`}
-            className={`grid content-start gap-2 overflow-y-auto overscroll-contain pr-1 ${fill ? "min-h-0" : "max-h-64"}`}
+            className={`overflow-y-auto overscroll-contain pr-1 ${fill ? "min-h-0" : "max-h-64"}`}
           >
-            {messages.length === 0 ? (
-              <li className="text-muted">{text.empty}</li>
-            ) : (
-              messages.map((m) => {
-                const mine = m.by === meId;
-                return (
-                  <li key={m.id} className="text-[15px] leading-snug break-words">
-                    <span
-                      className={`mr-1.5 inline-block max-w-[9rem] truncate rounded-full border-2 border-outline px-2 align-[0.05em] text-xs font-bold ${mine ? "bg-me" : "bg-partner"}`}
-                    >
-                      {mine ? names.me : names.partner}
-                    </span>
-                    {mine ? (
-                      <>
-                        {m.text}
-                        <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
-                          {time.format(m.at)}
-                        </time>
-                      </>
-                    ) : (
-                      // Sprint 21: your partner's message, in your language if you like.
-                      <Translatable text={m.text} language={language} compact>
-                        {(shown) => (
-                          <>
-                            {shown}
-                            <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
-                              {time.format(m.at)}
-                            </time>
-                          </>
-                        )}
-                      </Translatable>
-                    )}
-                  </li>
-                );
-              })
-            )}
-          </ol>
+            <ol className="grid content-start gap-2">
+              {messages.length === 0 ? (
+                <li className="text-muted">{text.empty}</li>
+              ) : (
+                messages.map((m) => {
+                  const mine = m.by === meId;
+                  return (
+                    <li key={m.id} className="text-[15px] leading-snug break-words">
+                      <span
+                        className={`mr-1.5 inline-block max-w-[9rem] truncate rounded-full border-2 border-outline px-2 align-[0.05em] text-xs font-bold ${mine ? "bg-me" : "bg-partner"}`}
+                      >
+                        {mine ? names.me : names.partner}
+                      </span>
+                      {mine ? (
+                        <>
+                          {m.text}
+                          <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
+                            {time.format(m.at)}
+                          </time>
+                        </>
+                      ) : (
+                        // Sprint 21: your partner's message, in your language if you like.
+                        <Translatable text={m.text} language={language} compact>
+                          {(shown) => (
+                            <>
+                              {shown}
+                              <time className="ml-1.5 text-xs text-muted" dateTime={new Date(m.at).toISOString()}>
+                                {time.format(m.at)}
+                              </time>
+                            </>
+                          )}
+                        </Translatable>
+                      )}
+                    </li>
+                  );
+                })
+              )}
+            </ol>
+          </div>
           <form
             className="flex gap-2"
             onSubmit={(e) => {

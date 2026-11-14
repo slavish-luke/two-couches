@@ -63,7 +63,7 @@ async function Swipe({ searchParams }: Pick<PageProps<"/pick/swipe">, "searchPar
           <Link
             href={everything ? "/pick/swipe" : "/pick/swipe?all=1"}
             className="chip justify-self-start"
-            aria-pressed={!everything}
+            aria-current={!everything ? "true" : undefined}
           >
             <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
             {t.pick.bothOnly}

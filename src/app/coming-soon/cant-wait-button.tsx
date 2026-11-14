@@ -17,6 +17,8 @@ export function CantWaitButton(props: {
   /** Null before pairing up: then there's only your dot. */
   partnerName: string | null;
   language: string;
+  /** Said after the label for screen readers, so a row of these says which title each one is for. */
+  titleName?: string;
 }) {
   const t = getMessages(props.language).discovery.cantWait;
   const [mine, setMine] = useOptimistic(props.mine);
@@ -49,6 +51,7 @@ export function CantWaitButton(props: {
           )}
         </span>
         {t.button}
+        {props.titleName && <span className="sr-only">: {props.titleName}</span>}
         {names && <span className="sr-only">. {t.marked(names)}</span>}
       </button>
       {both && mine && props.theirs && (

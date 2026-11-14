@@ -12,11 +12,14 @@ export function RemindButton({
   reminded,
   language,
   long = false,
+  titleName,
 }: {
   titleRef: TitleRef;
   reminded: boolean;
   language: string;
   long?: boolean;
+  /** Said after the label for screen readers, for rows of cards where every button looks alike. */
+  titleName?: string;
 }) {
   const [saving, startSaving] = useTransition();
   const [error, setError] = useState<string>();
@@ -34,7 +37,7 @@ export function RemindButton({
             setError(result.error);
           })
         }
-        className={`btn-quiet text-sm aria-pressed:bg-accent-soft ${long ? "" : "px-2.5 py-0.5"}`}
+        className={`btn-quiet relative text-sm aria-pressed:bg-accent-soft ${long ? "" : "px-2.5 py-0.5"}`}
       >
         {saving ? (
           t.saving
@@ -48,6 +51,7 @@ export function RemindButton({
         ) : (
           t.remind
         )}
+        {titleName && <span className="sr-only">: {titleName}</span>}
       </button>
       {error && (
         <span role="alert" className="text-xs font-semibold text-danger">

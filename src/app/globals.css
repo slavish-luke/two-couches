@@ -2516,8 +2516,10 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
   background-color: color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
+/* A picked hour is accent with on-accent text, a pair that passes 4.5:1 in every palette; any tint mixed in
+ * pulls the two together (3.4–4.3:1 in the audit), so the crescent dot alone says it's night there. */
 [data-slot][data-picked] [data-sky="night"] {
-  background-color: color-mix(in srgb, var(--on-accent) 24%, transparent);
+  background-color: transparent;
 }
 
 /* Now: an ink line through the hour that's under way, with a paper edge so it shows on any fill. */

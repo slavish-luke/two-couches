@@ -105,7 +105,7 @@ const tr: typeof en = {
   },
   rating: "Puan",
   anyRating: "Tüm puanlar",
-  minRating: (rating: string) => `Rated ${rating}+`,
+  minRating: (rating: string) => `${rating}+ puan`,
   sort: "Sırala",
   sorts: { popular: "En popüler", rated: "En yüksek puanlı", newest: "En yeni" },
   bothChecked: (found: number, checked: number) => `Bu sayfada bakılan ${checked} yapımdan ${found} tanesi.`,

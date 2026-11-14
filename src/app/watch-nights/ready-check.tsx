@@ -69,7 +69,7 @@ export function ReadyCheck(props: {
   }
 
   const textButton =
-    "text-sm font-bold underline underline-offset-4 transition hover:decoration-[3px] disabled:opacity-50";
+    "tap-area text-sm font-bold underline underline-offset-4 transition hover:decoration-[3px] disabled:opacity-50";
 
   // A paper slip of its own, so it reads the same on a card and inside the home page's grape spotlight.
   return (

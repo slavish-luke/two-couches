@@ -36,6 +36,20 @@ const en = {
     prompt: "Find a film or series and see where each of you can stream it.",
     noResultsHint: "Check the spelling, or try the original title.",
   },
+  /** Home on phones (Sprint 24): the cards that wait for you, folded to chips, and the next night as a strip. */
+  tray: {
+    label: "Waiting for you",
+    wrapups: (n: number) => `How were your last ${n} nights?`,
+    sentOne: (name: string, title: string) => `${name} sent you ${title}`,
+    sentMany: (name: string, n: number) => `${name} sent you ${n} titles`,
+    freeAsk: "Free tonight?",
+    /** The next night's strip: "4:00 PM for you · 5:00 AM for Alex". */
+    times: (mine: string, theirs: string, name: string) => `${mine} for you · ${theirs} for ${name}`,
+    timesAlone: (mine: string) => `${mine} for you`,
+    noTitle: "Title to be decided",
+    proposals: "Times suggested for a night",
+    pickOne: "Pick one",
+  },
 };
 
 const tr: typeof en = {
@@ -71,6 +85,18 @@ const tr: typeof en = {
     noResults: (query: string) => `“${query}” ile eşleşen film ya da dizi yok.`,
     prompt: "Bir film ya da dizi bul, ikinizin de nerede izleyebileceğini gör.",
     noResultsHint: "Yazımı kontrol et ya da orijinal adını dene.",
+  },
+  tray: {
+    label: "Seni bekleyenler",
+    wrapups: (n: number) => `Son ${n} izleme gecesi nasıldı?`,
+    sentOne: (name: string, title: string) => `${title} · Gönderen: ${name}`,
+    sentMany: (name: string, n: number) => `${n} yapım · Gönderen: ${name}`,
+    freeAsk: "Bu akşam boş musun?",
+    times: (mine: string, theirs: string, name: string) => `Sen: ${mine} · ${name}: ${theirs}`,
+    timesAlone: (mine: string) => `Sen: ${mine}`,
+    noTitle: "Ne izleneceği belli değil",
+    proposals: "Bir gece için önerilen saatler",
+    pickOne: "Birini seç",
   },
 };
 

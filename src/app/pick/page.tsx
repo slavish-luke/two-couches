@@ -67,7 +67,7 @@ function pickHref(state: PickState, changes: Partial<PickState>) {
   return query ? `/pick?${query}` : "/pick";
 }
 
-/** A chip link, grape while it's the current choice (drawn here: the chip class selects on aria-pressed). */
+/** A chip link, grape while it's the current choice (drawn here: the chip class selects on aria-current). */
 const chip = (active: boolean) =>
   `chip ${active ? "bg-accent text-on-accent shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]" : ""}`;
 
@@ -188,7 +188,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
                 <Link
                   href={pickHref(state, { everything: !state.everything, another: 0 })}
                   className="chip"
-                  aria-pressed={!state.everything}
+                  aria-current={!state.everything ? "true" : undefined}
                 >
                   <span aria-hidden className="size-3 rounded-full border-2 border-outline bg-stamp" />
                   {text.bothOnly}
@@ -198,7 +198,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
                 <Link
                   href={pickHref(state, { made: !state.made, another: 0 })}
                   className="chip"
-                  aria-pressed={state.made}
+                  aria-current={state.made ? "true" : undefined}
                   title={t.time.made.names(homeNames)}
                 >
                   <GlobeIcon className="size-4" />

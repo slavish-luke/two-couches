@@ -20,8 +20,21 @@ const nextConfig: NextConfig = {
     deviceSizes: [342, 500, 780],
   },
   async headers() {
-    // Browsers re-check the service worker on every visit, so changes to it reach phones straight away.
-    return [{ source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] }];
+    return [
+      // Nothing may frame the app (clickjacking), files are taken as the type they say they are, and other
+      // sites only learn the origin a link came from, never a page's path (night IDs, feed tokens).
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+        ],
+      },
+      // Browsers re-check the service worker on every visit, so changes to it reach phones straight away.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+    ];
   },
   turbopack: {
     rules: {

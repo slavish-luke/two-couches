@@ -105,9 +105,42 @@ async function savingData() {
 /** The next TMDB poster size down, for each size the app asks for (logos are w92 and stay as they are). */
 const SMALLER = { w500: "w342", w342: "w185", w185: "w154", w154: "w92" };
 
+/** Every TMDB size a poster can be kept at, biggest first (for falling back to another kept size). */
+const POSTER_SIZES = ["original", "w780", "w500", "w342", "w185", "w154", "w92"];
+
+/**
+ * Asks TMDB with CORS (an <img> asks without, which would store an opaque copy). A connection that drops
+ * (a rejected fetch) or a server error gets one more try, so one bad moment doesn't leave a broken poster.
+ */
+async function fetchPoster(target) {
+  const ask = () => fetch(new Request(target, { mode: "cors", credentials: "omit" }));
+  try {
+    const response = await ask();
+    if (response.status < 500) return response;
+  } catch {
+    // Tried again below.
+  }
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return ask();
+}
+
+/** The same poster at any other size this device keeps, or undefined. */
+async function keptAnySize(url) {
+  const [, , , , ...file] = url.pathname.split("/");
+  for (const size of POSTER_SIZES) {
+    const other = new URL(url);
+    other.pathname = `/t/p/${size}/${file.join("/")}`;
+    const kept = await caches.match(other.href, { cacheName: IMAGES });
+    if (kept) return kept;
+  }
+  return undefined;
+}
+
 /**
  * Cache first, keyed by the URL actually fetched. While saving data, a kept copy at the size asked for
- * still wins (it costs nothing); otherwise TMDB is asked for the next size down.
+ * still wins (it costs nothing); otherwise TMDB is asked for the next size down. If TMDB can't be reached,
+ * a kept copy at another size is better than nothing, and failing that the browser asks once more itself
+ * (an opaque copy, which an <img> can still show; it isn't kept).
  */
 async function poster(event, url) {
   const kept = await caches.match(url.href, { cacheName: IMAGES });
@@ -119,10 +152,15 @@ async function poster(event, url) {
     const keptSmall = await caches.match(target.href, { cacheName: IMAGES });
     if (keptSmall) return keptSmall;
   }
-  // <img> asks without CORS, which would store an opaque copy; TMDB allows CORS, so ask that way instead.
-  const response = await fetch(new Request(target, { mode: "cors", credentials: "omit" }));
-  if (response.ok) event.waitUntil(remember(IMAGES, target.href, response.clone()));
-  return response;
+  try {
+    const response = await fetchPoster(target);
+    if (response.ok) event.waitUntil(remember(IMAGES, target.href, response.clone()));
+    return response;
+  } catch (error) {
+    const other = await keptAnySize(url);
+    if (other) return other;
+    return fetch(url.href, { mode: "no-cors", credentials: "omit" }).catch(() => Promise.reject(error));
+  }
 }
 
 self.addEventListener("fetch", (event) => {

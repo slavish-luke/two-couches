@@ -11,7 +11,7 @@ export function HomeSkeleton() {
   return (
     <Skeleton wide className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-8 lg:grid-cols-12">
       <div className="grid min-w-0 content-start gap-7 lg:col-span-5 xl:col-span-4">
-        <div data-clocks className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3">
+        <div data-clocks className="card relative grid grid-cols-2 items-start gap-2 px-3 pb-4 pt-3 lg:-order-4">
           {(["me", "partner"] as const).map((who, i) => (
             <div
               key={who}
@@ -35,21 +35,39 @@ export function HomeSkeleton() {
             {" "}
           </span>
         </div>
-        <FreeTonightSkeleton />
-
-        <div className="spotlight grid -rotate-1 gap-4 p-5">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            {/* As wide as the real head, so the link wraps under it like the real one. */}
-            <SkelText bar="pop" className="display-pop text-[2rem]" width="85%" />
-            <SkelText className="font-bold" width="8rem" />
+        {/* Sprint 24: on phones the next night is a strip and the cards are chips in "Waiting for you" (TrayItem);
+            from lg up the aside is as it was (the lg:order classes match the page's). */}
+        <div className="lg:-order-1">
+          <div className="spotlight flex -rotate-1 items-center gap-3 px-4 py-3 lg:hidden">
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <SkelText bar="pop" className="font-bold leading-snug" width="60%" />
+              <SkelText className="text-sm font-semibold" width="75%" />
+            </span>
           </div>
-          <ul>
-            <NightCardSkeleton className="" listing aside />
-          </ul>
+          <div className="spotlight hidden -rotate-1 gap-4 p-5 lg:grid">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              {/* As wide as the real head, so the link wraps under it like the real one. */}
+              <SkelText bar="pop" className="display-pop text-[2rem]" width="85%" />
+              <SkelText className="font-bold" width="8rem" />
+            </div>
+            <ul>
+              <NightCardSkeleton className="" listing aside />
+            </ul>
+          </div>
         </div>
-        <QuestionSkeleton />
+        <div className="flex flex-wrap items-start gap-2 lg:contents">
+          <SkelText className="display basis-full text-xl lg:hidden" width="12rem" />
+          <SkelChip width="11rem" className="lg:hidden" />
+          <SkelChip width="9rem" className="lg:hidden" />
+          <div className="hidden lg:block">
+            <QuestionSkeleton />
+          </div>
+          <div className="hidden lg:-order-3 lg:block">
+            <FreeTonightSkeleton />
+          </div>
+        </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 lg:order-1">
           <div className="flex gap-2">
             <SkelField className="min-w-0 flex-1" />
             <SkelButton width="5.5rem" className="shrink-0 px-3 sm:px-4" />

@@ -74,8 +74,9 @@ export function TitleCard({
           </Suspense>
         )}
       </div>
-      <Link href={href} data-item-title className="line-clamp-2 font-bold leading-snug hover:underline">
-        {result.title}
+      {/* The clamp is on the inner span: on the link it would hide the tap area (the poster is the big target). */}
+      <Link href={href} data-item-title className="tap-area block font-bold leading-snug hover:underline">
+        <span className="line-clamp-2">{result.title}</span>
       </Link>
       {details ?? (result.release_date && <span className="text-sm text-muted">{result.release_date.slice(0, 4)}</span>)}
       {context.onList && (
@@ -83,6 +84,7 @@ export function TitleCard({
           titleRef={{ media_type: result.media_type, tmdb_id: result.tmdb_id }}
           onList={context.onList.has(titleKey(result))}
           language={context.language}
+          titleName={result.title}
         />
       )}
       {children}

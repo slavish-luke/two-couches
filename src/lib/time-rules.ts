@@ -56,10 +56,17 @@ export function isFirstTap(rows: FreeRow[], profileId: string, day: string) {
 }
 
 /**
+ * "Tonight" starts at noon on each person's clock. Not later: 7–8 hours apart, one person's evening is the
+ * other's afternoon, and that's still a night together. Not earlier: a morning start isn't tonight (13 hours
+ * apart it suggested 8 am to someone who'd just said they're free tonight).
+ */
+export const TONIGHT_FROM_HOUR = 12;
+
+/**
  * The best start tonight for everyone: an hour from now on that falls on each person's own tonight (their
- * local date when they said so), within the next day. The best by bestSlots() (free time on every clock, the
- * most prime time), else the warmest by slotHeat(), else null when nobody's awake together tonight. The
- * planner's date and time come from `plannerZone`, the form's clock.
+ * local date when they said so, from TONIGHT_FROM_HOUR), within the next day. The best by bestSlots() (free
+ * time on every clock, the most prime time), else the warmest by slotHeat(), else null when nobody's awake
+ * together tonight. The planner's date and time come from `plannerZone`, the form's clock.
  */
 export function tonightSlot(now: Date, evenings: Evening[], plannerZone: string) {
   if (evenings.length === 0) return null;
@@ -68,7 +75,7 @@ export function tonightSlot(now: Date, evenings: Evening[], plannerZone: string)
   const starts = [today, addDays(today, 1)]
     .flatMap((date) => hoursOfDay(date, plannerZone))
     .filter((s) => s.getTime() + HOUR_MS > now.getTime() && s.getTime() < now.getTime() + 24 * HOUR_MS)
-    .filter((s) => evenings.every((e) => localDate(e.zone, s) === e.day));
+    .filter((s) => evenings.every((e) => localDate(e.zone, s) === e.day && zonedParts(s, e.zone).hour >= TONIGHT_FROM_HOUR));
   const best = bestSlots(starts, zones, now);
   const warm = starts.filter((s) => slotHeat(s, zones) > 0);
   const top = Math.max(0, ...warm.map((s) => slotHeat(s, zones)));

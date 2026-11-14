@@ -440,7 +440,7 @@ function CountryColumn(props: {
           className={`flex max-w-full items-center gap-1 rounded-full border-[2.5px] border-outline px-3 py-0.5 text-lg font-bold ${isMe ? "bg-me" : "bg-partner"}`}
         >
           <span className="truncate">{props.who}</span>
-          <span className="shrink-0 opacity-75">· {watcher.country}</span>
+          <span className="shrink-0 font-normal">· {watcher.country}</span>
         </h3>
         <span className="font-semibold text-muted">{country}</span>
       </div>

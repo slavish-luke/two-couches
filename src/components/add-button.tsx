@@ -7,7 +7,18 @@ import type { TitleRef } from "@/lib/watch";
 import { CheckIcon, PlusIcon } from "./icons";
 
 /** One-tap "add to our list" for search results. Becomes a quiet "On our list" once it's there. */
-export function AddButton({ titleRef, onList, language }: { titleRef: TitleRef; onList: boolean; language: string }) {
+export function AddButton({
+  titleRef,
+  onList,
+  language,
+  titleName,
+}: {
+  titleRef: TitleRef;
+  onList: boolean;
+  language: string;
+  /** Said after the label for screen readers, so a row of these says which title each one adds. */
+  titleName?: string;
+}) {
   const [adding, startAdding] = useTransition();
   const [error, setError] = useState<string>();
   const t = getMessages(language).common.add;
@@ -23,7 +34,8 @@ export function AddButton({ titleRef, onList, language }: { titleRef: TitleRef; 
   return (
     <span className="grid justify-items-end gap-1">
       <button
-        className="btn-quiet px-2.5 py-0.5 text-sm"
+        // relative: keeps the sr-only name inside the card, or it escapes a scrolling row and widens the page.
+        className="btn-quiet relative px-2.5 py-0.5 text-sm"
         disabled={adding}
         onClick={() =>
           startAdding(async () => {
@@ -38,6 +50,7 @@ export function AddButton({ titleRef, onList, language }: { titleRef: TitleRef; 
           <>
             <PlusIcon className="size-3.5" />
             {t.add}
+            {titleName && <span className="sr-only">: {titleName}</span>}
           </>
         )}
       </button>

@@ -63,7 +63,7 @@ type PageContext = {
 };
 
 /** A card's "Can't wait" toggle, with both people's marks. */
-function CantWait({ item, context }: { item: TitleRef; context: PageContext }) {
+function CantWait({ item, context }: { item: TitleRef & { title?: string }; context: PageContext }) {
   const marks = context.cantWait[titleKey(item)] ?? [];
   const [me, partner] = context.people;
   return (
@@ -73,6 +73,7 @@ function CantWait({ item, context }: { item: TitleRef; context: PageContext }) {
       theirs={Boolean(partner && marks.includes(partner))}
       partnerName={partner ? context.card.partnerName : null}
       language={context.language}
+      titleName={item.title}
     />
   );
 }
@@ -195,7 +196,12 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
         <Row heading={t.upcoming.reminders.heading} note={t.upcoming.reminders.note}>
           {remindersOfType.map((r) => (
             <TitleCard key={titleKey(r)} result={r} context={reminderCard} className="w-36 shrink-0 snap-start">
-              <RemindButton titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }} reminded language={language} />
+              <RemindButton
+                titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }}
+                reminded
+                language={language}
+                titleName={r.title}
+              />
               <CantWait item={r} context={context} />
             </TitleCard>
           ))}
@@ -230,7 +236,7 @@ function AlertRow(props: {
         )}
       </div>
       <div className="grid min-w-0 flex-1 gap-0.5">
-        <Link href={titleHref(alert)} className="text-lg font-bold leading-tight hover:underline">
+        <Link href={titleHref(alert)} className="tap-area text-lg font-bold leading-tight hover:underline">
           {alert.title}
         </Link>
         <p className={`font-semibold ${alert.kind === "gone" ? "text-danger" : ""}`}>{heading}</p>
@@ -304,6 +310,7 @@ async function FilmSections({ context }: { context: PageContext }) {
                   titleRef={{ media_type: r.media_type, tmdb_id: r.tmdb_id }}
                   reminded={context.reminded.has(titleKey(r))}
                   language={context.language}
+                  titleName={r.title}
                 />
                 <CantWait item={r} context={context} />
               </TitleCard>
