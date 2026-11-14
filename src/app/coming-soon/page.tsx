@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { Couches } from "@/components/couch";
+import { DealIn } from "@/components/deal-in";
 import { ListSync } from "@/components/list-sync";
 import { Poster } from "@/components/poster";
 import { PosterTab } from "@/components/poster-tab";
@@ -145,6 +146,8 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
   return (
     <div className="grid gap-8">
       <ListSync coupleId={coupleId} />
+      {/* Sprint 26: Films / Series deal the new cards in (the release rows have their own, as they stream in later). */}
+      <DealIn scope="upcoming" tab={type} />
       {newCount > 0 && <MarkAlertsSeen />}
       <div className="grid gap-3">
         <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.upcoming.heading}</h1>
@@ -183,6 +186,8 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
               <Link
                 href={mediaType === "movie" ? "/coming-soon" : `/coming-soon?type=${mediaType}`}
                 aria-current={type === mediaType ? "page" : undefined}
+                data-deal-tab="upcoming"
+                data-deal-to={mediaType}
                 className="tab block"
               >
                 {t.common.mediaTypePlural[mediaType]}
@@ -295,6 +300,7 @@ async function FilmSections({ context }: { context: PageContext }) {
   ];
   return (
     <div className="grid gap-8">
+      <DealIn scope="upcoming" tab="movie" />
       {rows.map((row) =>
         row.items.length === 0 ? null : (
           <Row key={row.key} heading={row.text.heading} note={row.text.note}>
@@ -387,6 +393,7 @@ async function SeriesSections({ context }: { context: PageContext }) {
 
   return (
     <div className="grid gap-8">
+      <DealIn scope="upcoming" tab="tv" />
       {upcoming.length > 0 && (
         <Row heading={t.upcoming.nextOnList.heading} note={t.upcoming.nextOnList.note}>
           {upcoming.map((item) => {

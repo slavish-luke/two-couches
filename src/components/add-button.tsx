@@ -3,10 +3,14 @@
 import { useState, useTransition } from "react";
 import { addToList } from "@/app/list/actions";
 import { getMessages } from "@/lib/i18n";
+import { flyToList } from "@/lib/list-motion";
 import type { TitleRef } from "@/lib/watch";
 import { CheckIcon, PlusIcon } from "./icons";
 
-/** One-tap "add to our list" for search results. Becomes a quiet "On our list" once it's there. */
+/**
+ * One-tap "add to our list" for search results. Becomes a quiet "On our list" once it's there. Sprint 26:
+ * the card's poster flies onto the List tab while it saves (never waited for).
+ */
 export function AddButton({
   titleRef,
   onList,
@@ -37,12 +41,14 @@ export function AddButton({
         // relative: keeps the sr-only name inside the card, or it escapes a scrolling row and widens the page.
         className="btn-quiet relative px-2.5 py-0.5 text-sm"
         disabled={adding}
-        onClick={() =>
+        onClick={(event) => {
+          const button = event.currentTarget;
           startAdding(async () => {
             const result = await addToList(titleRef);
             setError(result.error);
-          })
-        }
+          });
+          void flyToList(button);
+        }}
       >
         {adding ? (
           t.adding

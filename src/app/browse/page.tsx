@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { BothSwitch } from "@/components/both-switch";
 import { Couches } from "@/components/couch";
 import { CountryChip } from "@/components/country-chip";
+import { DealIn } from "@/components/deal-in";
 import { ArrowIcon, BackIcon, GlobeIcon } from "@/components/icons";
 import { FilterSelect } from "@/components/filter-select";
 import { ListSync } from "@/components/list-sync";
@@ -218,6 +219,8 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
   return (
     <div data-wide className="grid gap-8">
       <h1 className="sr-only">{t.browse.heading}</h1>
+      {/* Sprint 26: Films / Series deal the new cards in (the grid has its own, as it can stream in later). */}
+      <DealIn scope="browse" tab={type} />
       <nav aria-label={t.browse.typesLabel}>
         <ul className="-mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:none]">
           {(["movie", "tv"] as const).map((mediaType) => (
@@ -226,6 +229,8 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
                 // Genre IDs differ between films and series, so switching drops the genre.
                 href={filtersHref(filters, { type: mediaType, genre: null })}
                 aria-current={type === mediaType ? "page" : undefined}
+                data-deal-tab="browse"
+                data-deal-to={mediaType}
                 className="tab block px-5 pb-2 pt-3.5 text-[2rem] sm:text-[2.6rem]"
               >
                 {t.common.mediaTypePlural[mediaType]}
@@ -448,6 +453,7 @@ async function BrowseResults(props: {
 
   return (
     <>
+      <DealIn scope="browse" tab={filters.type} />
       <p className="max-w-[65ch] text-sm font-medium text-muted">
         {filters.both
           ? t.browse.scope.both

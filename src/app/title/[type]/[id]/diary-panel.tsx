@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import type { ListResult } from "@/app/list/actions";
 import { logRewatch, rateRewatch, rateSeason, redateRewatch, removeRewatch } from "@/app/list/diary-actions";
 import { PlusIcon, RepeatIcon, StarIcon } from "@/components/icons";
 import { NameTag } from "@/components/name-tag";
-import { Stars } from "@/components/stars";
+import { LiveStars } from "@/components/live-stars";
+import { cheerStars } from "@/lib/list-motion";
 import { seasonsToRate, watchHistory, FIRST_WATCH_DATE, type Rewatch, type SeasonRatings } from "@/lib/diary-rules";
 import { getMessages, type Messages } from "@/lib/i18n";
 import type { ListItem } from "@/lib/list";
@@ -45,9 +46,10 @@ function ErrorLine({ error }: { error?: string }) {
  */
 function MiniStars({ rating, label, disabled, onRate, t }: { rating: number | null; label: string; disabled: boolean; onRate: (rating: number | null) => void; t: Messages }) {
   const [hover, setHover] = useState<number | null>(null);
+  const row = useRef<HTMLSpanElement>(null);
   const shown = hover ?? rating ?? 0;
   return (
-    <span role="radiogroup" aria-label={label} className="flex" onMouseLeave={() => setHover(null)}>
+    <span ref={row} role="radiogroup" aria-label={label} className="flex" onMouseLeave={() => setHover(null)}>
       {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}
@@ -60,28 +62,46 @@ function MiniStars({ rating, label, disabled, onRate, t }: { rating: number | nu
           onMouseEnter={() => setHover(n)}
           onFocus={() => setHover(n)}
           onBlur={() => setHover(null)}
-          onClick={() => onRate(rating === n ? null : n)}
+          onClick={() => {
+            const next = rating === n ? null : n;
+            // Sprint 26: the stars cheer as they do in StarPicker.
+            const buttons = [...(row.current?.querySelectorAll<HTMLElement>("[data-star]") ?? [])];
+            cheerStars(
+              buttons.map((b) => b.firstElementChild as HTMLElement),
+              buttons,
+              next ?? 0,
+              rating ?? 0,
+            );
+            onRate(next);
+          }}
+          data-star
           className="grid size-8 place-items-center rounded-full transition duration-150 ease-(--ease-spring) hover:-translate-y-0.5 hover:-rotate-6 hover:scale-110 active:scale-90 disabled:opacity-60"
         >
-          <StarIcon filled={n <= shown} className="size-6" />
+          <span className="grid place-items-center">
+            <StarIcon filled={n <= shown} className="size-6" />
+          </span>
         </button>
       ))}
     </span>
   );
 }
 
-/** Your partner's rating of something, read-only, or a quiet "no rating". */
-function TheirStars({ partner, rating, language, t }: { partner: Person; rating: number | undefined; language: string; t: Messages }) {
+/**
+ * Your partner's rating of something, read-only, or a quiet "no rating". `memory` names it, so a rating
+ * that arrives while you're looking drops in star by star (Sprint 26, LiveStars).
+ */
+function TheirStars({ partner, rating, memory, language, t }: { partner: Person; rating: number | undefined; memory: string; language: string; t: Messages }) {
   return (
     <span className="flex flex-wrap items-center gap-2">
       <NameTag name={partner.name} who="partner" />
-      {rating ? (
-        <span className="text-xl leading-none">
-          <Stars rating={rating} who={partner.name} language={language} />
-        </span>
-      ) : (
-        <span className="text-sm font-semibold text-muted">{t.diary.notRated}</span>
-      )}
+      <LiveStars
+        memory={memory}
+        rating={rating}
+        who={partner.name}
+        language={language}
+        className="text-xl leading-none"
+        fallback={<span className="text-sm font-semibold text-muted">{t.diary.notRated}</span>}
+      />
     </span>
   );
 }
@@ -227,7 +247,7 @@ function RewatchRow(props: {
               <span className="text-sm font-semibold text-muted">{d.veiled}</span>
             </span>
           ) : (
-            <TheirStars partner={partner} rating={rewatch.ratings[partner.id]} language={language} t={t} />
+            <TheirStars partner={partner} rating={rewatch.ratings[partner.id]} memory={`rewatch:${rewatch.id}:${partner.id}`} language={language} t={t} />
           ))}
       </div>
     </li>
@@ -313,7 +333,15 @@ export function SeasonRatingsPanel(props: {
                 t={t}
               />
             </span>
-            {partner && <TheirStars partner={partner} rating={rated[season]?.[partner.id]} language={language} t={t} />}
+            {partner && (
+              <TheirStars
+                partner={partner}
+                rating={rated[season]?.[partner.id]}
+                memory={`season:${item.id}:${season}:${partner.id}`}
+                language={language}
+                t={t}
+              />
+            )}
             <SeasonReview
               itemId={item.id}
               season={season}

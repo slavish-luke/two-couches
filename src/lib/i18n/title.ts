@@ -57,6 +57,8 @@ const en = {
   theyPayLabel: "they pay for this",
   checked: (when: string) => `Checked ${when}`,
   justWatch: "Data from JustWatch via TMDB",
+  /** Sprint 26: the sticker beside both ratings once you've both rated. */
+  cheer: { same: "Same!", close: "Close!", split: "Ooh, a split" },
   panel: {
     saveForLater: "Save it for later",
     notePlaceholder: "Add a note (optional)",
@@ -169,6 +171,7 @@ const tr: typeof en = {
   theyPayLabel: "aboneliği var",
   checked: (when: string) => `Son kontrol: ${when}`,
   justWatch: "Veriler JustWatch'tan, TMDB aracılığıyla",
+  cheer: { same: "Aynı!", close: "Yakın!", split: "Fikirler ayrı" },
   panel: {
     saveForLater: "Sonraya sakla",
     notePlaceholder: "Not ekle (isteğe bağlı)",
