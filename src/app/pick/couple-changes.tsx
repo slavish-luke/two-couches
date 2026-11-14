@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { announceChange } from "@/lib/couple-events";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -18,9 +19,11 @@ export function useCoupleChanges(coupleId: string, table: "moods" | "swipes" | "
   useEffect(() => {
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const changed = () => {
+    const changed = (payload?: Parameters<typeof announceChange>[0]) => {
       clearTimeout(timer);
       timer = setTimeout(() => latest.current(), 250);
+      // Sprint 27: pass inserts and updates on to the page (the partner peek).
+      if (payload) announceChange(payload);
     };
     const filter = `couple_id=eq.${coupleId}`;
     const channel = supabase
@@ -28,7 +31,7 @@ export function useCoupleChanges(coupleId: string, table: "moods" | "swipes" | "
       .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, changed)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, changed)
       // Realtime can't filter deletes; another couple's delete costs at most an extra check.
-      .on("postgres_changes", { event: "DELETE", schema: "public", table }, changed);
+      .on("postgres_changes", { event: "DELETE", schema: "public", table }, () => changed());
 
     let cancelled = false;
     supabase.auth.getSession().then(async ({ data }) => {

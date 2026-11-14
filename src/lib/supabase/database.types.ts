@@ -315,14 +315,14 @@ isOneToOne: false
                   ]
                 },"list_items": {
                   Row: {
-                    "added_by": string | null,"categories": (string)[],"couple_id": string,"created_at": string,"episode": number | null,"id": string,"media_type": string,"notes": string,"season": number | null,"status": string,"tmdb_id": number,"updated_at": string,"watched_on": string | null
+                    "added_by": string | null,"categories": (string)[],"couple_id": string,"created_at": string,"episode": number | null,"id": string,"media_type": string,"notes": string,"season": number | null,"status": string,"tmdb_id": number,"updated_at": string,"updated_by": string | null,"watched_on": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "added_by"?: string | null,"categories"?: (string)[],"couple_id": string,"created_at"?: string,"episode"?: number | null,"id"?: string,"media_type": string,"notes"?: string,"season"?: number | null,"status"?: string,"tmdb_id": number,"updated_at"?: string,"watched_on"?: string | null
+                    "added_by"?: string | null,"categories"?: (string)[],"couple_id": string,"created_at"?: string,"episode"?: number | null,"id"?: string,"media_type": string,"notes"?: string,"season"?: number | null,"status"?: string,"tmdb_id": number,"updated_at"?: string,"updated_by"?: string | null,"watched_on"?: string | null
                   }
                   Update: {
-                    "added_by"?: string | null,"categories"?: (string)[],"couple_id"?: string,"created_at"?: string,"episode"?: number | null,"id"?: string,"media_type"?: string,"notes"?: string,"season"?: number | null,"status"?: string,"tmdb_id"?: number,"updated_at"?: string,"watched_on"?: string | null
+                    "added_by"?: string | null,"categories"?: (string)[],"couple_id"?: string,"created_at"?: string,"episode"?: number | null,"id"?: string,"media_type"?: string,"notes"?: string,"season"?: number | null,"status"?: string,"tmdb_id"?: number,"updated_at"?: string,"updated_by"?: string | null,"watched_on"?: string | null
                   }
                   Relationships: [
                     {
@@ -343,6 +343,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "titles"
       referencedColumns: ["media_type","tmdb_id"]
+    },{
+      foreignKeyName: "list_items_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
                   ]
                 },"list_ratings": {
@@ -1103,14 +1109,14 @@ isOneToOne: false
                   ]
                 },"watch_nights": {
                   Row: {
-                    "couple_id": string,"created_at": string,"created_by": string | null,"id": string,"link": string | null,"media_type": string | null,"method": string | null,"notes": string,"starts_at": string,"syncplay_room": string | null,"syncplay_server": string | null,"tmdb_id": number | null,"updated_at": string
+                    "couple_id": string,"created_at": string,"created_by": string | null,"id": string,"link": string | null,"media_type": string | null,"method": string | null,"notes": string,"starts_at": string,"syncplay_room": string | null,"syncplay_server": string | null,"tmdb_id": number | null,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "couple_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"link"?: string | null,"media_type"?: string | null,"method"?: string | null,"notes"?: string,"starts_at": string,"syncplay_room"?: string | null,"syncplay_server"?: string | null,"tmdb_id"?: number | null,"updated_at"?: string
+                    "couple_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"link"?: string | null,"media_type"?: string | null,"method"?: string | null,"notes"?: string,"starts_at": string,"syncplay_room"?: string | null,"syncplay_server"?: string | null,"tmdb_id"?: number | null,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "couple_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"link"?: string | null,"media_type"?: string | null,"method"?: string | null,"notes"?: string,"starts_at"?: string,"syncplay_room"?: string | null,"syncplay_server"?: string | null,"tmdb_id"?: number | null,"updated_at"?: string
+                    "couple_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"link"?: string | null,"media_type"?: string | null,"method"?: string | null,"notes"?: string,"starts_at"?: string,"syncplay_room"?: string | null,"syncplay_server"?: string | null,"tmdb_id"?: number | null,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -1131,6 +1137,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "titles"
       referencedColumns: ["media_type","tmdb_id"]
+    },{
+      foreignKeyName: "watch_nights_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
                   ]
                 }

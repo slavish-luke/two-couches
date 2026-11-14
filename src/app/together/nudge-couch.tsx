@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Couch } from "@/components/couch";
 import { NudgeSticker } from "@/components/nudge-sticker";
+import { blush, hop, launch } from "@/lib/couch-moves";
+import { fxLayer, heartPath, sfx, sparkles } from "@/lib/fx";
 import { getMessages } from "@/lib/i18n";
+import { amp, anim, center, flyArc, isCalm } from "@/lib/motion";
 import { NUDGE_FRESH_MS, NUDGE_GAP_MS, NUDGE_KINDS, nudgeWait, type CouchMood, type NudgeKind } from "@/lib/together-rules";
 import { sendNudge } from "./actions";
 
@@ -20,6 +23,11 @@ function waitAfter(sentAt: number) {
  * "starting soon", "ready when you are"). Sending one makes their couch hop with the sticker floating up; so
  * does a nudge from them arriving while you look (`incoming`, the latest one sent to you that you haven't
  * marked seen; it arrives through ListSync). One a minute.
+ *
+ * Sprint 27 (the motion lab's "heart" scene): at Lively and Wild, with both couches on screen, the sticker
+ * flies along an arc from the sender's couch to the other one (trailing little hearts for a heart; the alarm
+ * clock rings when it lands; the popcorn spins), and the catching couch hops and blushes. Calm and reduced
+ * motion keep the hop and floating sticker above.
  */
 export function NudgeCouch(props: {
   partnerName: string;
@@ -38,6 +46,8 @@ export function NudgeCouch(props: {
   const seen = useRef<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const couchRef = useRef<HTMLButtonElement>(null);
+  const stickersRef = useRef<HTMLSpanElement>(null);
+
 
   // A nudge from them arriving live (or one sent moments before the page opened) makes their couch react.
   const { incoming } = props;
@@ -46,7 +56,9 @@ export function NudgeCouch(props: {
     const first = seen.current === null;
     seen.current = incoming.id;
     if (first && Date.now() - Date.parse(incoming.sent_at) > NUDGE_FRESH_MS) return;
-    const timer = setTimeout(() => setReaction({ kind: incoming.kind, key: Date.now() }), 0);
+    const timer = setTimeout(() => {
+      if (document.hidden || !fly(rootRef.current, stickersRef.current, incoming.kind, false)) setReaction({ kind: incoming.kind, key: Date.now() });
+    }, 0);
     return () => {
       clearTimeout(timer);
     };
@@ -102,7 +114,7 @@ export function NudgeCouch(props: {
         return;
       }
       sentAt.current = Date.now();
-      setReaction({ kind, key: Date.now() });
+      if (!fly(rootRef.current, stickersRef.current, kind, true)) setReaction({ kind, key: Date.now() });
       setStatus({ text: t.sent(partnerName) });
     });
   }
@@ -131,6 +143,15 @@ export function NudgeCouch(props: {
           </span>
         )}
       </button>
+
+      {/* The stickers a nudge's flight clones into the effects layer. */}
+      <span ref={stickersRef} hidden aria-hidden>
+        {NUDGE_KINDS.map((kind) => (
+          <span key={kind} data-kind={kind}>
+            <NudgeSticker kind={kind} className="size-10" />
+          </span>
+        ))}
+      </span>
 
       {open && (
         <div
@@ -169,4 +190,65 @@ export function NudgeCouch(props: {
       </p>
     </div>
   );
+}
+
+/** Flies the sticker from one couch to the other; false when it can't (Calm, reduced, a couch off screen). */
+function fly(root: HTMLElement | null, stickers: HTMLElement | null, kind: NudgeKind, toPartner: boolean) {
+  if (isCalm() || !root) return false;
+  const theirs = root.querySelector<SVGElement>(".couch");
+  const mine = root.closest("[data-clocks]")?.querySelector<SVGElement>(".couch:not(.couch-partner)");
+  const sticker = stickers?.querySelector(`[data-kind="${kind}"] svg`);
+  if (!theirs || !mine || !sticker || !onScreen(theirs) || !onScreen(mine)) return false;
+  void flight(kind, sticker, toPartner ? mine : theirs, toPartner ? theirs : mine);
+  return true;
+}
+
+function onScreen(el: Element) {
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+}
+
+/** The thrower squashes, the sticker arcs across (trailing hearts for a heart), and the catcher hops and blushes. */
+async function flight(kind: NudgeKind, sticker: Element, from: SVGElement, to: SVGElement) {
+  const layer = fxLayer();
+  const icon = sticker.cloneNode(true) as SVGElement;
+  icon.classList.add("nudge-flight");
+  layer.append(icon);
+  void launch(from);
+  let last = 0;
+  await flyArc(icon, center(from), center(to), {
+    lift: 130 * amp(),
+    duration: 950,
+    scaleTo: 1.15,
+    spin: kind === "ready" ? 360 : 0,
+    onStep: (x, y, progress) => {
+      if (kind !== "heart" || progress - last < 0.07) return;
+      last = progress;
+      const trail = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      trail.setAttribute("viewBox", "-8 -8 16 16");
+      trail.setAttribute("width", "14");
+      trail.setAttribute("height", "14");
+      trail.innerHTML = `<path d="${heartPath(0, 0, 5)}" fill="var(--stamp)" stroke="var(--outline)" stroke-width="1.4"/>`;
+      trail.style.left = `${x - 7}px`;
+      trail.style.top = `${y - 7}px`;
+      layer.append(trail);
+      void anim(trail, [{ transform: "scale(1)", opacity: 0.9 }, { transform: `translateY(${8 + Math.random() * 16}px) scale(.2)`, opacity: 0 }], {
+        duration: 700,
+        easing: "ease-in",
+      }).finished.then(() => trail.remove());
+    },
+  });
+  const at = icon.style.transform;
+  // The alarm clock rings where it lands.
+  if (kind === "soon") {
+    await anim(icon, [0, 1, 2, 3, 4, 5, 6].map((k) => ({ transform: `${at} rotate(${k % 2 ? 14 : -14}deg)` })), { duration: 500 }).finished;
+  }
+  void anim(icon, [{ opacity: 1 }, { opacity: 0, transform: `${at} scale(.3)` }], { duration: 200, fill: "forwards" }).finished.then(() => icon.remove());
+  const c = center(to);
+  void hop(to);
+  blush(to);
+  if (kind === "heart") sparkles(c.x, c.y - 20, { count: 8, colors: ["var(--blush)", "var(--stamp)"], distance: 55, kind: "heart" });
+  else sparkles(c.x, c.y - 20, { count: 8, distance: 55 });
+  if (kind === "heart") sfx("heart", c.x, c.y - 70);
+  if (kind === "ready") sfx("ready", c.x, c.y - 70);
 }
