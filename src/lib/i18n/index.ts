@@ -13,6 +13,7 @@ import common from "./common";
 import diary from "./diary";
 import discovery from "./discovery";
 import list from "./list";
+import motion from "./motion";
 import nights from "./nights";
 import people from "./people";
 import pick from "./pick";
@@ -26,8 +27,8 @@ import together from "./together";
 import upcoming from "./upcoming";
 
 const dictionaries = {
-  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en, pick: pick.en, places: places.en, reviews: reviews.en, diary: diary.en, discovery: discovery.en, together: together.en, people: people.en, shelf: shelf.en, time: time.en },
-  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr, pick: pick.tr, places: places.tr, reviews: reviews.tr, diary: diary.tr, discovery: discovery.tr, together: together.tr, people: people.tr, shelf: shelf.tr, time: time.tr },
+  en: { common: common.en, list: list.en, title: title.en, account: account.en, browse: browse.en, upcoming: upcoming.en, nights: nights.en, stats: stats.en, pick: pick.en, places: places.en, reviews: reviews.en, diary: diary.en, discovery: discovery.en, together: together.en, people: people.en, shelf: shelf.en, time: time.en, motion: motion.en },
+  tr: { common: common.tr, list: list.tr, title: title.tr, account: account.tr, browse: browse.tr, upcoming: upcoming.tr, nights: nights.tr, stats: stats.tr, pick: pick.tr, places: places.tr, reviews: reviews.tr, diary: diary.tr, discovery: discovery.tr, together: together.tr, people: people.tr, shelf: shelf.tr, time: time.tr, motion: motion.tr },
 } satisfies Record<Language, unknown>;
 
 export type Messages = (typeof dictionaries)["en"];

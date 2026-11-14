@@ -3200,3 +3200,58 @@ html[data-skin="comic"][data-flight="peel"]::view-transition-old(.page-out) {
     scale: 0.97;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------
+   Motion base (Phase 10): the fixed effects layer from src/lib/fx.ts. Each Phase 10 sprint appends its own
+   block below this one. Particles carry every skin's shape; the skin shows one.
+   --------------------------------------------------------------------------------------------------------- */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fx-layer > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.fx-particle {
+  overflow: visible;
+}
+
+.fx-particle [data-shape] {
+  display: none;
+}
+
+.fx-particle [data-shape="sparkle"] {
+  display: inline;
+}
+
+.fx-confetti {
+  border: 2px solid var(--outline);
+}
+
+.fx-sfx {
+  font: 400 40px/1 var(--font-bangers), sans-serif;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--pop);
+  -webkit-text-stroke: 4px var(--outline);
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 var(--stamp);
+  text-transform: uppercase;
+}
+
+.fx-sfx[data-big] {
+  font-size: 52px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-layer {
+    display: none;
+  }
+}

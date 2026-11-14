@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMessages } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n/server";
 import { getCurrentProfile } from "@/lib/session";
-import { DEFAULT_LOOK, LOOK_SCRIPT, PALETTE_COLORS } from "@/lib/theme";
+import { DEFAULT_LOOK, DEFAULT_MOTION, LOOK_SCRIPT, PALETTE_COLORS } from "@/lib/theme";
 import "./globals.css";
 
 // Saturday Morning's faces: Luckiest Guy for cartoon lettering, Fredoka for reading. Both cover Turkish.
@@ -80,6 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       data-skin={DEFAULT_LOOK.skin}
       data-palette={DEFAULT_LOOK.palette}
+      data-motion={DEFAULT_MOTION}
       suppressHydrationWarning
       className={`${luckiest.variable} ${fredoka.variable} ${fredokaTurkish.variable} ${bagel.variable} ${nunito.variable} ${dela.variable} ${rubik.variable} ${bangers.variable} ${shantell.variable} h-full antialiased`}
     >

@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="en" data-look="sunburst" data-level="lively">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@400..700&family=Bangers&family=Shantell+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Looks (values from globals.css) ---------- */
+  :root {
+    --ground: #ffd23f; --ray: #ffc61a; --paper: #fffaf0; --ink: #1d1a2b; --muted: #4a4360; --outline: #1d1a2b;
+    --g-ink: #1d1a2b; --g-muted: #4a4360;
+    --me: #ff8a65; --me-soft: #ffdccf; --pt: #5cc8ff; --pt-soft: #d4f0ff;
+    --stamp: #ff2e93; --on-stamp: #fff; --both: #b0005f; --both-soft: #ffd6ea;
+    --accent: #6a4cf5; --on-accent: #fff; --accent-soft: #e6e0ff; --pop: #ffd23f; --blush: #ff5c8a;
+    --ok: #2fbf71; --ok-soft: #d8f7e6;
+    --display: "Luckiest Guy", sans-serif; --body: Fredoka, sans-serif; --display-case: uppercase;
+    --r-panel: 22px; --r-control: 14px; --sh: 5px; --sh-sm: 3px; --stroke: 3px;
+    --display-fill: #fffaf0;
+  }
+  [data-look="nightowl"] {
+    --ground: #272056; --ray: transparent; --paper: #f6eddc; --outline: #0e0b1f;
+    --g-ink: #f6eddc; --g-muted: #c6bdf0; --stamp: #ff3d9a; --accent: #ff9a3d; --on-accent: #1d1a2b; --accent-soft: #ffe3c7;
+  }
+  [data-look="pow"] {
+    --ground: #fffdf3; --ray: transparent; --paper: #fff; --ink: #111; --muted: #4f4a42; --outline: #111;
+    --g-ink: #111; --g-muted: #4f4a42; --me: #ff9f1c; --me-soft: #ffe2b8; --pt: #9d7cff; --pt-soft: #e6dcff;
+    --stamp: #ff2f8e; --on-stamp: #111; --both: #b8005f; --accent: #00b2f0; --on-accent: #111; --accent-soft: #cdeffd; --pop: #ffe14d;
+    --display: Bangers, sans-serif; --body: "Shantell Sans", sans-serif; --display-fill: #ffe14d;
+    --r-panel: 4px; --r-control: 4px; --sh: 0px; --sh-sm: 0px; --stroke: 4px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scrollbar-color: var(--outline) var(--ground); }
+  html, body { margin: 0; }
+  body { background: var(--ground); color: var(--g-ink); font: 400 17px/1.6 var(--body); font-variant-numeric: tabular-nums; overflow-x: hidden; padding-bottom: 120px; transition: background-color .3s; }
+  ::selection { background: var(--outline); color: var(--paper); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  button { font: inherit; color: inherit; }
+
+  /* The ground: rays that can turn, stars for Night Owl, halftone for POW!. */
+  #ground { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  #rays { position: absolute; left: 50%; top: -10vh; width: 320vmax; height: 320vmax; margin: -160vmax 0 0 -160vmax; background: repeating-conic-gradient(from 0deg, var(--ray) 0 6deg, transparent 6deg 12deg); transform-origin: center; }
+  #rays.drift { animation: spin var(--drift, 240s) linear infinite; }
+  @supports (animation-timeline: scroll()) {
+    #rays.scrolly { animation: spin linear both; animation-timeline: scroll(root); animation-range: 0 100%; }
+  }
+  @keyframes spin { to { transform: rotate(var(--turn, 360deg)); } }
+  .stars { position: absolute; inset: 0; opacity: 0; transition: opacity .4s; background:
+    radial-gradient(1.6px 1.6px at 12% 18%, #fff3c4 99%, transparent), radial-gradient(1.2px 1.2px at 32% 64%, #fff3c4 99%, transparent),
+    radial-gradient(2px 2px at 54% 12%, #fff3c4 99%, transparent), radial-gradient(1.2px 1.2px at 72% 40%, #fff3c4 99%, transparent),
+    radial-gradient(1.6px 1.6px at 88% 76%, #fff3c4 99%, transparent), radial-gradient(1.2px 1.2px at 22% 88%, #fff3c4 99%, transparent),
+    radial-gradient(1.8px 1.8px at 64% 84%, #fff3c4 99%, transparent), radial-gradient(1.2px 1.2px at 92% 22%, #fff3c4 99%, transparent);
+    background-size: 520px 520px; }
+  .stars.b { background-position: 260px 180px; }
+  [data-look="nightowl"] .stars { opacity: .55; }
+  [data-look="nightowl"]:not([data-level="calm"]) .stars { animation: twinkle 3.6s ease-in-out infinite alternate; }
+  [data-look="nightowl"]:not([data-level="calm"]) .stars.b { animation-delay: -1.8s; }
+  @keyframes twinkle { from { opacity: .2; } to { opacity: .7; } }
+  #dots { position: absolute; inset: 0; opacity: 0; background: radial-gradient(rgb(17 17 17 / .09) 1.2px, transparent 1.6px) 0 0 / 8px 8px; }
+  [data-look="pow"] #dots { opacity: 1; }
+
+  #fx { position: fixed; inset: 0; z-index: 90; overflow: hidden; pointer-events: none; }
+  #fx > * { position: absolute; left: 0; top: 0; }
+
+  /* ---------- App chrome ---------- */
+  .site { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px clamp(16px, 4vw, 40px); background: color-mix(in srgb, var(--ground) 88%, transparent); backdrop-filter: blur(6px); }
+  .logo { display: flex; align-items: center; gap: 6px; font: 400 26px/1 var(--display); text-transform: var(--display-case); color: var(--display-fill); -webkit-text-stroke: 2px var(--outline); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--outline); white-space: nowrap; }
+  .logo .word { rotate: -2deg; }
+  nav { position: relative; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--paper); border: var(--stroke) solid var(--outline); box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); color: var(--ink); }
+  nav button { position: relative; z-index: 1; border: 0; background: none; font-weight: 700; font-size: 15px; padding: 5px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: color .2s; }
+  nav button[aria-current] { color: var(--on-accent); }
+  nav .pill { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; background: var(--accent); border: 2px solid var(--outline); border-radius: 999px; }
+  nav .count { position: relative; display: inline-flex; overflow: hidden; height: 1.3em; vertical-align: -0.2em; margin-left: 4px; min-width: 1.4em; justify-content: center; background: var(--pop); color: var(--ink); border: 2px solid var(--outline); border-radius: 999px; font-size: 12px; line-height: 1.1; padding: 0 4px; }
+  nav .count span { display: block; }
+  @media (max-width: 640px) {
+    .logo .word { display: none; }
+    nav { flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    nav button { padding: 5px 8px; font-size: 13px; }
+  }
+
+  /* ---------- Page ---------- */
+  main { max-width: 1240px; margin: 0 auto; padding: 8px clamp(16px, 4vw, 40px) 40px; }
+  .hello { max-width: 70ch; }
+  h1, .display { font: 400 clamp(2.4rem, 6vw, 4rem)/.95 var(--display); text-transform: var(--display-case); letter-spacing: .02em; color: var(--display-fill); -webkit-text-stroke: var(--stroke) var(--outline); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--outline); margin: 18px 0 14px; }
+  .hello p { margin: 0 0 10px; color: var(--g-ink); }
+  .hello p.small { color: var(--g-muted); font-size: 15px; }
+  h2.act { font: 400 clamp(1.6rem, 3vw, 2.2rem)/1 var(--display); text-transform: var(--display-case); color: var(--display-fill); -webkit-text-stroke: 2.5px var(--outline); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--outline); margin: 48px 0 6px; letter-spacing: .02em; }
+  .act-note { margin: 0 0 18px; color: var(--g-muted); max-width: 70ch; font-size: 15px; }
+  .scenes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); gap: 24px; }
+
+  .scene { background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: var(--r-panel); box-shadow: var(--sh) var(--sh) 0 var(--outline); padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  [data-look="pow"] .scene:nth-child(odd) { rotate: -.4deg; } [data-look="pow"] .scene:nth-child(even) { rotate: .3deg; }
+  .scene h3 { margin: 0; font: 400 1.5rem/1 var(--display); text-transform: var(--display-case); letter-spacing: .03em; }
+  .scene .where { margin: -4px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .scene .about { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); }
+  .stage { position: relative; min-height: 250px; border-radius: calc(var(--r-panel) - 8px); background: var(--ground); border: 2px solid var(--outline); overflow: hidden; display: grid; place-items: center; padding: 18px; color: var(--g-ink); isolation: isolate; }
+  .stage.rays::before { content: ""; position: absolute; inset: -50%; z-index: -1; background: repeating-conic-gradient(from 0deg at 50% 0%, var(--ray) 0 6deg, transparent 6deg 12deg); }
+  [data-look="pow"] .stage { background: #fffdf3 radial-gradient(rgb(17 17 17 / .1) 1.2px, transparent 1.6px) 0 0 / 8px 8px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .verdict { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; border-top: 2px dashed color-mix(in srgb, var(--outline) 25%, transparent); padding-top: 10px; margin-top: 2px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .verdict span { margin-right: 4px; }
+
+  /* Controls */
+  .btn { position: relative; display: inline-flex; align-items: center; gap: 6px; font: 400 1.02rem/1 var(--display); text-transform: var(--display-case); letter-spacing: .04em; padding: 10px 16px 8px; border-radius: var(--r-control); border: var(--stroke) solid var(--outline); background: var(--pop); color: var(--ink); box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); cursor: pointer; transform-origin: 50% 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .btn.quiet { font: 600 15px/1.2 var(--body); text-transform: none; letter-spacing: 0; background: var(--paper); padding: 7px 13px; }
+  .btn:active { translate: 1px 1px; box-shadow: 1px 1px 0 var(--outline); }
+  .chip { position: relative; overflow: hidden; isolation: isolate; font: 600 14px/1.2 var(--body); padding: 6px 13px; border-radius: 999px; border: 2px solid var(--outline); background: var(--paper); color: var(--ink); cursor: pointer; transition: color .15s; }
+  .chip .fill { position: absolute; inset: 0; z-index: -1; background: var(--accent); clip-path: circle(0 at 50% 50%); }
+  .chip[aria-pressed="true"] { color: var(--on-accent); }
+  .chip[aria-pressed="true"] .fill { clip-path: circle(150% at 50% 50%); }
+  .verdict .chip[aria-pressed="true"][data-v="keep"] .fill { background: var(--ok); }
+  .verdict .chip[aria-pressed="true"][data-v="keep"] { color: #0b2a19; }
+  .verdict .chip[aria-pressed="true"][data-v="skip"] .fill { background: var(--ink); }
+  .verdict .chip[aria-pressed="true"][data-v="skip"] { color: var(--paper); }
+  .verdict .chip[aria-pressed="true"][data-v="maybe"] .fill { background: var(--pop); }
+  .verdict .chip[aria-pressed="true"][data-v="maybe"] { color: var(--ink); }
+
+  /* Couch */
+  .couch { overflow: visible; transform-origin: 50% 100%; animation: bob 3.2s ease-in-out infinite; }
+  .couch.pt { animation-delay: -.6s; }
+  .couch .c-all, .couch .c-eyes ellipse, .couch .c-yawn, .couch .c-blush circle, .couch .c-mouth { transform-box: fill-box; transform-origin: center; }
+  .couch .c-all { transform-origin: 50% 100%; }
+  .couch .c-eyes ellipse { animation: blink 4.5s infinite; }
+  .couch.pt .c-eyes ellipse { animation-delay: 1.7s; }
+  @keyframes bob { 50% { transform: translateY(-2px) scaleY(1.03); } }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+  /* Posters */
+  .pframe { position: relative; container-type: inline-size; border-radius: 10px; border: var(--stroke) solid var(--outline); background: var(--outline); box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); aspect-ratio: 2 / 3; }
+  .pframe img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
+  .ptab { position: absolute; z-index: 2; top: 0; left: 10%; translate: 0 -55%; rotate: -4deg; padding: 4px 9px 3px; border: 2.5px solid var(--outline); border-radius: 8px; box-shadow: 2px 2px 0 var(--outline); font: 400 clamp(11px, 11cqi, 18px)/1 var(--display); text-transform: var(--display-case); letter-spacing: .03em; white-space: nowrap; }
+  .ptab.both { background: var(--stamp); color: var(--paper); -webkit-text-stroke: 1.2px var(--outline); paint-order: stroke fill; }
+  .ptab.one { background: var(--paper); color: var(--ink); font: 700 12px/1 var(--body); text-transform: none; display: inline-flex; gap: 5px; align-items: center; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--outline); }
+  .dot.me { background: var(--me); } .dot.pt { background: var(--pt); }
+
+  /* 1 Trading cards */
+  .tilt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 100%; padding-top: 12px; perspective: 800px; }
+  .tcard { position: relative; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transform-style: preserve-3d; transition: transform .25s cubic-bezier(.16, 1, .3, 1); will-change: transform; outline: none; }
+  .tcard .tt { font: 600 13px/1.25 var(--body); color: var(--g-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tcard .shine { position: absolute; inset: 0; border-radius: 7px; pointer-events: none; opacity: 0; transition: opacity .2s; background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgb(255 255 255 / .55), transparent 55%); mix-blend-mode: soft-light; }
+  .tcard .holo { position: absolute; inset: 0; border-radius: 7px; pointer-events: none; opacity: 0; transition: opacity .2s; background: conic-gradient(from calc(var(--hx, 0) * 1deg) at var(--mx, 50%) var(--my, 50%), #ff5c8a, #ffd23f, #5cc8ff, #6a4cf5, #ff5c8a); mix-blend-mode: color-dodge; }
+  .tcard:hover .shine, .tcard:focus-visible .shine { opacity: 1; }
+  [data-level="wild"] .tcard[data-both]:hover .holo { opacity: .38; }
+  [data-level="calm"] .tcard:hover, [data-level="calm"] .tcard:focus-visible { transform: translateY(-4px); }
+  .tcard:focus-visible .pframe { outline: 3px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 520px) { .tilt-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* 2 Controls */
+  .ctl-row { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+  .ctl-row .btn.big { font-size: 1.3rem; padding: 13px 22px 11px; }
+  .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; border: 0; background: none; font: 700 16px/1.2 var(--body); color: var(--g-ink); padding: 0; }
+  .switch .track { position: relative; width: 92px; height: 42px; border-radius: 999px; border: var(--stroke) solid var(--outline); background: var(--paper); box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); transition: background-color .25s; }
+  .switch[aria-checked="true"] .track { background: var(--stamp); }
+  .switch .mini { position: absolute; top: 5px; }
+  .switch .mini.me { left: 4px; } .switch .mini.pt { right: 4px; }
+  .switch .mini svg { animation: none; }
+
+  /* 3 Stars */
+  .rate { display: grid; gap: 12px; justify-items: center; }
+  .rate-row { display: flex; align-items: center; gap: 4px; }
+  .rate-row .who { font: 700 14px var(--body); width: 54px; text-align: right; margin-right: 8px; color: var(--g-ink); }
+  .star { border: 0; background: none; padding: 2px; cursor: pointer; line-height: 0; }
+  .star svg { width: 38px; height: 38px; overflow: visible; }
+  .star path { fill: var(--paper); stroke: var(--outline); stroke-width: 2.5; stroke-linejoin: round; transition: fill .15s; }
+  .star.on path { fill: var(--pop); }
+  .pt-row .star { cursor: default; }
+  .pt-row .star.on path { fill: var(--pt); }
+  .pt-row .star:not(.on) { opacity: .35; }
+  .sticker { position: absolute; z-index: 5; font: 400 26px/1 var(--display); text-transform: var(--display-case); padding: 9px 16px 7px; border: var(--stroke) solid var(--outline); border-radius: 12px; box-shadow: 3px 3px 0 var(--outline); background: var(--paper); color: var(--ink); rotate: -6deg; pointer-events: none; opacity: 0; }
+  .sticker.hot { background: var(--stamp); color: var(--paper); -webkit-text-stroke: 1.5px var(--outline); paint-order: stroke fill; }
+
+  /* 4 Add flies */
+  .fly-row { display: grid; grid-template-columns: repeat(3, minmax(0, 120px)); gap: 18px; justify-content: center; align-items: start; }
+  .fly-row figure { margin: 0; display: grid; gap: 10px; justify-items: center; }
+  .fly-row .btn { font-size: .9rem; padding: 8px 11px 6px; }
+  .fly-row .btn[aria-pressed="true"] { background: var(--paper); }
+  .tick { width: 16px; height: 16px; }
+  .tick path { fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* List cards (5, 6, 7) */
+  .lcard { position: relative; display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; width: min(100%, 380px); padding: 10px 14px 10px 10px; background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: 16px; box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); transition: outline-color .8s, background-color .5s; outline: 3px solid transparent; outline-offset: 3px; }
+  .lcard .pframe { border-width: 2px; box-shadow: none; }
+  .lcard b { display: block; font: 700 17px/1.2 var(--body); }
+  .lcard small { font: 600 13px/1.3 var(--body); color: var(--muted); display: flex; gap: 6px; align-items: center; margin-top: 3px; }
+  .lcard.fresh { outline-color: var(--pt); }
+  .lcard.done { background: color-mix(in srgb, var(--paper) 80%, var(--ok-soft)); }
+  .lcard.small { grid-template-columns: 40px 1fr; padding: 7px 12px 7px 7px; gap: 10px; }
+  .lcard.small b { font-size: 15px; }
+  .stamp-mark { position: absolute; left: 58%; top: 50%; z-index: 3; translate: -50% -50%; rotate: -12deg; font: 400 30px/1 var(--display); text-transform: var(--display-case); color: var(--ok); padding: 6px 12px 3px; border: 4px solid var(--ok); border-radius: 10px; background: color-mix(in srgb, var(--paper) 70%, transparent); letter-spacing: .04em; opacity: 0; pointer-events: none; mix-blend-mode: multiply; }
+  [data-look="nightowl"] .stamp-mark { mix-blend-mode: normal; }
+  .stage-col { display: grid; gap: 14px; justify-items: center; width: 100%; }
+  .mini-tabs { display: flex; gap: 6px; }
+  .mini-tab { position: relative; font: 400 15px/1 var(--display); text-transform: var(--display-case); letter-spacing: .03em; padding: 9px 13px 7px; border: 2.5px solid var(--outline); border-radius: 12px 12px 4px 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .mini-tab[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+  .mini-tab .n { position: absolute; top: -10px; right: -8px; min-width: 22px; padding: 2px 5px; font: 700 12px/1.2 var(--body); background: var(--pop); color: var(--ink); border: 2px solid var(--outline); border-radius: 999px; rotate: 6deg; }
+  .deal-list { display: grid; gap: 8px; width: min(100%, 360px); min-height: 186px; align-content: start; }
+
+  /* 7 Partner peek */
+  .peeker { width: 150px; z-index: 95; }
+  .peeker .bubble { position: absolute; right: 70px; bottom: 74px; width: max-content; max-width: 210px; padding: 8px 12px; background: var(--paper); color: var(--ink); border: 3px solid var(--outline); border-radius: 16px; box-shadow: 3px 3px 0 var(--outline); font: 700 14px/1.3 var(--body); transform-origin: 90% 100%; }
+  .peeker .bubble::after { content: ""; position: absolute; right: 14px; bottom: -11px; width: 16px; height: 16px; background: var(--paper); border-right: 3px solid var(--outline); border-bottom: 3px solid var(--outline); rotate: 45deg; }
+  .ripple { position: absolute; inset: -3px; border: 3px solid var(--pt); border-radius: 18px; pointer-events: none; opacity: 0; }
+  .toast { position: absolute; right: 12px; bottom: 12px; padding: 7px 12px; background: var(--paper); color: var(--ink); border: 2.5px solid var(--outline); border-radius: 999px; font: 700 13px/1.2 var(--body); display: flex; gap: 6px; align-items: center; opacity: 0; }
+
+  /* 8 Heart */
+  .clocks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: min(100%, 440px); position: relative; }
+  .clock { background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: 18px; box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); padding: 12px 10px 10px; display: grid; justify-items: center; gap: 2px; }
+  .clock .t { font: 400 30px/1 var(--display); letter-spacing: .03em; }
+  .clock small { font: 600 13px/1.2 var(--body); color: var(--muted); }
+  .apart { position: absolute; left: 50%; top: -12px; translate: -50% 0; z-index: 2; padding: 3px 10px; background: var(--accent); color: var(--on-accent); border: 2px solid var(--outline); border-radius: 999px; font: 700 12px/1.2 var(--body); white-space: nowrap; }
+  .got { font: 700 12px/1.2 var(--body); color: var(--both); min-height: 1.2em; opacity: 0; }
+
+  /* 9 Ready */
+  .night { position: relative; display: grid; grid-template-columns: 92px 1fr; gap: 14px; width: min(100%, 440px); padding: 14px; background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: 18px; box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); overflow: hidden; transition: background-color .5s; isolation: isolate; }
+  .night.go { background: var(--ok-soft); }
+  .night .ttl { font: 700 18px/1.2 var(--body); }
+  .night .cd { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 8px; font: 600 13px var(--body); color: var(--muted); }
+  .digits { display: inline-flex; font: 400 30px/1 var(--display); color: var(--ink); letter-spacing: .02em; }
+  .digit { position: relative; display: inline-block; width: .62em; height: 1em; overflow: hidden; text-align: center; }
+  .digit span { position: absolute; inset: 0; }
+  .seats { position: relative; display: flex; justify-content: space-between; align-items: end; padding: 6px 4px 0; min-height: 70px; }
+  .seat { display: grid; justify-items: center; gap: 2px; font: 700 12px/1.2 var(--body); position: relative; z-index: 2; }
+  .seat .tick { width: 18px; height: 18px; color: var(--ok); }
+  .seat .tick path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .ready-burst { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; z-index: 1; opacity: 0; pointer-events: none; }
+  .ready-burst text { font: 400 15px var(--display); text-transform: var(--display-case); }
+  .curtain { position: absolute; top: 0; bottom: 0; width: 51%; z-index: 6; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 100%, #000 0%) 0 14px, color-mix(in srgb, var(--accent) 78%, #000) 14px 18px, var(--accent) 18px 30px); border: 3px solid var(--outline); transform: translateX(-102%); }
+  .curtain.r { right: 0; transform: translateX(102%); }
+  .curtain.l { left: 0; }
+  .lights { position: absolute; inset: 0; z-index: 7; display: grid; place-items: center; pointer-events: none; font: 400 34px/1 var(--display); text-transform: var(--display-case); color: var(--display-fill); -webkit-text-stroke: 3px var(--outline); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--outline); opacity: 0; }
+
+  /* 10 Both reveal */
+  .where-cols { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; width: min(100%, 460px); align-items: start; }
+  .wcol { background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: 16px; box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); padding: 10px; display: grid; gap: 7px; min-height: 160px; align-content: start; position: relative; z-index: 1; }
+  .wcol h4 { margin: 0 0 2px; font: 700 13px/1.2 var(--body); display: flex; gap: 6px; align-items: center; }
+  .svc { font: 700 14px/1 var(--body); padding: 8px 10px; border-radius: 10px; border: 2px solid var(--outline); background: var(--paper); opacity: 0; }
+  .svc.match { background: var(--both-soft); border-color: var(--stamp); }
+  .link-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+  .link-svg path { fill: none; stroke: var(--stamp); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .both-burst { position: absolute; left: 50%; top: -6px; width: 112px; height: 112px; margin-left: -56px; z-index: 3; opacity: 0; pointer-events: none; }
+  .both-burst text { font: 400 20px var(--display); text-transform: var(--display-case); }
+
+  /* 11 Popcorn */
+  .pop-stage { position: relative; width: min(100%, 420px); height: 170px; }
+  .pop-stage .couch { position: absolute; bottom: 40px; }
+  .pop-stage .couch.me { left: 0; } .pop-stage .couch.pt { right: 0; }
+  .kernel { position: absolute; left: 0; top: 0; width: 22px; height: 20px; }
+  .skel { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 6px; }
+  .skel i { display: block; height: 10px; border-radius: 6px; background: color-mix(in srgb, var(--g-ink) 18%, transparent); }
+  .skel i:nth-child(2) { width: 70%; }
+
+  /* 12 Letters */
+  .letters { font: 400 clamp(2.2rem, 7vw, 3.6rem)/1 var(--display); text-transform: var(--display-case); letter-spacing: .02em; color: var(--display-fill); -webkit-text-stroke: var(--stroke) var(--outline); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--outline); margin: 0; text-align: center; }
+  .letters .ch { display: inline-block; transform-origin: 50% 100%; }
+  .letters .sp { display: inline-block; width: .3em; }
+  [data-level="wild"] .letters.waving .ch { animation: wave 1.2s ease-in-out infinite; animation-delay: calc(var(--i) * -90ms); }
+  @keyframes wave { 50% { transform: translateY(-.12em) rotate(-3deg); } }
+
+  /* 14 Stats */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+  .tile { background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: 14px; box-shadow: var(--sh-sm) var(--sh-sm) 0 var(--outline); padding: 10px; display: grid; gap: 2px; min-width: 0; }
+  .tile small { font: 600 12px/1.25 var(--body); color: var(--muted); }
+  .odo { display: inline-flex; font: 400 32px/1 var(--display); height: 1em; overflow: hidden; }
+  .odo .col { display: flex; flex-direction: column; }
+  .odo .col span { height: 1em; }
+  .meter { grid-column: 1 / -1; display: grid; gap: 6px; }
+  .meter .bar { position: relative; height: 26px; border: var(--stroke) solid var(--outline); border-radius: 999px; background: var(--paper); overflow: hidden; }
+  .meter .fill { position: absolute; inset: 0; background: linear-gradient(90deg, var(--me), var(--stamp) 50%, var(--pt)); transform-origin: 0 50%; transform: scaleX(.82); }
+  .meter .lbl { display: flex; justify-content: space-between; font: 700 14px var(--body); color: var(--g-ink); }
+  .months { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; align-items: end; height: 70px; }
+  .months i { display: block; background: var(--accent); border: 2px solid var(--outline); border-radius: 6px 6px 2px 2px; transform-origin: 50% 100%; }
+
+  /* 15 Idle */
+  .idle-stage { display: flex; gap: 40px; align-items: end; justify-content: center; position: relative; padding-top: 40px; }
+
+  /* 16 Milestone */
+  .ms { position: relative; display: grid; place-items: center; gap: 14px; }
+  .ms .sticker { position: static; opacity: 1; font-size: 30px; }
+
+  /* Picks */
+  .picks { margin-top: 48px; background: var(--paper); color: var(--ink); border: var(--stroke) solid var(--outline); border-radius: var(--r-panel); box-shadow: var(--sh) var(--sh) 0 var(--outline); padding: 20px; display: grid; gap: 12px; }
+  .picks h2 { margin: 0; font: 400 2rem/1 var(--display); text-transform: var(--display-case); }
+  .picks pre { margin: 0; white-space: pre-wrap; font: 500 15px/1.6 var(--body); background: color-mix(in srgb, var(--ground) 30%, var(--paper)); border: 2px solid var(--outline); border-radius: 12px; padding: 12px 14px; }
+
+  /* Control bar */
+  .lab { position: fixed; z-index: 100; left: 8px; right: 8px; bottom: 10px; display: flex; justify-content: center; pointer-events: none; }
+  .lab-in { pointer-events: auto; display: flex; gap: 14px; align-items: center; background: #1d1a2bf2; color: #fffaf0; padding: 9px 12px; border-radius: 18px; box-shadow: 0 10px 30px #0006; overflow-x: auto; max-width: 100%; scrollbar-width: thin; }
+  .grp { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+  .grp > span { font: 600 13px var(--body); padding-right: 4px; color: #d9d3f0; white-space: nowrap; }
+  .lab button { font: 700 13px/1 Fredoka, sans-serif; border: 2px solid #fffaf0; background: transparent; color: #fffaf0; border-radius: 999px; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+  .lab button[aria-pressed="true"] { background: #ffd23f; color: #1d1a2b; border-color: #ffd23f; }
+
+  /* Reduced motion (the toggle and the real setting) */
+  [data-rm] .couch, [data-rm] .couch .c-eyes ellipse { animation: none; }
+  [data-rm] #rays { animation: none !important; }
+  [data-rm] .stars { animation: none !important; }
+  [data-rm] .tcard { transition: none; }
+  [data-rm] .letters .ch { animation: none !important; }
+</style>
+</head>
+<body>
+<div id="ground" aria-hidden="true"><div id="rays"></div><div class="stars"></div><div class="stars b"></div><div id="dots"></div></div>
+
+<header class="site">
+  <div class="logo"><span id="logo-couches"></span><span class="word">Two Couches</span></div>
+  <nav aria-label="Pretend app sections">
+    <span class="pill" id="pill"></span>
+    <button id="nav-list" aria-current="page"><span data-t="list">List</span><span class="count" id="list-count"><span>12</span></span></button>
+    <button data-t="browse">Browse</button>
+    <button data-t="soon">Soon</button>
+    <button data-t="nights">Nights</button>
+    <button data-t="stats">Stats</button>
+  </nav>
+</header>
+
+<main>
+  <section class="hello">
+    <h1>Motion lab</h1>
+    <p>Sixteen ways the app could move more. Each one is wired to something real in Two Couches, with real posters. Press its buttons, hover the posters, and try the dial at the bottom.</p>
+    <p>The <b>Motion</b> dial is a proposal too: a per-device setting next to Data saver. <b>Calm</b> is roughly the app today, <b>Lively</b> would be the new default, <b>Wild</b> turns everything up (screen shakes, confetti, comic sound words in POW!). Reduced motion on the device always wins.</p>
+    <p class="small">Mark each idea Keep, Maybe or Skip. Your picks gather at the bottom, ready to copy and paste back to me.</p>
+  </section>
+  <div id="acts"></div>
+  <section class="picks" id="picks">
+    <h2>Your picks</h2>
+    <pre id="picks-text"></pre>
+    <div class="tools"><button class="btn" id="copy">Copy my picks</button><button class="btn quiet" id="clear">Clear</button></div>
+  </section>
+</main>
+
+<div class="lab" role="region" aria-label="Lab controls"><div class="lab-in">
+  <div class="grp" data-group="level"><span>Motion</span><button data-v="calm">Calm</button><button data-v="lively" aria-pressed="true">Lively</button><button data-v="wild">Wild</button></div>
+  <div class="grp" data-group="speed"><span>Speed</span><button data-v="1" aria-pressed="true">1×</button><button data-v="0.5">½×</button><button data-v="0.2">⅕×</button></div>
+  <div class="grp" data-group="rm"><span>Reduced motion</span><button data-v="off" aria-pressed="true">Off</button><button data-v="on">On</button></div>
+  <div class="grp" data-group="look"><span>Look</span><button data-v="sunburst" aria-pressed="true">Sunburst</button><button data-v="nightowl">Night Owl</button><button data-v="pow">POW!</button></div>
+  <div class="grp" data-group="lang"><span>Text</span><button data-v="en" aria-pressed="true">EN</button><button data-v="tr">TR</button></div>
+</div></div>
+
+<div id="fx" aria-hidden="true"></div>
+
+<script>
+/* ======================= data ======================= */
+const P = (path, w = "w342") => `https://image.tmdb.org/t/p/${w}${path}`;
+const T_ = {
+  dune: { en: "Dune: Part Two", tr: "Dune: Çöl Gezegeni - Bölüm İki", p: "/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg", ptr: "/tihf8Trht9zP3scmUQfvGlAY9FU.jpg" },
+  spirited: { en: "Spirited Away", tr: "Ruhların Kaçışı", p: "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", ptr: "/xvOEOMCzfV8qXkd1n1btZ8q4Psd.jpg" },
+  severance: { en: "Severance", tr: "Severance", p: "/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg" },
+  bear: { en: "The Bear", tr: "The Bear", p: "/eKfVzzEazSIjJMrw9ADa2x8ksLz.jpg" },
+  paddington: { en: "Paddington 2", tr: "Ayı Paddington 2", p: "/1OJ9vkD5xPt3skC6KguyXAgagRZ.jpg" },
+  eeaao: { en: "Everything Everywhere All at Once", tr: "Her Şey Her Yerde Aynı Anda", p: "/u68AjlvlutfEIcpmbYpKcdi09ut.jpg", ptr: "/vt5Fd1wouNEL7HN3TQ0PMls4auE.jpg" },
+  pastlives: { en: "Past Lives", tr: "Başka Bir Hayatta", p: "/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg", ptr: "/ndE4NbhoNGFcnICbkhvpExdFp8W.jpg" },
+  madmax: { en: "Mad Max: Fury Road", tr: "Mad Max: Fury Road", p: "/ulcAi4dKpAjHwYGS08vNyx9H6I9.jpg", ptr: "/mnKUoJFdNbQVs4f7nEGW6p7CgsA.jpg" },
+  lastofus: { en: "The Last of Us", tr: "The Last of Us", p: "/dmo6TYuuJgaYinXBPjrgG9mB5od.jpg", ptr: "/cdbDsn2hqLL7x804GixzPP8AiBE.jpg" },
+  insideout: { en: "Inside Out 2", tr: "Ters Yüz 2", p: "/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg", ptr: "/xYqeUheNCep7ll9AotOcclGhP0X.jpg" },
+  soul: { en: "Soul", tr: "Soul", p: "/hm58Jw4Lw8OIeECIq5qyPYhAeRJ.jpg", ptr: "/nEnPHSZlr0zOqW1LVyFrkvbyhpr.jpg" },
+  oppenheimer: { en: "Oppenheimer", tr: "Oppenheimer", p: "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg", ptr: "/mmZi0tyPFfbcCqEsJIPxVldCPOL.jpg" },
+};
+const name = (k) => T_[k][state.lang];
+const poster = (k, w) => P(state.lang === "tr" && T_[k].ptr ? T_[k].ptr : T_[k].p, w);
+
+const STR = {
+  en: { list: "List", browse: "Browse", soon: "Soon", nights: "Nights", stats: "Stats", add: "+ Add", onList: "On the list", both: "Both!", onlySam: "Only Sam",
+    films: "Films", series: "Series", canBoth: "We can both watch", you: "You", sam: "Sam", samRates: "Sam rates it", same: "Same!", close: "Close!", split: "Ooh, a split",
+    upNext: "Up next", watched: "Watched", dropped: "Dropped", watchedIt: "We watched it", dropIt: "Drop it", back: "Bring it back", stampWord: "Watched!",
+    added: "Sam · 4 Nov", samAdds: "Sam adds a title", samRatesOne: "Sam rates one", samTicks: "Sam ticks one watched",
+    bubAdd: (t) => `I added ${t}!`, bubRate: "4 stars from me", bubTick: "We watched this one!", toastAdd: (t) => `Sam added ${t}`, toastRate: "Sam rated it 4 stars", toastTick: "Sam marked it watched",
+    heart: "Send a heart", soonBtn: "Starting soon", readyBtn: "Ready when you are", apart: "13 h apart", got: "Sam got it",
+    imReady: "I'm ready", samReady: "Sam's ready", countdown: "Start a 10 s countdown", reset: "Reset", startsIn: "Starts in", bothReady: "Both ready!", lightsDown: "Lights down!",
+    check: "Check where to watch", youGB: "You · GB", samNZ: "Sam · NZ",
+    words: ["Watch nights", "Coming soon", "Up next"], replay: "Play again",
+    films2: "Films together", hours: "Hours", nights2: "Watch nights", taste: "Taste match", playStats: "Open Stats",
+    glance: "Glance", yawn: "Yawn", nudge: "Nudge", hi5: "High five", doze: "Doze off", auto: "By themselves",
+    milestone: "Film #50 together!", celebrate: "Celebrate",
+    sfx: { add: "ZIP!", stamp: "THWACK!", drop: "PLOP!", both: "KA-POW!", heart: "SMOOCH!", ready: "YES!", five: "WOW!", same: "BINGO!", lights: "SHHH!" } },
+  tr: { list: "Liste", browse: "Keşfet", soon: "Yakında", nights: "Geceler", stats: "İstatistik", add: "+ Ekle", onList: "Listede", both: "İkimiz!", onlySam: "Yalnız Sam",
+    films: "Filmler", series: "Diziler", canBoth: "İkimiz de izleyebiliriz", you: "Sen", sam: "Sam", samRates: "Sam puanlasın", same: "Aynı!", close: "Yakın!", split: "Fikirler ayrı",
+    upNext: "Sırada", watched: "İzlendi", dropped: "Bırakıldı", watchedIt: "İzledik", dropIt: "Bırak", back: "Geri getir", stampWord: "İzlendi!",
+    added: "Sam · 4 Kas", samAdds: "Sam bir şey eklesin", samRatesOne: "Sam puanlasın", samTicks: "Sam izlendi desin",
+    bubAdd: (t) => `Ekledim: ${t}`, bubRate: "Benden 4 yıldız", bubTick: "Bunu izledik!", toastAdd: (t) => `Sam ekledi: ${t}`, toastRate: "Sam 4 yıldız verdi", toastTick: "Sam izlendi olarak işaretledi",
+    heart: "Kalp gönder", soonBtn: "Birazdan başlıyor", readyBtn: "Hazırım", apart: "13 saat fark", got: "Sam aldı",
+    imReady: "Hazırım", samReady: "Sam hazır", countdown: "10 sn geri sayım", reset: "Baştan", startsIn: "Başlamasına", bothReady: "İkiniz de hazır!", lightsDown: "Işıklar sönüyor!",
+    check: "Nerede izlenir?", youGB: "Sen · GB", samNZ: "Sam · NZ",
+    words: ["İzleme geceleri", "Yakında", "Sırada"], replay: "Tekrar",
+    films2: "Birlikte film", hours: "Saat", nights2: "İzleme gecesi", taste: "Zevk uyumu", playStats: "İstatistikleri aç",
+    glance: "Bakış", yawn: "Esneme", nudge: "Dürtme", hi5: "Çak bir beşlik", doze: "Uyuklama", auto: "Kendi kendine",
+    milestone: "Birlikte 50. film!", celebrate: "Kutla",
+    sfx: { add: "VIIN!", stamp: "ŞAK!", drop: "PAT!", both: "KA-BUM!", heart: "MUCK!", ready: "EVET!", five: "VAY!", same: "TAMAM!", lights: "ŞŞŞ!" } },
+};
+const t = (k) => STR[state.lang][k];
+
+/* ======================= state & helpers ======================= */
+const root = document.documentElement;
+const state = { level: "lively", speed: 1, rm: matchMedia("(prefers-reduced-motion: reduce)").matches, look: "sunburst", lang: "en" };
+const AMP = { calm: .5, lively: 1, wild: 1.6 };
+const amp = () => (state.rm ? 0 : AMP[state.level]);
+const calm = () => state.rm || state.level === "calm";
+const wild = () => !state.rm && state.level === "wild";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const fx = $("#fx");
+const rand = (a, b) => a + Math.random() * (b - a);
+const wait = (ms) => new Promise((r) => setTimeout(r, ms / state.speed));
+function anim(el, frames, opts) {
+  const a = el.animate(frames, { fill: "none", ...opts });
+  a.playbackRate = state.speed;
+  // A cancelled animation (Reset, a second tap) is fine: never let it throw.
+  Object.defineProperty(a, "finished", { value: a.finished.catch(() => a) });
+  return a;
+}
+const SPRING = "cubic-bezier(.3, 1.45, .5, 1)";
+const OUT = "cubic-bezier(.16, 1, .3, 1)";
+const center = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, r }; };
+const sc = (v) => 1 + (v - 1) * amp(); // scale a squash value by intensity
+
+function burstPath(points, r1, r2, cx, cy) {
+  let d = "";
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 ? r2 : r1, a = (Math.PI * i) / points - Math.PI / 2;
+    d += `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }
+  return d + "Z";
+}
+function starPath(cx, cy, r1, r2) { return burstPath(5, r1, r2, cx, cy); }
+const sparklePath = (x, y, r) => { const w = r * .32; return `M${x} ${y - r}Q${x + w} ${y - w} ${x + r} ${y}Q${x + w} ${y + w} ${x} ${y + r}Q${x - w} ${y + w} ${x - r} ${y}Q${x - w} ${y - w} ${x} ${y - r}Z`; };
+const heartPath = (x, y, r) => `M${x} ${y + r}C${x - r * 1.6} ${y - r * .1} ${x - r * .9} ${y - r * 1.5} ${x} ${y - r * .5}C${x + r * .9} ${y - r * 1.5} ${x + r * 1.6} ${y - r * .1} ${x} ${y + r}Z`;
+const tickSvg = `<svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path pathLength="1" d="M4 10.5l4 4 8-9"/></svg>`;
+
+function couch(who, size = 56, cls = "") {
+  const fill = who === "me" ? "var(--me)" : "var(--pt)";
+  return `<svg class="couch ${who} ${cls}" width="${size}" height="${Math.round(size * .78)}" viewBox="0 0 64 50" aria-hidden="true">
+    <g class="c-all" stroke="var(--outline)" stroke-width="3">
+      <rect x="9" y="8" width="46" height="24" rx="9" fill="${fill}"/>
+      <rect x="3" y="20" width="14" height="22" rx="6" fill="${fill}"/>
+      <rect x="47" y="20" width="14" height="22" rx="6" fill="${fill}"/>
+      <rect x="13" y="28" width="38" height="14" rx="5" fill="${fill}"/>
+      <path d="M10 42v5M54 42v5" stroke-linecap="round"/>
+      <g class="c-eyes" stroke="none"><ellipse cx="26" cy="19" rx="2.6" ry="3.4" fill="var(--outline)"/><ellipse cx="38" cy="19" rx="2.6" ry="3.4" fill="var(--outline)"/></g>
+      <path class="c-mouth" d="M28 25q4 3.5 8 0" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+      <ellipse class="c-yawn" cx="32" cy="26" rx="2.6" ry="2.8" fill="var(--outline)" stroke="none" opacity="0"/>
+      <g class="c-blush" stroke="none"><circle cx="21" cy="24" r="2.6" fill="var(--blush)" opacity=".45"/><circle cx="43" cy="24" r="2.6" fill="var(--blush)" opacity=".45"/></g>
+      <g class="c-z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0"><path d="M55 2h5l-5 5h5"/><path d="M61 -6h3.5l-3.5 3.5h3.5" stroke-width="1.6"/></g>
+    </g></svg>`;
+}
+
+/* Particles and comic words, drawn into the fixed #fx layer so they never widen the page. */
+function sparkles(x, y, n = 10, colors = ["var(--pop)", "var(--stamp)", "var(--pt)", "var(--me)"], dist = 70, shape = "sparkle") {
+  if (state.rm) return;
+  const count = Math.round(n * (state.level === "calm" ? .5 : state.level === "wild" ? 1.6 : 1));
+  for (let i = 0; i < count; i++) {
+    const s = rand(8, 16);
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    el.setAttribute("viewBox", "-10 -10 20 20"); el.setAttribute("width", s); el.setAttribute("height", s);
+    el.style.left = x - s / 2 + "px"; el.style.top = y - s / 2 + "px"; el.style.overflow = "visible";
+    const d = shape === "heart" ? heartPath(0, 0, 6) : sparklePath(0, 0, 9);
+    el.innerHTML = `<path d="${d}" fill="${colors[i % colors.length]}" stroke="var(--outline)" stroke-width="1.6" stroke-linejoin="round"/>`;
+    fx.append(el);
+    const a = rand(0, Math.PI * 2), r = dist * rand(.55, 1.15) * Math.max(.7, amp());
+    anim(el, [
+      { transform: "translate(0,0) scale(0) rotate(0deg)", opacity: 1 },
+      { transform: `translate(${Math.cos(a) * r}px, ${Math.sin(a) * r}px) scale(1) rotate(${rand(-90, 90)}deg)`, opacity: 1, offset: .6 },
+      { transform: `translate(${Math.cos(a) * r * 1.15}px, ${Math.sin(a) * r * 1.15 + 14}px) scale(.3) rotate(${rand(-120, 120)}deg)`, opacity: 0 },
+    ], { duration: rand(650, 900), easing: OUT }).finished.then(() => el.remove());
+  }
+}
+function sfx(key, x, y) {
+  if (state.look !== "pow" || calm()) return;
+  const el = document.createElement("div");
+  el.textContent = t("sfx")[key];
+  el.style.cssText = `font: 400 ${wild() ? 52 : 40}px/1 Bangers, sans-serif; color: #ffe14d; -webkit-text-stroke: 4px #111; paint-order: stroke fill; text-shadow: 4px 4px 0 #ff2f8e; letter-spacing: .04em; white-space: nowrap;`;
+  fx.append(el);
+  const w = el.offsetWidth, h = el.offsetHeight;
+  const rot = rand(-14, 14);
+  el.style.left = Math.min(innerWidth - w - 8, Math.max(8, x - w / 2)) + "px"; el.style.top = Math.max(8, y - h / 2) + "px";
+  anim(el, [
+    { transform: `scale(0) rotate(${rot - 20}deg)`, opacity: 1 },
+    { transform: `scale(1.25) rotate(${rot}deg)`, opacity: 1, offset: .25 },
+    { transform: `scale(1) rotate(${rot}deg)`, opacity: 1, offset: .4 },
+    { transform: `scale(1.05) rotate(${rot}deg)`, opacity: 1, offset: .8 },
+    { transform: `scale(1.2) rotate(${rot}deg)`, opacity: 0 },
+  ], { duration: 1000, easing: "ease-out" }).finished.then(() => el.remove());
+}
+function shake(el, px = 6) {
+  if (calm()) return;
+  const p = px * amp();
+  anim(el, [{ transform: "none" }, { transform: `translate(${-p}px, ${p / 2}px) rotate(-.5deg)` }, { transform: `translate(${p}px, ${-p / 2}px) rotate(.5deg)` }, { transform: `translate(${-p / 2}px, ${p / 3}px)` }, { transform: `translate(${p / 3}px, 0)` }, { transform: "none" }], { duration: 340, easing: "linear" });
+}
+/* The ground's rays flare on a big moment. */
+function flare() {
+  if (calm() || state.look !== "sunburst") return;
+  anim($("#rays"), [{ filter: "brightness(1)", scale: 1 }, { filter: "brightness(1.12) saturate(1.3)", scale: 1.08, offset: .3 }, { filter: "brightness(1)", scale: 1 }], { duration: 1100, easing: OUT });
+}
+function confetti(fromX, fromY, toward, n, color, meetColor) {
+  if (state.rm) return;
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement("div");
+    const w = rand(7, 11), h = rand(11, 17);
+    el.style.cssText = `width:${w}px;height:${h}px;left:${fromX}px;top:${fromY}px;border:2px solid var(--outline);border-radius:${Math.random() < .3 ? "50%" : "2px"};background:${color};`;
+    fx.append(el);
+    const vx = toward * rand(.25, 1) * innerWidth * .55, peak = -rand(.35, .75) * innerHeight, endY = rand(.05, .35) * innerHeight;
+    const crosses = Math.abs(vx) > innerWidth * .38;
+    anim(el, [
+      { transform: "translate(0,0) rotate(0deg)", background: color },
+      { transform: `translate(${vx * .55}px, ${peak}px) rotate(${rand(180, 540)}deg)`, background: crosses ? meetColor : color, offset: .45 },
+      { transform: `translate(${vx}px, ${peak + innerHeight * .4 + endY}px) rotate(${rand(540, 1080)}deg)`, background: crosses ? meetColor : color, opacity: .9 },
+    ], { duration: rand(1700, 2600), easing: "cubic-bezier(.2,.6,.4,1)", delay: rand(0, 220) }).finished.then(() => el.remove());
+  }
+}
+/* An arc from a to b, run by rAF so slow-mo and interruption behave. */
+function flyArc(el, a, b, { lift = 120, dur = 800, onStep, ease = (x) => x < .5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2, scaleTo = 1, spin = 0 } = {}) {
+  return new Promise((resolve) => {
+    let t0 = null, p = 0;
+    function step(now) {
+      if (t0 === null) t0 = now;
+      p = Math.min(1, p + ((now - t0) * state.speed) / dur); t0 = now;
+      const e = ease(p);
+      const x = a.x + (b.x - a.x) * e, y = a.y + (b.y - a.y) * e - lift * 4 * e * (1 - e);
+      const s = 1 + (scaleTo - 1) * e;
+      el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${s}) rotate(${spin * e}deg)`;
+      onStep?.(x, y, p);
+      if (p < 1) requestAnimationFrame(step); else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+/* ======================= scenes ======================= */
+const ACTS = [
+  { title: "Everyday touches", note: "The things you press a hundred times. Small, quick, never in the way, but alive." },
+  { title: "Things go where they're going", note: "Motion that explains: where a title went, what changed, which tab you're on now." },
+  { title: "Two of you, live", note: "The heart of the app: your partner's actions arriving on your screen, and moments that only exist because there are two of you." },
+  { title: "Big moments and the room itself", note: "Celebrations spent on what matters, plus the background, the couches and the numbers." },
+];
+const SCENES = [];
+function scene(act, id, title, where, about, html, init) { SCENES.push({ act, id, title, where, about, html, init }); }
+
+/* 1 — Trading-card posters */
+scene(0, "cards", "Trading-card posters", "Every poster grid: Browse, For you, Search, Coming soon, person pages",
+  "Posters tilt towards your pointer like a card in your hand, with a light sheen that follows it. Pressing squashes them. On Wild, titles you can both watch get a holographic foil. On phones a tap gives a little wobble.",
+  () => `<div class="tilt-grid">${["dune", "pastlives", "spirited", "bear"].map((k, i) => `
+    <div class="tcard" tabindex="0" ${i % 2 === 0 ? "data-both" : ""}><div class="pframe"><img src="${poster(k)}" alt="" draggable="false"><span class="shine"></span><span class="holo"></span>
+    ${i % 2 === 0 ? `<span class="ptab both">${t("both")}</span>` : `<span class="ptab one"><i class="dot pt"></i>${t("onlySam")}</span>`}</div><span class="tt">${name(k)}</span></div>`).join("")}</div>`,
+  (el) => {
+    $$(".tcard", el).forEach((c) => {
+      c.addEventListener("pointermove", (e) => {
+        if (e.pointerType !== "mouse" || calm()) return;
+        const r = c.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+        const deg = state.level === "wild" ? 16 : 9;
+        c.style.transition = "transform .08s linear";
+        c.style.transform = `rotateY(${px * deg}deg) rotateX(${-py * deg}deg) translateY(-6px) scale(1.03)`;
+        c.style.setProperty("--mx", `${(px + .5) * 100}%`); c.style.setProperty("--my", `${(py + .5) * 100}%`); c.style.setProperty("--hx", px * 360);
+      });
+      c.addEventListener("pointerleave", () => { c.style.transition = ""; c.style.transform = ""; });
+      c.addEventListener("pointerdown", (e) => {
+        if (state.rm) return;
+        if (e.pointerType !== "mouse") anim(c, [{ transform: "none" }, { transform: `rotate(${-3 * amp()}deg) scale(.96)` }, { transform: `rotate(${2 * amp()}deg) scale(1.02)` }, { transform: "none" }], { duration: 420, easing: "ease-out" });
+        else anim($(".pframe", c), [{ scale: 1 }, { scale: sc(.95) }, { scale: 1 }], { duration: 260, easing: SPRING });
+      });
+    });
+  });
+
+/* 2 — Buttons, chips, the "both" switch */
+scene(0, "controls", "Jelly buttons and ink chips", "Every button, filter chip and toggle",
+  "Buttons squash when pressed and wobble back like jelly. A chip fills with colour from exactly where you tapped it. The \"We can both watch\" switch is your two couches: they scoot together when it's on.",
+  () => `<div class="ctl-row">
+    <button class="btn big jelly">${t("add")}</button>
+    <div class="tools chips-demo"><button class="chip" aria-pressed="true"><span class="fill"></span>${t("films")}</button><button class="chip" aria-pressed="false"><span class="fill"></span>${t("series")}</button><button class="chip" aria-pressed="false"><span class="fill"></span>2020s</button></div>
+    <button class="switch" role="switch" aria-checked="false"><span class="track"><span class="mini me">${couch("me", 30)}</span><span class="mini pt">${couch("pt", 30)}</span></span><span>${t("canBoth")}</span></button>
+  </div>`,
+  (el) => {
+    const b = $(".jelly", el);
+    b.addEventListener("pointerdown", () => { if (!state.rm) b._a = anim(b, [{ transform: "none" }, { transform: `scale(${sc(1.08)}, ${sc(.86)})` }], { duration: 90, fill: "forwards", easing: "ease-out" }); });
+    const release = () => {
+      if (!b._a) return; b._a.cancel(); b._a = null;
+      anim(b, [{ transform: `scale(${sc(1.08)}, ${sc(.86)})` }, { transform: `scale(${sc(.93)}, ${sc(1.1)})` }, { transform: `scale(${sc(1.04)}, ${sc(.97)})` }, { transform: `scale(${sc(.99)}, ${sc(1.01)})` }, { transform: "none" }], { duration: 520, easing: "ease-out" });
+      if (wild()) { const c = center(b); sparkles(c.x, c.r.top, 6); }
+    };
+    b.addEventListener("pointerup", release); b.addEventListener("pointerleave", release);
+    $$(".chips-demo .chip", el).forEach((c) => c.addEventListener("click", (e) => {
+      const was = $(".chips-demo [aria-pressed=true]", el);
+      if (was === c) return;
+      const r = c.getBoundingClientRect(), x = e.clientX ? e.clientX - r.left : r.width / 2, y = e.clientY ? e.clientY - r.top : r.height / 2;
+      was.setAttribute("aria-pressed", "false"); c.setAttribute("aria-pressed", "true");
+      if (calm()) return;
+      anim($(".fill", c), [{ clipPath: `circle(0px at ${x}px ${y}px)` }, { clipPath: `circle(${r.width * 1.2}px at ${x}px ${y}px)` }], { duration: 380, easing: OUT });
+      anim($(".fill", was), [{ clipPath: "circle(150% at 50% 50%)" }, { clipPath: "circle(0 at 50% 50%)" }], { duration: 200, easing: "ease-in" });
+      anim(c, [{ transform: "none" }, { transform: `scale(${sc(1.1)})` }, { transform: "none" }], { duration: 300, easing: SPRING });
+    }));
+    const sw = $(".switch", el);
+    sw.addEventListener("click", () => {
+      const on = sw.getAttribute("aria-checked") !== "true";
+      sw.setAttribute("aria-checked", on);
+      const me = $(".mini.me", sw), pt = $(".mini.pt", sw);
+      const dx = on ? 13 : 0;
+      if (state.rm) { me.style.transform = `translateX(${dx}px)`; pt.style.transform = `translateX(${-dx}px)`; return; }
+      const hop = calm() ? 0 : -10 * amp();
+      [[me, dx], [pt, -dx]].forEach(([m, x], i) => {
+        const from = m.style.transform || "translateX(0px)";
+        anim(m, [{ transform: from }, { transform: `translate(${x / 2}px, ${hop}px) rotate(${(i ? -1 : 1) * 10 * amp()}deg)` }, { transform: `translateX(${x}px)` }], { duration: calm() ? 200 : 420, easing: "ease-out", delay: i * 40 }).finished.then(() => { m.style.transform = `translateX(${x}px)`; });
+      });
+      if (on && !calm()) setTimeout(() => { const c = center($(".track", sw)); sparkles(c.x, c.y - 10, 7, ["var(--blush)", "var(--stamp)"], 50, "heart"); }, 380 / state.speed);
+    });
+  });
+
+/* 3 — Stars */
+scene(0, "stars", "Stars that cheer", "Rating on the title page, the wrap-up card, season stars",
+  "Each star pops in turn, five stars burst into sparkles, and when your partner's rating arrives it drops in star by star. Same rating? A \"Same!\" sticker slaps on. A big split gets a raised eyebrow instead.",
+  () => `<div class="rate">
+    <div class="rate-row me-row"><span class="who">${t("you")}</span>${[1, 2, 3, 4, 5].map((n) => `<button class="star" data-n="${n}" aria-label="${n}"><svg viewBox="-20 -20 40 40"><path d="${starPath(0, 0, 18, 8)}"/></svg></button>`).join("")}</div>
+    <div class="rate-row pt-row"><span class="who">${t("sam")}</span>${[1, 2, 3, 4, 5].map(() => `<span class="star"><svg viewBox="-20 -20 40 40"><path d="${starPath(0, 0, 18, 8)}"/></svg></span>`).join("")}</div>
+    <button class="btn quiet samrate">${t("samRates")}</button>
+    <span class="sticker" style="left:50%;top:44%"></span>
+  </div>`,
+  (el) => {
+    let mine = 0, turn = 0;
+    const stars = $$(".me-row .star", el), pts = $$(".pt-row .star", el), sticker = $(".sticker", el);
+    stars.forEach((s) => s.addEventListener("click", () => {
+      mine = +s.dataset.n;
+      stars.forEach((x, i) => {
+        const on = i < mine, was = x.classList.contains("on");
+        x.classList.toggle("on", on);
+        if (state.rm) return;
+        if (on) anim($("svg", x), [{ transform: "scale(.5) rotate(0)" }, { transform: `scale(${sc(1.35)}) rotate(${-18 * amp()}deg)` }, { transform: "none" }], { duration: 420, delay: i * (calm() ? 0 : 55), easing: "ease-out", fill: "backwards" });
+        else if (was) anim($("svg", x), [{ transform: "scale(1)" }, { transform: "scale(.7)" }, { transform: "none" }], { duration: 200 });
+      });
+      if (mine === 5 && !calm()) setTimeout(() => { const c = center($(".me-row", el)); sparkles(c.x + 30, c.y, 14, undefined, 110); sfx("five", c.x + 30, c.y - 50);
+        if (wild()) stars.forEach((x, i) => anim(x, [{ transform: "none" }, { transform: "translateY(-12px)" }, { transform: "none" }], { duration: 380, delay: i * 60, easing: "ease-in-out" })); }, 300 / state.speed);
+    }));
+    $(".samrate", el).addEventListener("click", async () => {
+      const base = mine || 4;
+      const theirs = [base, Math.max(1, Math.min(5, base + (base > 3 ? -1 : 1))), base > 2 ? 1 : 5][turn++ % 3];
+      pts.forEach((x) => x.classList.remove("on"));
+      sticker.getAnimations().forEach((a) => a.cancel()); sticker.style.opacity = 0;
+      for (let i = 0; i < 5; i++) {
+        const x = pts[i];
+        if (i < theirs) {
+          x.classList.add("on");
+          if (!state.rm) anim(x, [{ transform: `translateY(${-50 * Math.max(.4, amp())}px) rotate(-30deg)`, opacity: 0 }, { transform: "translateY(4px) scaleY(.8)", opacity: 1, offset: .7 }, { transform: "none", opacity: 1 }], { duration: calm() ? 200 : 420, easing: "ease-in", fill: "backwards", delay: i * (calm() ? 20 : 80) });
+        }
+      }
+      await wait(theirs * (calm() ? 20 : 80) + 420);
+      const d = Math.abs(theirs - (mine || 4));
+      sticker.className = "sticker" + (d === 0 ? " hot" : "");
+      sticker.textContent = d === 0 ? t("same") : d === 1 ? t("close") : t("split");
+      sticker.style.translate = "-50% -50%";
+      if (state.rm) { anim(sticker, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: "forwards" }); return; }
+      if (d === 0) {
+        anim(sticker, [{ transform: "scale(2.4) rotate(20deg)", opacity: 0 }, { transform: "scale(.92) rotate(-2deg)", opacity: 1, offset: .65 }, { transform: "scale(1) rotate(0deg)", opacity: 1 }], { duration: 380, easing: "ease-in", fill: "forwards" });
+        await wait(250); shake(el.closest(".scene").querySelector(".stage"), 7); const c = center(sticker); sparkles(c.x, c.y, 14, undefined, 90); sfx("same", c.x, c.y - 60);
+      } else {
+        anim(sticker, [{ transform: "scale(0) rotate(0)", opacity: 0 }, { transform: "scale(1.1) rotate(4deg)", opacity: 1, offset: .6 }, { transform: "scale(1) rotate(-3deg)", opacity: 1, offset: .8 }, { transform: "scale(1) rotate(2deg)", opacity: 1 }], { duration: 520, easing: "ease-out", fill: "forwards" });
+      }
+    });
+  });
+
+/* 4 — Add flies to the List tab */
+scene(1, "fly", "Add, and it flies onto the list", "+ Add on Browse, Search, For you, Coming soon",
+  "The poster jumps out of the grid and arcs up into the List tab, which gulps it down and ticks its count up. You see where it went. (On phones it flies down into the List tab at the bottom.)",
+  () => `<div class="fly-row">${["insideout", "soul", "oppenheimer"].map((k) => `<figure><div class="pframe" style="width:100%"><img src="${poster(k)}" alt=""></div><button class="btn add" aria-pressed="false">${t("add")}</button></figure>`).join("")}</div>`,
+  (el) => {
+    $$(".add", el).forEach((b) => b.addEventListener("click", async () => {
+      const on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", on);
+      b.innerHTML = on ? `${tickSvg}${t("onList")}` : t("add");
+      const n = listCount;
+      if (!on) { setCount(n - 1, -1); return; }
+      const img = $("img", b.closest("figure")), tab = $("#nav-list");
+      if (state.rm) { setCount(n + 1, 1); anim(tab, [{ background: "var(--pop)" }, { background: "transparent" }], { duration: 600 }); return; }
+      const a = center(img), z = center(tab);
+      const ghost = (op) => { const g = document.createElement("img"); g.src = img.src; g.style.cssText = `width:${a.r.width}px;height:${a.r.height}px;object-fit:cover;border:3px solid var(--outline);border-radius:8px;box-shadow:3px 3px 0 var(--outline);opacity:${op}`; fx.append(g); return g; };
+      if (calm()) {
+        const g = ghost(1);
+        await flyArc(g, a, z, { lift: 0, dur: 320, scaleTo: .12 }); g.remove();
+      } else {
+        const trail = wild() ? [ghost(.45), ghost(.25), ghost(.12)] : [];
+        const g = ghost(1);
+        anim(b, [{ transform: "none" }, { transform: `scale(${sc(1.12)})` }, { transform: "none" }], { duration: 300, easing: SPRING });
+        sfx("add", a.x, a.y - a.r.height / 2);
+        const go = (el2, delay) => wait(delay).then(() => flyArc(el2, a, z, { lift: 180 * amp(), dur: 720, scaleTo: .14, spin: -25 * amp() }));
+        await Promise.all([go(g, 0), ...trail.map((x, i) => go(x, (i + 1) * 45))]);
+        g.remove(); trail.forEach((x) => x.remove());
+      }
+      anim(tab, [{ transform: "none" }, { transform: `scale(${sc(1.22)}, ${sc(.78)})` }, { transform: `scale(${sc(.92)}, ${sc(1.1)})` }, { transform: "none" }], { duration: 460, easing: "ease-out" });
+      setCount(n + 1, 1);
+      if (!calm()) sparkles(z.x, z.y, 6, undefined, 40);
+    }));
+  });
+let listCount = 12;
+function setCount(n, dir) {
+  listCount = n;
+  const count = $("#list-count"), spans = $$("span", count);
+  spans.slice(0, -1).forEach((s) => s.remove());
+  const old = spans.at(-1);
+  old.getAnimations().forEach((a) => a.cancel()); old.style.position = "";
+  if (state.rm || calm()) { old.textContent = n; return; }
+  const nu = document.createElement("span"); nu.textContent = n; nu.style.position = "absolute"; count.append(nu);
+  anim(old, [{ transform: "none" }, { transform: `translateY(${-dir * 110}%)` }], { duration: 260, easing: "ease-in", fill: "forwards" }).finished.then(() => { old.remove(); if (nu.isConnected) nu.style.position = ""; });
+  anim(nu, [{ transform: `translateY(${dir * 110}%)` }, { transform: "translateY(-12%)", offset: .7 }, { transform: "none" }], { duration: 360, easing: "ease-out" });
+}
+
+/* 5 — Stamp it watched, or drop it */
+scene(1, "stamp", "A stamp for watched, a fall for dropped", "Home's list cards and the title page's status",
+  "\"We watched it\" slams a rubber stamp onto the card (on Wild the screen jolts), then the card slides off towards the Watched tab. Dropping a title tips it over the edge and it falls off the bottom.",
+  () => `<div class="stage-col">
+    <div class="mini-tabs"><span class="mini-tab" aria-selected="true">${t("upNext")}</span><span class="mini-tab wtab">${t("watched")}<span class="n">8</span></span></div>
+    <div class="lcard st-card"><div class="pframe"><img src="${poster("paddington", "w154")}" alt=""></div><div><b>${name("paddington")}</b><small><i class="dot pt"></i>${t("added")}</small></div><span class="stamp-mark">${t("stampWord")}</span></div>
+    <div class="tools"><button class="btn st-w">${t("watchedIt")}</button><button class="btn quiet st-d">${t("dropIt")}</button><button class="btn quiet st-b">${t("back")}</button></div></div>`,
+  (el) => {
+    const card = $(".st-card", el), mark = $(".stamp-mark", el), stage = el.closest(".scene").querySelector(".stage"), wtab = $(".wtab", el);
+    let busy = false, gone = false;
+    const reset = async () => {
+      card.getAnimations().forEach((a) => a.cancel()); mark.getAnimations().forEach((a) => a.cancel()); mark.style.opacity = 0; card.classList.remove("done");
+      if (gone && !state.rm) await anim(card, [{ transform: "translateX(-140%) rotate(-8deg)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: calm() ? 200 : 480, easing: calm() ? OUT : SPRING }).finished;
+      gone = false; busy = false;
+    };
+    $(".st-b", el).addEventListener("click", reset);
+    $(".st-w", el).addEventListener("click", async () => {
+      if (busy || gone) return; busy = true;
+      if (state.rm) { card.classList.add("done"); anim(mark, [{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: "forwards" }); busy = false; gone = false; return; }
+      if (calm()) { card.classList.add("done"); await anim(mark, [{ opacity: 0, scale: 1.1 }, { opacity: 1, scale: 1 }], { duration: 220, fill: "forwards", easing: OUT }).finished; busy = false; return; }
+      await anim(mark, [{ transform: `scale(${2.6 * Math.max(1, amp() * .8)})`, opacity: 0, filter: "blur(3px)" }, { transform: "scale(.9)", opacity: 1, filter: "blur(0)", offset: .75 }, { transform: "scale(1)", opacity: 1 }], { duration: 300, easing: "ease-in", fill: "forwards" }).finished;
+      card.classList.add("done");
+      anim(card, [{ transform: "none" }, { transform: `scale(${sc(1.03)}, ${sc(.93)})` }, { transform: "none" }], { duration: 240, easing: "ease-out" });
+      shake(stage, 5); const c = center(mark); sfx("stamp", c.x, c.y - 50);
+      if (wild()) sparkles(c.x, c.y, 10, ["var(--ok)"], 80);
+      await wait(700);
+      const w = center(wtab);
+      await anim(card, [{ transform: "none", opacity: 1 }, { transform: `translate(${w.x - center(card).x}px, ${w.y - center(card).y}px) scale(.2) rotate(8deg)`, opacity: 0 }], { duration: 520, easing: "cubic-bezier(.5,0,.75,0)", fill: "forwards" }).finished;
+      gone = true;
+      anim(wtab, [{ transform: "none" }, { transform: `scale(${sc(1.15)}) rotate(-3deg)` }, { transform: "none" }], { duration: 380, easing: SPRING });
+      const n = $(".n", wtab); n.textContent = +n.textContent + 1; anim(n, [{ transform: "scale(1.6)" }, { transform: "none" }], { duration: 300, easing: SPRING });
+    });
+    $(".st-d", el).addEventListener("click", async () => {
+      if (busy || gone) return; busy = true;
+      if (state.rm || calm()) { await anim(card, [{ opacity: 1 }, { opacity: 0, transform: "translateY(10px)" }], { duration: 220, fill: "forwards" }).finished; gone = true; return; }
+      card.style.transformOrigin = "0% 100%";
+      await anim(card, [{ transform: "none" }, { transform: `rotate(${6 * amp()}deg)`, offset: .3 }, { transform: `rotate(${3 * amp()}deg)`, offset: .45 }, { transform: `rotate(${9 * amp()}deg)` }], { duration: 520, easing: "ease-in-out", fill: "forwards" }).finished;
+      const c = center(card);
+      anim(card, [{ transform: `rotate(${9 * amp()}deg)` }, { transform: `translate(${30 * amp()}px, 420px) rotate(${55 * amp()}deg)` }], { duration: 650, easing: "cubic-bezier(.55,0,1,.45)", fill: "forwards" });
+      await wait(420);
+      sfx("drop", c.x, stage.getBoundingClientRect().bottom - 40);
+      if (wild()) { const s = stage.getBoundingClientRect(); sparkles(c.x, s.bottom - 6, 10, ["var(--muted)"], 50); }
+      gone = true; card.style.transformOrigin = "";
+    });
+  });
+
+/* 6 — Tabs deal the cards */
+const DEAL = { upNext: ["dune", "severance", "pastlives"], watched: ["paddington", "spirited", "eeaao"], dropped: ["madmax"] };
+scene(1, "deal", "Tabs that deal the cards", "Home's Up next / Watched / Dropped, Browse's Films / Series, Coming soon",
+  "Switching tabs flicks the old cards away and deals the new ones in from the side, one after another, like a dealer laying out a hand. The tab you picked jiggles and its count sticker bounces.",
+  () => `<div class="stage-col"><div class="mini-tabs" role="tablist">${Object.keys(DEAL).map((k, i) => `<button class="mini-tab" role="tab" data-k="${k}" aria-selected="${i === 0}">${t(k)}<span class="n">${DEAL[k].length}</span></button>`).join("")}</div><div class="deal-list"></div></div>`,
+  (el) => {
+    const list = $(".deal-list", el);
+    const rows = (k) => DEAL[k].map((x) => `<div class="lcard small"><div class="pframe"><img src="${poster(x, "w154")}" alt=""></div><div><b>${name(x)}</b><small><i class="dot ${x.length % 2 ? "me" : "pt"}"></i>${t("added")}</small></div></div>`).join("");
+    list.innerHTML = rows("upNext");
+    let busy = false;
+    $$(".mini-tab", el).forEach((tab) => tab.addEventListener("click", async () => {
+      if (busy || tab.getAttribute("aria-selected") === "true") return; busy = true;
+      $$(".mini-tab", el).forEach((x) => x.setAttribute("aria-selected", x === tab));
+      if (!state.rm) {
+        anim(tab, [{ transform: "none" }, { transform: `rotate(${-5 * amp()}deg) scale(${sc(1.08)})` }, { transform: `rotate(${3 * amp()}deg)` }, { transform: "none" }], { duration: 380, easing: "ease-out" });
+        anim($(".n", tab), [{ transform: "none" }, { transform: `translateY(${-8 * amp()}px) scale(${sc(1.3)})` }, { transform: "none" }], { duration: 400, easing: SPRING });
+      }
+      const old = $$(".lcard", list);
+      if (state.rm) { list.innerHTML = rows(tab.dataset.k); anim(list, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); busy = false; return; }
+      if (calm()) {
+        await anim(list, [{ opacity: 1 }, { opacity: 0, transform: "translateX(-8px)" }], { duration: 120, fill: "forwards" }).finished;
+        list.innerHTML = rows(tab.dataset.k); await anim(list, [{ opacity: 0, transform: "translateX(8px)" }, { opacity: 1, transform: "none" }], { duration: 180, easing: OUT }).finished; busy = false; return;
+      }
+      await Promise.all(old.map((c, i) => anim(c, [{ transform: "none", opacity: 1 }, { transform: `translate(${-70 * amp()}px, ${10 * amp()}px) rotate(${-8 * amp()}deg)`, opacity: 0 }], { duration: 200, delay: i * 35, easing: "ease-in", fill: "forwards" }).finished));
+      list.innerHTML = rows(tab.dataset.k);
+      $$(".lcard", list).forEach((c, i) => anim(c, [{ transform: `translate(${160 * amp()}px, ${-30 * amp()}px) rotate(${14 * amp()}deg)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 460, delay: i * 75, easing: SPRING, fill: "backwards" }));
+      busy = false;
+    }));
+  });
+
+/* 7 — Your partner's hand */
+scene(2, "peek", "Your partner pops in", "Anything Sam changes while you're looking: the list, ratings, nights",
+  "Today a live change just appears. Instead, Sam's couch peeks in from the edge of your screen with a speech bubble, tosses the change in (a title lands in a ring of Sam's colour), waves and ducks out. It makes the app feel like a room you're both in. Calm keeps just the coloured ring and a small note.",
+  () => `<div class="stage-col"><div class="deal-list peek-list"></div>
+    <div class="tools"><button class="btn pk-add">${t("samAdds")}</button><button class="btn quiet pk-rate">${t("samRatesOne")}</button><button class="btn quiet pk-tick">${t("samTicks")}</button></div><span class="toast"></span></div>`,
+  (el) => {
+    const list = $(".peek-list", el), toast = $(".toast", el);
+    const pool = ["pastlives", "lastofus", "spirited", "eeaao", "bear"]; let i = 0;
+    const row = (k) => `<div class="lcard small"><div class="pframe"><img src="${poster(k, "w154")}" alt=""></div><div><b>${name(k)}</b><small><i class="dot me"></i>${t("you")} · 2 Nov</small></div><span class="ripple"></span></div>`;
+    list.innerHTML = row("dune") + row("severance");
+    let busy = false;
+    async function peek(text) {
+      const host = document.createElement("div");
+      host.className = "peeker";
+      host.innerHTML = `<div class="bubble">${text}</div>${couch("pt", 92)}`;
+      fx.append(host);
+      const s = el.closest(".scene").querySelector(".stage").getBoundingClientRect();
+      const y = Math.min(innerHeight - 110, Math.max(80, s.top + s.height / 2 - 40));
+      host.style.top = y + "px"; host.style.left = innerWidth - 120 + "px";
+      const bub = $(".bubble", host);
+      bub.style.opacity = 0;
+      await anim(host, [{ transform: `translateX(160px) rotate(20deg)` }, { transform: `translateX(-8px) rotate(${-12 * amp()}deg)`, offset: .7 }, { transform: `translateX(0) rotate(-8deg)` }], { duration: 520, easing: "ease-out", fill: "forwards" }).finished;
+      anim(bub, [{ transform: "scale(0)", opacity: 0 }, { transform: "scale(1.08)", opacity: 1, offset: .7 }, { transform: "scale(1)", opacity: 1 }], { duration: 300, easing: "ease-out", fill: "forwards" });
+      return host;
+    }
+    async function leave(host) {
+      await anim(host, [{ transform: "rotate(-8deg)" }, { transform: `rotate(${4 * amp()}deg)` }, { transform: "rotate(-10deg)" }, { transform: `rotate(${4 * amp()}deg)` }, { transform: "rotate(-8deg)" }], { duration: 700, easing: "ease-in-out" }).finished;
+      await wait(500);
+      await anim(host, [{ transform: "translateX(0) rotate(-8deg)" }, { transform: "translateX(-14px) rotate(-14deg)", offset: .2 }, { transform: "translateX(180px) rotate(14deg)" }], { duration: 380, easing: "ease-in", fill: "forwards" }).finished;
+      host.remove();
+    }
+    function showToast(text) {
+      toast.innerHTML = `<i class="dot pt"></i>${text}`;
+      anim(toast, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none", offset: .12 }, { opacity: 1, transform: "none", offset: .85 }, { opacity: 0 }], { duration: 2600 });
+    }
+    function ring(card, times = 2) {
+      card.classList.add("fresh"); setTimeout(() => card.classList.remove("fresh"), 1600 / state.speed);
+      if (state.rm) return;
+      const r = $(".ripple", card);
+      for (let k = 0; k < (calm() ? 1 : times); k++) anim(r, [{ transform: "scale(.96)", opacity: 1 }, { transform: `scale(${1 + .1 * Math.max(.5, amp())}, ${1 + .4 * Math.max(.5, amp())})`, opacity: 0 }], { duration: 700, delay: k * 260, easing: OUT });
+    }
+    $(".pk-add", el).addEventListener("click", async () => {
+      if (busy) return; busy = true;
+      const k = pool[i++ % pool.length];
+      const wrap = document.createElement("div"); wrap.innerHTML = row(k).replace('<i class="dot me"></i>' + t("you"), '<i class="dot pt"></i>' + t("sam")); const card = wrap.firstChild;
+      if (calm()) {
+        list.prepend(card); if ($$(".lcard", list).length > 3) list.lastElementChild.remove();
+        if (!state.rm) anim(card, [{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }], { duration: 220, easing: OUT });
+        ring(card); showToast(t("toastAdd")(name(k))); busy = false; return;
+      }
+      const host = await peek(t("bubAdd")(name(k)));
+      await wait(250);
+      list.prepend(card); const extra = $$(".lcard", list).length > 3 ? list.lastElementChild : null;
+      if (extra) anim(extra, [{ opacity: 1 }, { opacity: 0, transform: "translateY(10px)" }], { duration: 200, fill: "forwards" }).finished.then(() => extra.remove());
+      const from = center(host), to = center(card);
+      anim(card, [{ transform: `translate(${from.x - to.x}px, ${from.y - to.y}px) scale(.3) rotate(25deg)`, opacity: 0 }, { transform: `translate(0, ${-24 * amp()}px) scale(1.04) rotate(-3deg)`, opacity: 1, offset: .7 }, { transform: "none", opacity: 1 }], { duration: 560, easing: "ease-out" });
+      if (wild()) for (let k2 = 0; k2 < 6; k2++) setTimeout(() => sparkles(from.x + (to.x - from.x) * k2 / 6, from.y + (to.y - from.y) * k2 / 6 - 30 * Math.sin(Math.PI * k2 / 6), 2, ["var(--pt)"], 20), k2 * 60 / state.speed);
+      await wait(520); ring(card); sfx("add", to.x, to.y - 40);
+      await leave(host); busy = false;
+    });
+    const onFirst = async (bubble, toastText, decorate) => {
+      if (busy) return; busy = true;
+      const card = $(".lcard", list);
+      if (calm()) { decorate(card); ring(card); showToast(toastText); busy = false; return; }
+      const host = await peek(bubble); await wait(300);
+      decorate(card); ring(card);
+      await leave(host); busy = false;
+    };
+    $(".pk-rate", el).addEventListener("click", () => onFirst(t("bubRate"), t("toastRate"), (card) => {
+      let s = $(".pt-stars", card); if (!s) { s = document.createElement("span"); s.className = "pt-stars"; s.style.cssText = "display:inline-flex;gap:1px;margin-left:6px"; $("small", card).append(s); }
+      s.innerHTML = [0, 1, 2, 3].map(() => `<svg viewBox="-20 -20 40 40" width="13" height="13"><path d="${starPath(0, 0, 18, 8)}" fill="var(--pt)" stroke="var(--outline)" stroke-width="3"/></svg>`).join("");
+      if (!state.rm) $$("svg", s).forEach((x, i) => anim(x, [{ transform: "scale(0) rotate(-90deg)" }, { transform: `scale(${sc(1.5)})` }, { transform: "none" }], { duration: 380, delay: i * 70, easing: "ease-out", fill: "backwards" }));
+    }));
+    $(".pk-tick", el).addEventListener("click", () => onFirst(t("bubTick"), t("toastTick"), (card) => {
+      card.classList.add("done");
+      let m = $(".stamp-mark", card); if (!m) { m = document.createElement("span"); m.className = "stamp-mark"; m.style.fontSize = "18px"; m.textContent = t("stampWord"); card.append(m); }
+      if (state.rm) { m.style.opacity = 1; return; }
+      anim(m, [{ transform: "scale(2.2)", opacity: 0 }, { transform: "scale(.92)", opacity: 1, offset: .75 }, { transform: "scale(1)", opacity: 1 }], { duration: 300, easing: "ease-in", fill: "forwards" });
+    }));
+  });
+
+/* 8 — Heart across the world */
+scene(2, "heart", "A heart that travels", "Home's couches: the thinking-of-you taps",
+  "Your tap flies from your couch to Sam's across the time difference, trailing little hearts. Sam's couch catches it with a hop and a blush. \"Starting soon\" sends a ringing alarm clock, \"Ready\" a star.",
+  () => `<div class="stage-col"><div class="clocks"><span class="apart">${t("apart")}</span>
+      <div class="clock">${couch("me", 60, "h-me")}<span class="t">10:30</span><small>${t("you")} · GB · PM</small></div>
+      <div class="clock">${couch("pt", 60, "h-pt")}<span class="t">11:30</span><small>${t("sam")} · NZ · AM</small><span class="got">${t("got")}</span></div></div>
+    <div class="tools"><button class="btn h-heart">${t("heart")}</button><button class="btn quiet h-soon">${t("soonBtn")}</button><button class="btn quiet h-ready">${t("readyBtn")}</button></div></div>`,
+  (el) => {
+    const me = $(".h-me", el), pt = $(".h-pt", el), got = $(".got", el);
+    const ICON = {
+      heart: `<path d="${heartPath(0, 0, 11)}" fill="var(--blush)" stroke="var(--outline)" stroke-width="2.5" stroke-linejoin="round"/>`,
+      soon: `<g stroke="var(--outline)" stroke-width="2.5" stroke-linecap="round"><circle cx="0" cy="2" r="11" fill="var(--pop)"/><path d="M0 2V-4M0 2l4 3" fill="none"/><path d="M-11 -9l5 -4M11 -9l-5 -4" fill="none"/><path d="M-7 12l-3 4M7 12l3 4" fill="none"/></g>`,
+      ready: `<path d="${starPath(0, 0, 13, 6)}" fill="var(--pop)" stroke="var(--outline)" stroke-width="2.5" stroke-linejoin="round"/>`,
+    };
+    let busy = false;
+    async function send(kind) {
+      if (busy) return; busy = true;
+      const a = center(me), b = center(pt);
+      const catchIt = () => {
+        anim(got, [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none", offset: .15 }, { opacity: 1, offset: .85 }, { opacity: 0 }], { duration: 2200 });
+        if (state.rm) return;
+        anim($(".c-all", pt), [{ transform: "none" }, { transform: `scale(${sc(1.12)}, ${sc(.86)})` }, { transform: `translateY(${-18 * amp()}px) scale(${sc(.92)}, ${sc(1.1)})` }, { transform: `scale(${sc(1.08)}, ${sc(.92)})` }, { transform: "none" }], { duration: 620, easing: "ease-out" });
+        anim($(".c-blush", pt), [{ opacity: 1, transform: "scale(1)" }, { opacity: 1, transform: "scale(1.6)", filter: "saturate(2)" }, { opacity: 1, transform: "scale(1)" }], { duration: 1200 });
+        if (kind === "heart") sparkles(b.x, b.y - 20, 8, ["var(--blush)", "var(--stamp)"], 55, "heart");
+        else sparkles(b.x, b.y - 20, 8, undefined, 55);
+        if (kind === "heart") sfx("heart", b.x, b.y - 70); if (kind === "ready") sfx("ready", b.x, b.y - 70);
+      };
+      if (calm()) { catchIt(); await wait(500); busy = false; return; }
+      anim($(".c-all", me), [{ transform: "none" }, { transform: `scale(${sc(1.1)}, ${sc(.88)})` }, { transform: `translateY(${-8 * amp()}px)` }, { transform: "none" }], { duration: 380, easing: "ease-out" });
+      const ic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      ic.setAttribute("viewBox", "-16 -16 32 32"); ic.setAttribute("width", 40); ic.setAttribute("height", 40); ic.style.overflow = "visible"; ic.innerHTML = ICON[kind];
+      fx.append(ic);
+      let last = 0;
+      await flyArc(ic, a, b, { lift: 130 * amp(), dur: 950, scaleTo: 1.15, spin: kind === "ready" ? 360 : 0, onStep: (x, y, p) => {
+        if (kind !== "heart" || p - last < .07) return; last = p;
+        const h = document.createElementNS("http://www.w3.org/2000/svg", "svg"); h.setAttribute("viewBox", "-8 -8 16 16"); h.setAttribute("width", 14); h.setAttribute("height", 14);
+        h.innerHTML = `<path d="${heartPath(0, 0, 5)}" fill="var(--stamp)" stroke="var(--outline)" stroke-width="1.4"/>`; h.style.left = x - 7 + "px"; h.style.top = y - 7 + "px"; fx.append(h);
+        anim(h, [{ transform: "scale(1)", opacity: .9 }, { transform: `translateY(${rand(8, 24)}px) scale(.2)`, opacity: 0 }], { duration: 700, easing: "ease-in" }).finished.then(() => h.remove());
+      } });
+      if (kind === "soon") await anim(ic, [0, 1, 2, 3, 4, 5, 6].map((k) => ({ transform: `${ic.style.transform} rotate(${k % 2 ? 14 : -14}deg)` })), { duration: 500 }).finished;
+      anim(ic, [{ opacity: 1 }, { opacity: 0, transform: `${ic.style.transform} scale(.3)` }], { duration: 200, fill: "forwards" }).finished.then(() => ic.remove());
+      catchIt(); await wait(400); busy = false;
+    }
+    $(".h-heart", el).addEventListener("click", () => send("heart"));
+    $(".h-soon", el).addEventListener("click", () => send("soon"));
+    $(".h-ready", el).addEventListener("click", () => send("ready"));
+  });
+
+/* 9 — Ready check, countdown and curtains */
+scene(2, "ready", "Both ready, then curtains", "Night cards: the ready check and the countdown",
+  "\"I'm ready\" makes your couch spring up and draws a tick. When you're both ready the couches scoot together behind a starburst and the card turns green. The countdown's digits flip, and at zero cartoon curtains swish shut: lights down.",
+  () => `<div class="night"><div class="pframe"><img src="${poster("pastlives")}" alt=""></div>
+    <div><div class="ttl">${name("pastlives")}</div><div class="cd"><span>${t("startsIn")}</span><span class="digits"><span class="digit"><span>0</span></span><span class="digit"><span>0</span></span><span>:</span><span class="digit"><span>1</span></span><span class="digit"><span>0</span></span></span></div>
+      <div class="seats"><svg class="ready-burst" viewBox="-75 -75 150 150"><path d="${burstPath(14, 72, 52, 0, 0)}" fill="var(--stamp)" stroke="var(--outline)" stroke-width="3" stroke-linejoin="round"/><text text-anchor="middle" y="6" fill="var(--paper)" stroke="var(--outline)" stroke-width="3" paint-order="stroke" class="rb-text">${t("bothReady")}</text></svg>
+        <span class="seat s-me">${couch("me", 50)}<span>${tickSvg}</span></span><span class="seat s-pt">${couch("pt", 50)}<span>${tickSvg}</span></span></div></div>
+    <span class="curtain l"></span><span class="curtain r"></span><span class="lights">${t("lightsDown")}</span></div>`,
+  (el) => {
+    const card = $(".night", el), sMe = $(".s-me", el), sPt = $(".s-pt", el), burst = $(".ready-burst", el);
+    const ready = { me: false, pt: false };
+    async function become(who) {
+      if (ready[who]) return; ready[who] = true;
+      const seat = who === "me" ? sMe : sPt, tick = $(".tick path", seat);
+      if (state.rm) { tick.style.strokeDashoffset = 0; } else {
+        anim($(".couch", seat), [{ transform: "none" }, { transform: `scale(${sc(1.12)}, ${sc(.85)})`, offset: .15 }, { transform: `translateY(${-26 * amp()}px) scale(${sc(.92)}, ${sc(1.1)})`, offset: .45 }, { transform: `scale(${sc(1.12)}, ${sc(.88)})`, offset: .75 }, { transform: "none" }], { duration: calm() ? 300 : 620, easing: "ease-out" });
+        await wait(300);
+        anim(tick, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 300, easing: "ease-out", fill: "forwards" });
+      }
+      if (ready.me && ready.pt) {
+        await wait(350);
+        card.classList.add("go");
+        if (state.rm) { burst.style.opacity = 1; return; }
+        const gap = (sPt.getBoundingClientRect().left - sMe.getBoundingClientRect().right) / 2 - 2;
+        const scoot = calm() ? 0 : Math.max(0, gap - 34);
+        anim(sMe, [{ transform: "none" }, { transform: `translateX(${scoot}px)` }], { duration: 450, easing: SPRING, fill: "forwards" });
+        anim(sPt, [{ transform: "none" }, { transform: `translateX(${-scoot}px)` }], { duration: 450, easing: SPRING, fill: "forwards", delay: 60 });
+        anim(burst, [{ transform: "scale(0) rotate(-40deg)", opacity: 1 }, { transform: `scale(${calm() ? 1 : 1.12}) rotate(6deg)`, opacity: 1, offset: .7 }, { transform: "scale(1) rotate(0)", opacity: 1 }], { duration: calm() ? 260 : 520, easing: "ease-out", fill: "forwards", delay: 120 });
+        await wait(400);
+        const c = center(burst); sparkles(c.x, c.y, 14, undefined, 100); sfx("ready", c.x, c.y - 80); flare();
+        if (wild()) confetti(c.x, c.y, 1, 14, "var(--me)", "var(--stamp)"), confetti(c.x, c.y, -1, 14, "var(--pt)", "var(--stamp)");
+      }
+    }
+    function setDigits(sec) {
+      const s = String(Math.floor(sec / 60)).padStart(2, "0") + String(sec % 60).padStart(2, "0");
+      $$(".digit", el).forEach((d, i) => {
+        const old = $("span", d); if (old.textContent === s[i]) return;
+        if (calm()) { old.textContent = s[i]; return; }
+        const nu = document.createElement("span"); nu.textContent = s[i]; d.append(nu);
+        anim(old, [{ transform: "none", opacity: 1 }, { transform: "translateY(90%) rotateX(-70deg)", opacity: 0 }], { duration: 260, easing: "ease-in", fill: "forwards" }).finished.then(() => old.remove());
+        anim(nu, [{ transform: "translateY(-100%)" }, { transform: "translateY(10%)", offset: .7 }, { transform: "none" }], { duration: 340, easing: "ease-out" });
+      });
+      if (sec <= 3 && sec > 0 && !calm()) { anim($(".digits", el), [{ transform: "scale(1)" }, { transform: `scale(${sc(1.35)}) rotate(${(sec % 2 ? -4 : 4) * amp()}deg)` }, { transform: "scale(1)" }], { duration: 400, easing: SPRING }); if (wild()) shake(card, 3); }
+    }
+    let timer = null, gen = 0;
+    async function curtains() {
+      const L = $(".curtain.l", el), R = $(".curtain.r", el), lights = $(".lights", el);
+      sfx("lights", center(card).x, center(card).y - 70);
+      if (state.rm || calm()) {
+        await anim(lights, [{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: "forwards" }).finished; await wait(1200);
+        anim(lights, [{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" }); return;
+      }
+      anim(L, [{ transform: "translateX(-102%)" }, { transform: "translateX(4%) scaleX(1.05)", offset: .75 }, { transform: "translateX(0)" }], { duration: 560, easing: "ease-in", fill: "forwards" });
+      await anim(R, [{ transform: "translateX(102%)" }, { transform: "translateX(-4%) scaleX(1.05)", offset: .75 }, { transform: "translateX(0)" }], { duration: 560, easing: "ease-in", fill: "forwards" }).finished;
+      shake(card, 3);
+      anim(lights, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1.1)", offset: .7 }, { opacity: 1, transform: "none" }], { duration: 380, easing: "ease-out", fill: "forwards" });
+      const g = gen;
+      await wait(1500);
+      if (g !== gen) return; // Reset was pressed
+      anim(lights, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" });
+      anim(L, [{ transform: "translateX(0)" }, { transform: "translateX(-102%)" }], { duration: 520, easing: "cubic-bezier(.5,0,.2,1)", fill: "forwards" });
+      anim(R, [{ transform: "translateX(0)" }, { transform: "translateX(102%)" }], { duration: 520, easing: "cubic-bezier(.5,0,.2,1)", fill: "forwards" });
+    }
+    el.closest(".scene").querySelector(".tools").insertAdjacentHTML("afterbegin", `<button class="btn r-me">${t("imReady")}</button><button class="btn quiet r-pt">${t("samReady")}</button><button class="btn quiet r-cd">${t("countdown")}</button><button class="btn quiet r-reset">${t("reset")}</button>`);
+    const tools = el.closest(".scene").querySelector(".tools");
+    $(".r-me", tools).onclick = () => become("me");
+    $(".r-pt", tools).onclick = () => become("pt");
+    $(".r-cd", tools).onclick = () => {
+      clearInterval(timer); let s = 10; setDigits(s);
+      timer = setInterval(() => { s--; setDigits(s); if (s <= 0) { clearInterval(timer); curtains(); } }, 1000 / state.speed);
+    };
+    $(".r-reset", tools).onclick = () => {
+      clearInterval(timer); gen++; ready.me = ready.pt = false; card.classList.remove("go");
+      [sMe, sPt, burst, ...$$(".tick path", el), ...$$(".curtain", el), $(".lights", el)].forEach((x) => x.getAnimations().forEach((a) => a.cancel()));
+      $$(".tick path", el).forEach((p) => (p.style.strokeDashoffset = "")); burst.style.opacity = ""; $$(".digit span", el).forEach((d, i) => (d.textContent = "0010"[i]));
+    };
+  }, true);
+
+/* 10 — Both can watch reveal */
+scene(3, "both", "\"We can both watch it\" lands", "The title page's where-to-watch columns and banner",
+  "Each country's services drop into its column. The one you both pay for lights up on each side, a line draws itself between them, and the starburst lands in the middle. This is the app's big moment, so it gets the big entrance.",
+  () => `<div class="where-cols"><svg class="link-svg"><path pathLength="1" d=""/></svg>
+    <svg class="both-burst" viewBox="-56 -56 112 112"><path d="${burstPath(12, 54, 38, 0, 0)}" fill="var(--stamp)" stroke="var(--outline)" stroke-width="3" stroke-linejoin="round"/><text text-anchor="middle" y="7" fill="var(--paper)" stroke="var(--outline)" stroke-width="3" paint-order="stroke">${t("both")}</text></svg>
+    <div class="wcol"><h4><i class="dot me"></i>${t("youGB")}</h4><span class="svc">BBC iPlayer</span><span class="svc match">Netflix</span><span class="svc">Disney+</span></div>
+    <div class="wcol"><h4><i class="dot pt"></i>${t("samNZ")}</h4><span class="svc">Neon</span><span class="svc">TVNZ+</span><span class="svc match">Netflix</span></div></div>`,
+  (el) => {
+    const tools = el.closest(".scene").querySelector(".tools");
+    tools.insertAdjacentHTML("afterbegin", `<button class="btn b-go">${t("check")}</button>`);
+    const svcs = $$(".svc", el), path = $(".link-svg path", el), burst = $(".both-burst", el), cols = $$(".wcol", el);
+    $(".b-go", tools).onclick = async () => {
+      [...svcs, path, burst, ...cols].forEach((x) => x.getAnimations().forEach((a) => a.cancel()));
+      svcs.forEach((s) => (s.style.opacity = 0)); burst.style.opacity = 0; path.style.strokeDashoffset = 1;
+      await wait(150);
+      if (state.rm) { svcs.forEach((s) => (s.style.opacity = 1)); burst.style.opacity = 1; return; }
+      svcs.forEach((s, i) => {
+        const col = s.parentElement === cols[0] ? 0 : 1, row = [...s.parentElement.querySelectorAll(".svc")].indexOf(s);
+        anim(s, [{ opacity: 0, transform: calm() ? "translateY(4px)" : `translateY(${-40 * amp()}px) rotate(${(col ? 8 : -8) * amp()}deg)` }, { opacity: 1, transform: "none" }], { duration: calm() ? 200 : 420, delay: calm() ? 0 : row * 110 + col * 55, easing: calm() ? OUT : SPRING, fill: "forwards" });
+      });
+      await wait(calm() ? 250 : 650);
+      const m = $$(".svc.match", el), box = $(".where-cols", el).getBoundingClientRect(), a = m[0].getBoundingClientRect(), b = m[1].getBoundingClientRect();
+      if (!calm()) {
+        m.forEach((x) => anim(x, [{ transform: "none" }, { transform: `scale(${sc(1.12)})` }, { transform: "none" }], { duration: 360, easing: SPRING }));
+        const x1 = a.right - box.left, y1 = a.top + a.height / 2 - box.top, x2 = b.left - box.left, y2 = b.top + b.height / 2 - box.top;
+        path.setAttribute("d", `M${x1} ${y1}C${x1 + 40} ${y1 - 30} ${x2 - 40} ${y2 - 30} ${x2} ${y2}`);
+        await anim(path, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 420, easing: "ease-in-out", fill: "forwards" }).finished;
+        if (wild()) cols.forEach((c, i) => anim(c, [{ transform: "none" }, { transform: `rotate(${i ? -3 : 3}deg) translateX(${i ? -6 : 6}px)` }, { transform: "none" }], { duration: 500, easing: SPRING }));
+      }
+      anim(burst, [{ transform: "scale(0) rotate(-120deg)", opacity: 1 }, { transform: `scale(${calm() ? 1 : 1.15}) rotate(8deg)`, opacity: 1, offset: .7 }, { transform: "scale(1) rotate(0)", opacity: 1 }], { duration: calm() ? 240 : 560, easing: "ease-out", fill: "forwards" });
+      if (!calm()) { await wait(380); const c = center(burst); sparkles(c.x, c.y, 16, undefined, 110); sfx("both", c.x, c.y - 80); flare(); }
+    };
+  }, true);
+
+/* 11 — Popcorn loading */
+scene(3, "popcorn", "Popcorn while it loads", "Any page that takes more than about half a second",
+  "Instead of only grey shapes pulsing, your two couches toss a piece of popcorn between them above the page's skeleton. It only shows on slow loads, and it stops as soon as you scroll it out of view.",
+  () => `<div class="pop-stage">${couch("me", 64)}${couch("pt", 64)}<svg class="kernel" viewBox="0 0 22 20"><g stroke="var(--outline)" stroke-width="2" fill="#fffaf0"><circle cx="7" cy="9" r="5"/><circle cx="14" cy="7" r="5"/><circle cx="11" cy="13" r="5"/></g><circle cx="11" cy="10" r="2" fill="var(--pop)"/></svg><div class="skel"><i></i><i></i><i></i></div></div>`,
+  (el) => {
+    const stage = $(".pop-stage", el), k = $(".kernel", el), me = $(".couch.me", el), pt = $(".couch.pt", el);
+    let anims = [];
+    function start() {
+      anims.forEach((a) => a.cancel()); anims = [];
+      if (state.rm) { k.style.transform = `translate(${stage.clientWidth / 2 - 11}px, 50px)`; return; }
+      const w = stage.clientWidth, x0 = 44, x1 = w - 66, y = 66, h = calm() ? 40 : 80 * Math.max(1, amp() * .9);
+      const frames = []; const N = 24;
+      for (let i = 0; i <= N; i++) { const p = i / N, half = p < .5 ? p * 2 : (p - .5) * 2, dir = p < .5; const x = dir ? x0 + (x1 - x0) * half : x1 - (x1 - x0) * half; frames.push({ transform: `translate(${x}px, ${y - h * 4 * half * (1 - half)}px) rotate(${p * 720}deg)`, offset: p }); }
+      const D = calm() ? 1800 : 1400;
+      anims.push(anim(k, frames, { duration: D, iterations: Infinity }));
+      const catchF = (o) => [{ transform: "none", offset: 0 }, { transform: "none", offset: Math.max(0, o - .06) }, { transform: `scale(${sc(1.12)}, ${sc(.86)}) translateY(2px)`, offset: o }, { transform: "none", offset: Math.min(1, o + .1) }, { transform: "none", offset: 1 }];
+      anims.push(anim($(".c-all", pt), catchF(.5), { duration: D, iterations: Infinity }));
+      anims.push(anim($(".c-all", me), catchF(.96), { duration: D, iterations: Infinity }));
+      $$(".skel i", el).forEach((s, i) => anims.push(anim(s, [{ opacity: .5 }, { opacity: 1 }, { opacity: .5 }], { duration: 1400, iterations: Infinity, delay: i * 150 })));
+    }
+    el._start = start;
+    new IntersectionObserver(([e]) => { if (e.isIntersecting) start(); else { anims.forEach((a) => a.pause()); } }).observe(stage);
+  });
+
+/* 12 — Lettering that lands */
+scene(3, "letters", "Headings that land letter by letter", "Every page's big heading, on arrival",
+  "Page titles drop in one letter at a time and squash on landing. Run your pointer over one and the letters hop. On Wild they keep a gentle wave going while you hover. Screen readers still hear the whole word.",
+  () => `<div class="stage-col"><h4 class="letters" lang="${state.lang}"></h4><div class="tools l-words">${t("words").map((w, i) => `<button class="chip" aria-pressed="${i === 0}"><span class="fill"></span>${w}</button>`).join("")}</div></div>`,
+  (el) => {
+    const h = $(".letters", el);
+    let word = t("words")[0];
+    function render() {
+      h.setAttribute("aria-label", word); h.lang = state.lang;
+      const seg = [...new Intl.Segmenter(state.lang, { granularity: "grapheme" }).segment(word)].map((s) => s.segment);
+      h.innerHTML = seg.map((c, i) => (c === " " ? `<span class="sp" aria-hidden="true"> </span>` : `<span class="ch" aria-hidden="true" style="--i:${i}">${c}</span>`)).join("");
+      const chars = $$(".ch", h);
+      if (state.rm) return;
+      if (calm()) { anim(h, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: OUT }); return; }
+      chars.forEach((c, i) => {
+        const fromY = wild() ? rand(-160, -60) : -70, rot = wild() ? rand(-40, 40) : 0;
+        anim(c, [{ transform: `translateY(${fromY}px) rotate(${rot}deg)`, opacity: 0 }, { transform: "translateY(0) scale(1.15, .8)", opacity: 1, offset: .65 }, { transform: "translateY(-6px) scale(.95, 1.06)", offset: .82 }, { transform: "none", opacity: 1 }], { duration: 520, delay: i * 38, easing: "ease-in", fill: "backwards" });
+        c.addEventListener("pointerenter", () => { if (calm() || c.getAnimations().length > 1) return; anim(c, [{ transform: "none" }, { transform: `translateY(${-12 * amp()}px) rotate(${rand(-8, 8)}deg)` }, { transform: "none" }], { duration: 380, easing: "ease-out" }); });
+      });
+    }
+    h.addEventListener("pointerenter", () => h.classList.add("waving")); h.addEventListener("pointerleave", () => h.classList.remove("waving"));
+    el._render = render;
+    $$(".l-words .chip", el).forEach((b, i) => b.addEventListener("click", () => { $$(".l-words .chip", el).forEach((x) => x.setAttribute("aria-pressed", x === b)); word = t("words")[i]; render(); }));
+    render();
+  });
+
+/* 13 — The ground itself */
+scene(3, "alive", "A ground that's alive", "The page background in every skin",
+  "Sunburst's rays turn, very slowly, all the time, or turn as you scroll (try it on this page). On big moments they flare. Night Owl's stars twinkle and the odd one shoots across. It's the whole page, so this one is the most likely to be too much: judge it after scrolling for a minute.",
+  () => `<div class="stage-col"><div class="tools g-mode"><button class="chip" data-m="off" aria-pressed="false"><span class="fill"></span>Still</button><button class="chip" data-m="drift" aria-pressed="false"><span class="fill"></span>Slow drift</button><button class="chip" data-m="scroll" aria-pressed="false"><span class="fill"></span>Turns as you scroll</button><button class="chip" data-m="auto" aria-pressed="true"><span class="fill"></span>Follow the Motion dial</button></div><button class="btn g-flare">Flare the rays</button><p style="margin:0;font-size:14px;max-width:44ch;text-align:center;color:var(--g-muted)">The dial: Calm is still, Lively drifts (one turn every 4 minutes), Wild drifts faster and turns with scrolling.</p></div>`,
+  (el) => {
+    $$(".g-mode .chip", el).forEach((b) => b.addEventListener("click", () => { $$(".g-mode .chip", el).forEach((x) => x.setAttribute("aria-pressed", x === b)); groundMode = b.dataset.m; applyGround(); }));
+    $(".g-flare", el).onclick = () => { if (state.look === "nightowl") shootingStar(); else flare(); };
+  });
+let groundMode = "auto";
+function applyGround() {
+  const r = $("#rays"); r.classList.remove("drift", "scrolly");
+  const m = groundMode === "auto" ? (state.level === "calm" ? "off" : state.level === "lively" ? "drift" : "both") : groundMode;
+  if (state.rm || m === "off") return;
+  if (m === "drift") { r.style.setProperty("--drift", "240s"); r.style.setProperty("--turn", "360deg"); r.classList.add("drift"); }
+  if (m === "scroll") { r.style.setProperty("--turn", "120deg"); r.classList.add("scrolly"); }
+  if (m === "both") { r.style.setProperty("--drift", "90s"); r.style.setProperty("--turn", "360deg"); if (CSS.supports("animation-timeline: scroll()")) { r.style.setProperty("--turn", "180deg"); r.classList.add("scrolly"); } else r.classList.add("drift"); }
+  document.getAnimations().forEach((a) => (a.playbackRate = state.speed));
+}
+function shootingStar() {
+  if (state.rm || state.look !== "nightowl") return;
+  const s = document.createElement("div");
+  s.style.cssText = "width:120px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#fff3c4);";
+  fx.append(s);
+  const y = rand(40, innerHeight * .4), x = rand(innerWidth * .2, innerWidth * .8);
+  anim(s, [{ transform: `translate(${x}px, ${y}px) rotate(20deg) scaleX(.2)`, opacity: 0 }, { transform: `translate(${x + 120}px, ${y + 44}px) rotate(20deg) scaleX(1)`, opacity: 1, offset: .3 }, { transform: `translate(${x + 420}px, ${y + 154}px) rotate(20deg) scaleX(.4)`, opacity: 0 }], { duration: 900, easing: "ease-out" }).finished.then(() => s.remove());
+}
+setInterval(() => { if (state.look === "nightowl" && !calm() && Math.random() < (wild() ? .6 : .25)) shootingStar(); }, 6000);
+
+/* 14 — Numbers that roll */
+scene(3, "stats", "Numbers that roll in", "Stats, the taste match, Home's streak chip",
+  "Counts spin up like a fruit machine, the month bars spring up one after another, and the taste-match bar fills from your colour to Sam's and pops a heart at the end.",
+  () => `<div class="stats">
+    <div class="tile"><span class="odo" data-n="47"></span><small>${t("films2")}</small></div>
+    <div class="tile"><span class="odo" data-n="112"></span><small>${t("hours")}</small></div>
+    <div class="tile"><span class="odo" data-n="23"></span><small>${t("nights2")}</small></div>
+    <div class="meter"><div class="lbl"><span>${t("taste")}</span><span class="pct">82%</span></div><div class="bar"><span class="fill"></span></div></div>
+    <div class="months">${[3, 5, 2, 6, 4, 7, 5, 8, 6, 9, 4, 6].map((v) => `<i style="height:${v * 10}%"></i>`).join("")}</div></div>`,
+  (el) => {
+    const tools = el.closest(".scene").querySelector(".tools");
+    tools.insertAdjacentHTML("afterbegin", `<button class="btn s-go">${t("playStats")}</button>`);
+    $$(".odo", el).forEach((o) => { o.innerHTML = [...o.dataset.n].map((d) => `<span class="col">${[...Array(20)].map((_, i) => `<span>${i % 10}</span>`).join("")}</span>`).join(""); $$(".col", o).forEach((c, i) => (c.style.transform = `translateY(-${10 + +o.dataset.n[i]}em)`)); });
+    const go = async () => {
+      const fill = $(".fill", el), pct = $(".pct", el), bars = $$(".months i", el);
+      [fill, ...bars, ...$$(".col", el)].forEach((x) => x.getAnimations().forEach((a) => a.cancel()));
+      if (state.rm) { anim($(".stats", el), [{ opacity: .3 }, { opacity: 1 }], { duration: 300 }); return; }
+      $$(".odo", el).forEach((o) => $$(".col", o).forEach((c, i) => {
+        const d = +o.dataset.n[i];
+        anim(c, [{ transform: "translateY(0)" }, { transform: `translateY(-${10 + d}em)` }], { duration: calm() ? 400 : 900 + i * 220, easing: calm() ? OUT : "cubic-bezier(.2,.7,.25,1.08)", fill: "backwards" });
+      }));
+      bars.forEach((b, i) => anim(b, [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: calm() ? 300 : 520, delay: calm() ? 0 : 200 + i * 45, easing: calm() ? OUT : SPRING, fill: "backwards" }));
+      const meter = anim(fill, [{ transform: "scaleX(0)" }, { transform: "scaleX(.82)" }], { duration: calm() ? 400 : 1200, delay: 250, easing: calm() ? OUT : "cubic-bezier(.3,1.25,.5,1)", fill: "backwards" });
+      const t0 = performance.now(); const tick = () => { const p = Math.min(1, ((performance.now() - t0) * state.speed) / (calm() ? 650 : 1450)); pct.textContent = Math.round(82 * Math.min(1, p * 1.05)) + "%"; if (p < 1) requestAnimationFrame(tick); }; tick();
+      await meter.finished;
+      if (!calm()) { const r = $(".bar", el).getBoundingClientRect(); sparkles(r.left + r.width * .82, r.top + r.height / 2, 8, ["var(--blush)", "var(--stamp)"], 50, "heart"); anim(pct, [{ transform: "none" }, { transform: `scale(${sc(1.4)}) rotate(-6deg)` }, { transform: "none" }], { duration: 420, easing: SPRING }); }
+    };
+    $(".s-go", tools).onclick = go;
+    new IntersectionObserver(([e], o) => { if (e.isIntersecting) { go(); o.disconnect(); } }, { threshold: .6 }).observe(el);
+  }, true);
+
+/* 15 — Idle couches */
+scene(3, "idle", "Couches with a life of their own", "Home's clocks panel, the logo",
+  "Today the couches bob and blink. Left alone, they could also do little things: glance at each other, yawn when it's late for one of you, give a nudge, high-five, doze off. Every so often, never while you're doing something.",
+  () => `<div class="idle-stage"><span class="i-me">${couch("me", 96)}</span><span class="i-pt">${couch("pt", 96)}</span></div>`,
+  (el) => {
+    const tools = el.closest(".scene").querySelector(".tools");
+    tools.insertAdjacentHTML("afterbegin", ["glance", "yawn", "nudge", "hi5", "doze"].map((k) => `<button class="btn quiet i-b" data-k="${k}">${t(k)}</button>`).join("") + `<button class="chip i-auto" aria-pressed="true"><span class="fill"></span>${t("auto")}</button>`);
+    const me = $(".i-me .couch", el), pt = $(".i-pt .couch", el);
+    let busy = false;
+    const A = {
+      async glance() {
+        const d = 2.5 * Math.max(.6, amp());
+        await Promise.all([anim($(".c-eyes", me), [{ transform: "none" }, { transform: `translateX(${d}px)`, offset: .2 }, { transform: `translateX(${d}px)`, offset: .8 }, { transform: "none" }], { duration: 1400 }).finished,
+          anim($(".c-eyes", pt), [{ transform: "none" }, { transform: `translateX(${-d}px)`, offset: .25 }, { transform: `translateX(${-d}px)`, offset: .8 }, { transform: "none" }], { duration: 1400 }).finished,
+          anim($(".c-blush", me), [{ opacity: 1 }, { opacity: 1, transform: "scale(1.5)", offset: .5 }, { opacity: 1 }], { duration: 1400 }).finished]);
+      },
+      async yawn() {
+        await Promise.all([anim($(".c-yawn", pt), [{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: `scale(1, ${1.6 * Math.max(.7, amp())})`, offset: .4 }, { opacity: 1, offset: .7 }, { opacity: 0 }], { duration: 1500 }).finished,
+          anim($(".c-mouth", pt), [{ opacity: 1 }, { opacity: 0, offset: .1 }, { opacity: 0, offset: .8 }, { opacity: 1 }], { duration: 1500 }).finished,
+          anim($$(".c-eyes ellipse", pt)[0], [{ transform: "none" }, { transform: "scaleY(.2)", offset: .3 }, { transform: "scaleY(.2)", offset: .75 }, { transform: "none" }], { duration: 1500 }).finished,
+          anim($$(".c-eyes ellipse", pt)[1], [{ transform: "none" }, { transform: "scaleY(.2)", offset: .3 }, { transform: "scaleY(.2)", offset: .75 }, { transform: "none" }], { duration: 1500 }).finished,
+          anim($(".c-all", pt), [{ transform: "none" }, { transform: `scale(${sc(.96)}, ${sc(1.08)})`, offset: .4 }, { transform: "none" }], { duration: 1500 }).finished]);
+      },
+      async nudge() {
+        await anim($(".c-all", me), [{ transform: "none" }, { transform: `translateX(${8 * amp()}px) rotate(${10 * amp()}deg)`, offset: .4 }, { transform: "none" }], { duration: 600, easing: "ease-in-out" }).finished;
+        await anim($(".c-all", pt), [{ transform: "none" }, { transform: `translateX(${6 * amp()}px) rotate(${8 * amp()}deg)` }, { transform: `rotate(${-4 * amp()}deg)` }, { transform: "none" }], { duration: 500, easing: "ease-out" }).finished;
+      },
+      async hi5() {
+        const gap = (pt.getBoundingClientRect().left - me.getBoundingClientRect().right) / 2;
+        const lean = (el2, dir) => anim($(".c-all", el2), [{ transform: "none" }, { transform: `translateX(${dir * gap * .8}px) rotate(${dir * 14}deg)`, offset: .45 }, { transform: `translateX(${dir * gap * .8}px) rotate(${dir * 8}deg)`, offset: .6 }, { transform: "none" }], { duration: 800, easing: "ease-in-out" }).finished;
+        const p = Promise.all([lean(me, 1), lean(pt, -1)]);
+        await wait(360); const c1 = center(me), c2 = center(pt); sparkles((c1.x + c2.x) / 2, c1.y - 20, 10, undefined, 50);
+        await p;
+      },
+      async doze() {
+        const z = $(".c-z", pt);
+        await Promise.all([...$$(".c-eyes ellipse", pt).map((e) => anim(e, [{ transform: "none" }, { transform: "scaleY(.12)", offset: .15 }, { transform: "scaleY(.12)", offset: .9 }, { transform: "none" }], { duration: 3000 }).finished),
+          anim(z, [{ opacity: 0, transform: "translate(0,0)" }, { opacity: 1, transform: "translate(2px,-4px)", offset: .3 }, { opacity: 1, transform: "translate(4px,-10px)", offset: .7 }, { opacity: 0, transform: "translate(6px,-16px)" }], { duration: 3000 }).finished,
+          anim($(".c-all", pt), [{ transform: "none" }, { transform: "rotate(-4deg) translateY(1px)", offset: .3 }, { transform: "rotate(-4deg) translateY(1px)", offset: .85 }, { transform: "none" }], { duration: 3000 }).finished]);
+      },
+    };
+    const run = async (k) => { if (busy || state.rm) return; busy = true; try { await A[k](); } finally { busy = false; } };
+    $$(".i-b", tools).forEach((b) => b.addEventListener("click", () => run(b.dataset.k)));
+    const auto = $(".i-auto", tools);
+    auto.onclick = () => auto.setAttribute("aria-pressed", auto.getAttribute("aria-pressed") !== "true");
+    let visible = false; new IntersectionObserver(([e]) => (visible = e.isIntersecting)).observe(el);
+    let since = 0;
+    const iv = setInterval(() => { if (!el.isConnected) return clearInterval(iv); since += 1000; const every = state.level === "wild" ? 5000 : 11000; if (since < every || calm() || !visible || auto.getAttribute("aria-pressed") !== "true") return; since = 0; run(Object.keys(A)[Math.floor(Math.random() * 5)]); }, 1000);
+  }, true);
+
+/* 16 — Milestone confetti */
+scene(3, "confetti", "Confetti that meets in the middle", "Milestones: film #50, a year since your first night, a new best streak",
+  "Confetti fires from both bottom corners, yours in your colour and Sam's in theirs. Pieces that cross the middle turn bubblegum, the colour that means \"both of you\". Saved for real milestones, so it stays special.",
+  () => `<div class="ms"><span class="sticker hot ms-st">${t("milestone")}</span>${couch("me", 50)}</div>`,
+  (el) => {
+    const tools = el.closest(".scene").querySelector(".tools");
+    tools.insertAdjacentHTML("afterbegin", `<button class="btn c-go">${t("celebrate")}</button>`);
+    const st = $(".ms-st", el);
+    $(".c-go", tools).onclick = async () => {
+      if (!state.rm) anim(st, [{ transform: "translateY(-120px) rotate(-30deg) scale(.6)", opacity: 0 }, { transform: "translateY(6px) rotate(4deg) scale(1.08)", opacity: 1, offset: .7 }, { transform: "rotate(-6deg)", opacity: 1 }], { duration: 560, easing: "ease-out" });
+      if (calm()) { const c = center(st); sparkles(c.x, c.y, 10, undefined, 80); return; }
+      const n = wild() ? 70 : 36;
+      confetti(20, innerHeight - 20, 1, n, "var(--me)", "var(--stamp)");
+      confetti(innerWidth - 20, innerHeight - 20, -1, n, "var(--pt)", "var(--stamp)");
+      flare(); const c = center(st); sfx("same", c.x, c.y - 70);
+    };
+  }, true);
+
+/* ======================= render ======================= */
+function renderAll() {
+  const host = $("#acts"); host.innerHTML = "";
+  ACTS.forEach((act, ai) => {
+    const sec = document.createElement("section");
+    sec.innerHTML = `<h2 class="act">${act.title}</h2><p class="act-note">${act.note}</p><div class="scenes"></div>`;
+    host.append(sec);
+    SCENES.filter((s) => s.act === ai).forEach((s) => {
+      const card = document.createElement("article");
+      card.className = "scene"; card.id = s.id;
+      card.innerHTML = `<h3>${s.title}</h3><p class="where">${s.where}</p><div class="stage ${["cards", "letters", "idle", "popcorn"].includes(s.id) ? "rays" : ""}"><div class="inner" style="width:100%;display:grid;place-items:center"></div></div><p class="about">${s.about}</p><div class="tools"></div>
+        <div class="verdict"><span>Verdict</span>${["keep", "maybe", "skip"].map((v) => `<button class="chip" data-v="${v}" aria-pressed="${picks[s.id] === v}"><span class="fill"></span>${v[0].toUpperCase() + v.slice(1)}</button>`).join("")}</div>`;
+      $(".inner", card).innerHTML = s.html();
+      $(".scenes", sec).append(card);
+      s.init($(".inner", card));
+      $$(".verdict .chip", card).forEach((b) => b.addEventListener("click", () => {
+        const v = picks[s.id] === b.dataset.v ? null : b.dataset.v;
+        picks[s.id] = v; savePicks();
+        $$(".verdict .chip", card).forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === v));
+        if (v === "keep" && !state.rm) { anim(b, [{ transform: "none" }, { transform: `scale(${sc(1.2)}) rotate(-4deg)` }, { transform: "none" }], { duration: 300, easing: SPRING }); const c = center(b); sparkles(c.x, c.y, 5, ["var(--ok)", "var(--pop)"], 35); }
+      }));
+    });
+  });
+  renderPicks();
+  document.getAnimations().forEach((a) => (a.playbackRate = state.speed));
+}
+
+/* Picks */
+let picks = {};
+try { picks = JSON.parse(localStorage.getItem("motion-lab-picks") || "{}"); } catch {}
+function savePicks() { try { localStorage.setItem("motion-lab-picks", JSON.stringify(picks)); } catch {} renderPicks(); }
+function renderPicks() {
+  const by = (v) => SCENES.filter((s) => picks[s.id] === v).map((s) => `  - ${s.title}`).join("\n") || "  (none yet)";
+  $("#picks-text").textContent = `Motion level I'd want by default: ${state.level[0].toUpperCase() + state.level.slice(1)}\nLook I judged in: ${{ sunburst: "Sunburst", nightowl: "Night Owl", pow: "POW!" }[state.look]}\n\nKeep:\n${by("keep")}\n\nMaybe:\n${by("maybe")}\n\nSkip:\n${by("skip")}`;
+}
+$("#copy").onclick = async () => { try { await navigator.clipboard.writeText($("#picks-text").textContent); $("#copy").textContent = "Copied"; setTimeout(() => ($("#copy").textContent = "Copy my picks"), 1500); } catch { const r = document.createRange(); r.selectNodeContents($("#picks-text")); getSelection().removeAllRanges(); getSelection().addRange(r); } };
+$("#clear").onclick = () => { picks = {}; savePicks(); $$(".verdict .chip").forEach((x) => x.setAttribute("aria-pressed", "false")); };
+
+/* Header */
+function placePill(btn, smear) {
+  const pill = $("#pill"), nav = btn.parentElement.getBoundingClientRect(), r = btn.getBoundingClientRect();
+  pill.style.transition = smear && !state.rm ? `left .38s ${SPRING}, width .38s ${SPRING}` : "none";
+  pill.style.left = r.left - nav.left - 3 + "px"; pill.style.width = r.width + "px";
+  if (smear && !calm()) anim(pill, [{ transform: "none" }, { transform: `scaleX(${sc(1.3)}) scaleY(${sc(.82)})`, offset: .4 }, { transform: `scaleX(.96) scaleY(1.05)`, offset: .7 }, { transform: "none" }], { duration: 380 });
+}
+$$("nav button").forEach((b) => b.addEventListener("click", () => { $$("nav button").forEach((x) => x.removeAttribute("aria-current")); b.setAttribute("aria-current", "page"); placePill(b, true); }));
+function renderChrome() {
+  $("#logo-couches").innerHTML = couch("me", 34) + couch("pt", 34);
+  $$("[data-t]").forEach((x) => (x.textContent = t(x.dataset.t)));
+  requestAnimationFrame(() => placePill($("nav [aria-current]"), false));
+}
+addEventListener("resize", () => placePill($("nav [aria-current]"), false));
+
+/* Control bar */
+$$(".lab .grp").forEach((g) => g.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  $$("button", g).forEach((x) => x.setAttribute("aria-pressed", x === b));
+  const v = b.dataset.v, k = g.dataset.group;
+  if (k === "level") { state.level = v; root.dataset.level = v; applyGround(); renderPicks(); $("#popcorn .inner")?._start?.(); }
+  if (k === "speed") { state.speed = +v; document.getAnimations().forEach((a) => (a.playbackRate = state.speed)); }
+  if (k === "rm") { state.rm = v === "on"; root.toggleAttribute("data-rm", state.rm); applyGround(); renderAll(); }
+  if (k === "look") { state.look = v; root.dataset.look = v; renderPicks(); requestAnimationFrame(() => placePill($("nav [aria-current]"), false)); }
+  if (k === "lang") { state.lang = v; root.lang = v; renderChrome(); renderAll(); }
+}));
+if (state.rm) { root.setAttribute("data-rm", ""); $$('[data-group="rm"] button').forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === "on")); }
+
+renderChrome();
+renderAll();
+applyGround();
+</script>
+</body>
+</html>
