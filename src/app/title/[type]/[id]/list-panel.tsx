@@ -125,7 +125,7 @@ function ListEditor(props: Props & { item: ListItem; t: Messages }) {
   const predictions = props.predictions;
 
   return (
-    <section className="card grid gap-6 sm:p-6" aria-busy={pending}>
+    <section data-list-panel className="card grid gap-6 sm:p-6" aria-busy={pending}>
       <div className="grid gap-1">
         <h2 className="display-ink text-[2rem]">{t.title.panel.onOurList}</h2>
         <p className="text-sm font-semibold text-muted">

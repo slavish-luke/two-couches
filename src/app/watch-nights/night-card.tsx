@@ -40,6 +40,8 @@ export function NightCard(props: {
   const { night, me, partner, language, t, actions = true, className = "card p-4", listing = false, live = false } = props;
   const start = new Date(night.starts_at);
   const started = start <= props.now;
+  // Sprint 27: within the last hour every upcoming card counts down live (and draws its curtains at zero).
+  const ticking = live || (!started && start.getTime() - props.now.getTime() <= 60 * 60 * 1000);
   const plannedBy =
     night.created_by === me.id
       ? t.nights.plannedByYou
@@ -55,7 +57,8 @@ export function NightCard(props: {
   // Phones: the poster sits beside the title and tickets; everything after them takes the card's full width.
   return (
     <li
-      className={`flex items-start gap-4 max-sm:grid max-sm:grid-cols-[4rem_minmax(0,1fr)] max-sm:gap-x-3 max-sm:gap-y-2 ${className}`}
+      data-night-card={night.id}
+      className={`relative flex items-start gap-4 max-sm:grid max-sm:grid-cols-[4rem_minmax(0,1fr)] max-sm:gap-x-3 max-sm:gap-y-2 ${className}`}
     >
       <Poster
         path={night.title?.poster_path ?? null}
@@ -74,7 +77,7 @@ export function NightCard(props: {
             <span className="text-xl font-bold leading-snug text-muted">{t.nights.noTitle}</span>
           )}
           {actions &&
-            (live ? (
+            (ticking ? (
               <Countdown startsAt={night.starts_at} serverNow={props.now.getTime()} language={language} />
             ) : (
               <span

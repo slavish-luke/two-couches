@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { announceChange } from "@/lib/couple-events";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -21,6 +22,11 @@ export function ListSync({ coupleId }: { coupleId: string }) {
       clearTimeout(timer);
       timer = setTimeout(() => router.refresh(), 250);
     };
+    // Sprint 27: each insert and update also goes to the page (your partner's couch peeks in with it).
+    const changed = (payload: Parameters<typeof announceChange>[0]) => {
+      refresh();
+      announceChange(payload);
+    };
     const filter = `couple_id=eq.${coupleId}`;
 
     const channel = supabase.channel(`list:${coupleId}`);
@@ -30,8 +36,8 @@ export function ListSync({ coupleId }: { coupleId: string }) {
       // Sprint 21: titles sent to each other, season reviews (signals carry your partner's hidden one).
       "title_sends", "season_reviews", "season_review_signals"]) {
       channel
-        .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, refresh)
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, refresh)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table, filter }, changed)
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table, filter }, changed)
         // Realtime can't filter deletes, and they carry only the row's key, so any couple's delete
         // arrives here. At worst that costs an extra refresh.
         .on("postgres_changes", { event: "DELETE", schema: "public", table }, refresh);

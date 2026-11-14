@@ -30,6 +30,10 @@ const en = {
     hours: (hours: number, minutes: number) => (minutes ? `in ${hours} h ${minutes} min` : `in ${hours} h`),
     minutes: (minutes: number) => `in ${minutes} min`,
     now: "Starting now",
+    /** The last minute, second by second (Sprint 27). */
+    seconds: (seconds: number) => `in ${seconds} s`,
+    /** Over the night's card as the curtains close at zero. */
+    lightsDown: "Lights down!",
   },
   proposal: {
     section: "Suggested times",
@@ -431,6 +435,8 @@ const tr: typeof en = {
     hours: (hours: number, minutes: number) => (minutes ? `${hours} sa ${minutes} dk sonra` : `${hours} sa sonra`),
     minutes: (minutes: number) => `${minutes} dk sonra`,
     now: "Şimdi başlıyor",
+    seconds: (seconds: number) => `${seconds} sn sonra`,
+    lightsDown: "Işıklar sönüyor!",
   },
   proposal: {
     section: "Önerilen saatler",

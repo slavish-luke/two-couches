@@ -6,12 +6,14 @@ import { Suspense } from "react";
 import { preconnect } from "react-dom";
 import { AppNav } from "@/components/app-nav";
 import { Couches } from "@/components/couch";
+import { CouchLife } from "@/components/couch-life";
 import { FlightDeck } from "@/components/flight-deck";
 import { Ground } from "@/components/ground";
 import { HtmlLang } from "@/components/html-lang";
 import { Intro } from "@/components/intro";
 import { MotionEffects } from "@/components/motion-effects";
 import { OfflineChip } from "@/components/offline-chip";
+import { PartnerPeek } from "@/components/partner-peek";
 import { AppBadge, PwaSetup } from "@/components/pwa";
 import { WarmUp } from "@/components/warm-up";
 import { countNewAlerts } from "@/lib/alerts";
@@ -138,6 +140,7 @@ async function AccountNav() {
           and only lang="tr" turns a Turkish i into İ. HtmlLang keeps it right after client navigations. */}
       <script dangerouslySetInnerHTML={{ __html: `document.documentElement.lang=${JSON.stringify(language)}` }} />
       <HtmlLang language={language} />
+      <CouchLife />
       {profile && (
         <>
           <OfflineChip language={language} />
@@ -145,6 +148,7 @@ async function AccountNav() {
           <FlightDeck language={language} />
           {profile.couple_id && <WarmUp />}
           {profile.couple_id && <AppBadge count={badge} />}
+          {profile.couple_id && <PartnerPeek coupleId={profile.couple_id} language={language} />}
         </>
       )}
     </>

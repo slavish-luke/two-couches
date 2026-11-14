@@ -4,7 +4,9 @@ import type { CouchMood } from "@/lib/together-rules";
  * The mascot: a little cartoon couch with a face, one per person in their colour. It bobs and blinks
  * (globals.css, off with reduced motion; the partner's couch runs a beat behind). `mood` changes the face
  * with how often you've watched together lately (couchMood()): sleepy after a long gap, happy or delighted
- * after recent nights; each skin draws the extras its own way. Decorative.
+ * after recent nights; each skin draws the extras its own way. Decorative. Class hooks for the idle moves
+ * and the motion of Sprint 27 (src/components/couch-life.tsx): couch-body, couch-look (the eyes), couch-mouth,
+ * couch-cheek, and couch-yawn / couch-doze-z, hidden until a move shows them.
  */
 export function Couch({
   who,
@@ -46,13 +48,21 @@ function heart(x: number, y: number, r: number) {
 export function CouchShape({ fill, mood = "content" }: { fill: string; mood?: CouchMood }) {
   const ink = "var(--outline)";
   return (
-    <g stroke={ink} strokeWidth={3}>
+    <g className="couch-body" stroke={ink} strokeWidth={3}>
       <rect x="9" y="8" width="46" height="24" rx="9" fill={fill} />
       <rect x="3" y="20" width="14" height="22" rx="6" fill={fill} />
       <rect x="47" y="20" width="14" height="22" rx="6" fill={fill} />
       <rect x="13" y="28" width="38" height="14" rx="5" fill={fill} />
       <path d="M10 42v5M54 42v5" strokeLinecap="round" />
       <Face mood={mood} ink={ink} />
+      {/* Hidden until an idle yawn or doze opens them (src/components/couch-life.tsx). */}
+      <ellipse className="couch-yawn couch-ink" cx="32" cy="26" rx="2.6" ry="2.8" fill={ink} stroke="none" opacity={0} />
+      {mood !== "sleepy" && (
+        <g className="couch-doze-z" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0}>
+          <path d="M55 2h5l-5 5h5" />
+          <path d="M61 -6h3.5l-3.5 3.5h3.5" strokeWidth={1.6} />
+        </g>
+      )}
       {mood === "delighted" && (
         // Three ways to say "delighted"; each skin shows one (globals.css, Sprint 20).
         <g className="couch-extra" strokeWidth={1.6} strokeLinejoin="round">
@@ -82,15 +92,15 @@ export function CouchShape({ fill, mood = "content" }: { fill: string; mood?: Co
 function Face({ mood, ink }: { mood: CouchMood; ink: string }) {
   const cheeks = (opacity: number) => (
     <>
-      <circle cx="21" cy="24" r="2.6" fill="var(--blush)" opacity={opacity} stroke="none" />
-      <circle cx="43" cy="24" r="2.6" fill="var(--blush)" opacity={opacity} stroke="none" />
+      <circle className="couch-cheek" cx="21" cy="24" r="2.6" fill="var(--blush)" opacity={opacity} stroke="none" />
+      <circle className="couch-cheek" cx="43" cy="24" r="2.6" fill="var(--blush)" opacity={opacity} stroke="none" />
     </>
   );
   if (mood === "sleepy") {
     return (
       <>
-        <path d="M23.4 19.5q2.6 2.2 5.2 0M35.4 19.5q2.6 2.2 5.2 0" fill="none" strokeWidth={2.2} strokeLinecap="round" />
-        <path d="M30 26.2h4" fill="none" strokeWidth={2.4} strokeLinecap="round" />
+        <path className="couch-look" d="M23.4 19.5q2.6 2.2 5.2 0M35.4 19.5q2.6 2.2 5.2 0" fill="none" strokeWidth={2.2} strokeLinecap="round" />
+        <path className="couch-mouth" d="M30 26.2h4" fill="none" strokeWidth={2.4} strokeLinecap="round" />
         {cheeks(0.3)}
       </>
     );
@@ -98,20 +108,20 @@ function Face({ mood, ink }: { mood: CouchMood; ink: string }) {
   if (mood === "delighted") {
     return (
       <>
-        <path d="M23.4 20.5q2.6-4 5.2 0M35.4 20.5q2.6-4 5.2 0" fill="none" strokeWidth={2.4} strokeLinecap="round" />
-        <path className="couch-ink" d="M26.5 23.5h11c0 3.4-2.5 5.6-5.5 5.6s-5.5-2.2-5.5-5.6Z" fill={ink} strokeWidth={1.6} strokeLinejoin="round" />
+        <path className="couch-look" d="M23.4 20.5q2.6-4 5.2 0M35.4 20.5q2.6-4 5.2 0" fill="none" strokeWidth={2.4} strokeLinecap="round" />
+        <path className="couch-ink couch-mouth" d="M26.5 23.5h11c0 3.4-2.5 5.6-5.5 5.6s-5.5-2.2-5.5-5.6Z" fill={ink} strokeWidth={1.6} strokeLinejoin="round" />
         {cheeks(0.7)}
       </>
     );
   }
   return (
     <>
-      <ellipse className="couch-eye" cx="26" cy="19" rx="2.6" ry="3.4" fill={ink} stroke="none" />
-      <ellipse className="couch-eye" cx="38" cy="19" rx="2.6" ry="3.4" fill={ink} stroke="none" />
+      <ellipse className="couch-eye couch-look" cx="26" cy="19" rx="2.6" ry="3.4" fill={ink} stroke="none" />
+      <ellipse className="couch-eye couch-look" cx="38" cy="19" rx="2.6" ry="3.4" fill={ink} stroke="none" />
       {mood === "happy" ? (
-        <path d="M26.2 23.8q5.8 6.2 11.6 0" fill="none" strokeWidth={2.7} strokeLinecap="round" />
+        <path className="couch-mouth" d="M26.2 23.8q5.8 6.2 11.6 0" fill="none" strokeWidth={2.7} strokeLinecap="round" />
       ) : (
-        <path d="M28 25q4 3.5 8 0" fill="none" strokeWidth={2.4} strokeLinecap="round" />
+        <path className="couch-mouth" d="M28 25q4 3.5 8 0" fill="none" strokeWidth={2.4} strokeLinecap="round" />
       )}
       {cheeks(mood === "happy" ? 0.7 : 0.45)}
     </>

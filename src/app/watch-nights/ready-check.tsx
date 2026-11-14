@@ -1,9 +1,12 @@
 "use client";
 
-import { useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
-import { Couches } from "@/components/couch";
+import { useLayoutEffect, useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
+import { Couch, Couches } from "@/components/couch";
 import { FilePick, VIDEO_TYPES } from "@/components/file-pick";
 import { CheckIcon } from "@/components/icons";
+import { spring } from "@/lib/couch-moves";
+import { confetti, flare, sfx, sparkles } from "@/lib/fx";
+import { amp, anim, center, isCalm, isReduced, isWild, SPRING, wait } from "@/lib/motion";
 import { getMessages } from "@/lib/i18n";
 import { probeFile, type MediaProblem } from "@/lib/media-check";
 import type { NightMethod } from "@/lib/night-rules";
@@ -59,6 +62,24 @@ export function ReadyCheck(props: {
       : null;
   const room = getMessages(language).nights.room;
 
+  // Sprint 27 (the motion lab's "ready" scene): someone becoming ready while you look springs their couch and
+  // draws their tick; both becoming ready scoots the couches together behind the tag, with sparkles, the
+  // ground's flare and, at Wild, confetti from both sides. Nothing on the first render.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const wasReady = useRef<{ me: boolean; partner: boolean; both: boolean } | null>(null);
+  const meReady = Boolean(mine?.ready_at);
+  const partnerReady = Boolean(theirs?.ready_at);
+  // A layout effect, so a tick that's about to draw itself never shows whole for a frame first.
+  useLayoutEffect(() => {
+    const before = wasReady.current;
+    wasReady.current = { me: meReady, partner: partnerReady, both };
+    const root = rootRef.current;
+    if (!before || !root || document.hidden) return;
+    if (meReady && !before.me) void becomeReady(root, "me");
+    if (partnerReady && !before.partner) void becomeReady(root, "partner");
+    if (both && !before.both) void celebrate(root);
+  }, [meReady, partnerReady, both]);
+
   function run(action: () => Promise<NightResult>, after?: () => void) {
     setError(undefined);
     startTransition(async () => {
@@ -74,15 +95,17 @@ export function ReadyCheck(props: {
   // A paper slip of its own, so it reads the same on a card and inside the home page's grape spotlight.
   return (
     <div
+      ref={rootRef}
       aria-busy={pending}
-      className={`paper grid gap-2.5 rounded-control border-[3px] border-outline p-3 text-sm ${both ? "bg-both-soft" : ""}`}
+      data-ready-check
+      className={`paper grid gap-2.5 rounded-control border-[3px] border-outline p-3 text-sm transition-colors duration-500 ${both ? "bg-both-soft" : ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
         <span className="text-base font-bold">{t.heading}</span>
         {both && (
           // You're both ready: the two couches turn up, and a bubblegum tag pops in like the BOTH burst.
           <span className="inline-flex items-center gap-2">
-            <Couches size={34} />
+            <Couches size={34} className="ready-couches" />
             <span
               style={{ "--r": "-3deg", rotate: "var(--r)" } as CSSProperties}
               className="burst inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-outline bg-stamp px-3 pb-0.5 pt-1 font-display text-base uppercase leading-none tracking-[0.03em] text-on-stamp shadow-[var(--lift-sm)_var(--lift-sm)_0_var(--outline)]"
@@ -95,7 +118,7 @@ export function ReadyCheck(props: {
       </div>
 
       <ul className="grid gap-2">
-        <Row person={me} check={mine} fill="bg-me" files={files} language={language}>
+        <Row person={me} who="me" check={mine} fill="bg-me" files={files} language={language}>
           {mine?.ready_at ? (
             <button
               type="button"
@@ -121,7 +144,7 @@ export function ReadyCheck(props: {
             </button>
           )}
         </Row>
-        {partner && <Row person={partner} check={theirs} fill="bg-partner" files={files} language={language} />}
+        {partner && <Row person={partner} who="partner" check={theirs} fill="bg-partner" files={files} language={language} />}
       </ul>
 
       {!mine?.ready_at && (
@@ -175,9 +198,46 @@ export function ReadyCheck(props: {
   );
 }
 
-/** One person: their name tag, ready or not, the file they have, and (for you) the buttons. */
+/** Someone's couch springs up and their tick draws itself (Calm: a smaller spring; reduced motion: neither). */
+async function becomeReady(root: HTMLElement, who: "me" | "partner") {
+  if (isReduced()) return;
+  const row = root.querySelector(`[data-seat="${who}"]`);
+  const couch = row?.querySelector(".couch");
+  if (couch) void spring(couch, isCalm());
+  const tick = row?.closest("li")?.querySelector<SVGPathElement>("[data-tick] path");
+  if (!tick) return;
+  tick.style.strokeDashoffset = "1";
+  await wait(300);
+  await anim(tick, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 300, easing: "ease-out" }).finished;
+  tick.style.strokeDashoffset = "";
+}
+
+/** You're both ready: the couches scoot in from each side behind the tag, then sparkles, flare and (Wild) confetti. */
+async function celebrate(root: HTMLElement) {
+  if (isReduced()) return;
+  await wait(350);
+  const couches = [...root.querySelectorAll<SVGElement>(".ready-couches .couch")];
+  const tag = root.querySelector(".ready-couches")?.nextElementSibling;
+  const scoot = isCalm() ? 0 : 22 * amp();
+  couches.forEach((couch, i) => {
+    void anim(couch, [{ translate: `${i ? scoot : -scoot}px 0` }, { translate: "0 0" }], { duration: 450, easing: SPRING, delay: i * 60 });
+  });
+  await wait(400);
+  if (!tag) return;
+  const c = center(tag);
+  sparkles(c.x, c.y, { count: 14, distance: 100 });
+  sfx("ready", c.x, c.y - 80);
+  flare();
+  if (isWild()) {
+    confetti(c.x, c.y, { toward: 1, count: 14, color: "var(--me)", meetColor: "var(--stamp)" });
+    confetti(c.x, c.y, { toward: -1, count: 14, color: "var(--partner)", meetColor: "var(--stamp)" });
+  }
+}
+
+/** One person: their couch, name tag, ready or not, the file they have, and (for you) the buttons. */
 function Row(props: {
   person: Person;
+  who: "me" | "partner";
   check: Check | undefined;
   /** The person's colour, as a background class. */
   fill: string;
@@ -193,6 +253,10 @@ function Row(props: {
     : null;
   return (
     <li className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+      {/* Their seat: a little couch that springs up when they're ready. */}
+      <span data-seat={props.who} className="-my-1 inline-flex">
+        <Couch who={props.who} size={28} />
+      </span>
       <span
         className={`max-w-full truncate rounded-full border-[2.5px] border-outline px-2.5 text-sm font-bold ${props.fill}`}
       >
@@ -200,7 +264,10 @@ function Row(props: {
       </span>
       {check?.ready_at ? (
         <span className="inline-flex items-center gap-1 rounded-full border-2 border-outline bg-accent py-px pl-1.5 pr-2.5 text-sm font-bold text-on-accent">
-          <CheckIcon className="size-4 [stroke-width:3]" />
+          {/* The check, drawn with pathLength 1 so it can draw itself in (becomeReady()). */}
+          <svg data-tick aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="inline-block size-4 shrink-0">
+            <path pathLength={1} strokeDasharray={1} d="m5 12.5 4.5 4.5L19 7.5" />
+          </svg>
           {t.ready}
         </span>
       ) : (
