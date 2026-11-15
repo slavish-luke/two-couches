@@ -70,7 +70,7 @@ async function WatchNights() {
 
   return (
     <div className="grid gap-10">
-      <ListSync coupleId={profile.couple_id} />
+      <ListSync />
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div className="grid max-w-[34rem] gap-3">
           <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.nights.heading}</h1>

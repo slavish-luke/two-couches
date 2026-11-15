@@ -129,7 +129,7 @@ async function PickForTonight({ searchParams }: Pick<PageProps<"/pick">, "search
 
   return (
     <div className="grid gap-8">
-      <ListSync coupleId={profile.couple_id} />
+      <ListSync />
       <MoodSync coupleId={profile.couple_id} />
       <div className="grid gap-3">
         <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{text.heading}</h1>

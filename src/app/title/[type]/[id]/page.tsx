@@ -68,6 +68,9 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
   const ref: TitleRef = { media_type: type, tmdb_id: tmdbId };
   // The poster deck streams in after the page (never rejects); until then the page shows its one poster.
   const deck = getPosterDeck(ref, language);
+  // Where to watch starts alongside the title (both may need TMDB), not after it.
+  const where = loadWhereToWatch(ref);
+  where.catch(() => {});
   const title = await getTitle(ref, tmdbLocale(profile.language, profile.home_country));
   if (!title) notFound();
   const poster = (
@@ -154,7 +157,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
       </div>
 
       <Suspense fallback={<WhereToWatchSkeleton />}>
-        <WhereToWatch titleRef={ref} />
+        <WhereToWatch titleRef={ref} data={where} />
       </Suspense>
 
       {/* Sprint 23: who made it and the main cast, each with a page of their own. */}
@@ -175,7 +178,7 @@ async function TitleView({ params }: Pick<PageProps<"/title/[type]/[id]">, "para
             seasonEpisodes={title.season_episodes}
             genres={title.genre_ids.map((id, i) => ({ id, name: title.genres[i] ?? "" }))}
           />
-          <ListSync coupleId={profile.couple_id} />
+          <ListSync />
         </Suspense>
       )}
       {profile.couple_id && <TitleTogether titleRef={ref} seasonEpisodes={title.season_episodes} />}
@@ -307,17 +310,22 @@ async function tasteExtras(
   return { predictions: rated ? { me: predict(meId), partner: predict(partnerId) } : null, guesses };
 }
 
-async function WhereToWatch({ titleRef }: { titleRef: TitleRef }) {
-  const [profile, partner, { t }] = await Promise.all([requireProfile(), getPartner(), getI18n()]);
+/** Where to watch's data: availability in both countries, reminders and "gone" alerts, all at once. */
+async function loadWhereToWatch(titleRef: TitleRef) {
+  const [profile, partner] = await Promise.all([requireProfile(), getPartner()]);
   const me: Watcher = { country: profile.country!, services: profile.services };
   const them: Watcher | null = partner?.country ? { country: partner.country, services: partner.services } : null;
-  const partnerName = partner?.display_name || t.common.yourPartner;
-
   const [byTitle, reminded, goneByTitle] = await Promise.all([
     getAvailability([titleRef], them ? [me.country, them.country] : [me.country]),
     profile.couple_id ? getReminderKeys(profile.couple_id) : null,
     profile.couple_id ? getGoneAlerts(profile.couple_id) : ({} as Awaited<ReturnType<typeof getGoneAlerts>>),
   ]);
+  return { profile, partner, me, them, byTitle, reminded, goneByTitle };
+}
+
+async function WhereToWatch({ titleRef, data }: { titleRef: TitleRef; data: ReturnType<typeof loadWhereToWatch> }) {
+  const [{ profile, partner, me, them, byTitle, reminded, goneByTitle }, { t }] = await Promise.all([data, getI18n()]);
+  const partnerName = partner?.display_name || t.common.yourPartner;
   const availability = byTitle[titleKey(titleRef)] ?? {};
   // Services one of you paid to stream it on, that it has left (the daily check's "gone" alerts).
   const gone = goneByTitle[titleKey(titleRef)] ?? {};

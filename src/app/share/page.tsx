@@ -55,7 +55,7 @@ async function Share({ searchParams }: Pick<PageProps<"/share">, "searchParams">
           </p>
         )}
       </div>
-      {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
+      {profile.couple_id && <ListSync />}
       <Suspense fallback={<ShareResultsSkeleton />}>
         <Results
           lookup={lookup}

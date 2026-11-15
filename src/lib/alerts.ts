@@ -26,7 +26,8 @@ export async function recordBaseline(ref: TitleRef, countries: string[]) {
   const admin = createAdminClient();
   if (!admin) return;
   try {
-    const availability = (await getAvailability([ref], countries))[titleKey(ref)] ?? {};
+    // fresh: the baseline must be what streams today, not a copy up to a week old.
+    const availability = (await getAvailability([ref], countries, { fresh: true }))[titleKey(ref)] ?? {};
     const rows = countries.flatMap((country) => {
       const there = availability[country];
       return there

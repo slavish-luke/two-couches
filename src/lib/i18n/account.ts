@@ -92,7 +92,7 @@ const en = {
   },
   dataSaver: {
     heading: "Data saver",
-    intro: "Smaller posters, for slow or limited connections. Auto turns it on when this device asks to save data or the connection is slow.",
+    intro: "Smaller posters, and the other tabs load when you open them rather than in the background, for slow or limited connections. Auto turns it on when this device asks to save data or the connection is slow.",
     options: { auto: "Auto", on: "On", off: "Off" } satisfies Record<DataSaverMode, string>,
     savingNow: "Saving data now.",
     cantDetect: "This browser doesn't share how fast the connection is, so Auto stays off here. Choose On to save data.",
@@ -242,7 +242,7 @@ const tr: typeof en = {
   },
   dataSaver: {
     heading: "Veri tasarrufu",
-    intro: "Yavaş ya da kotalı bağlantılar için daha küçük afişler. Otomatik seçeneği, cihaz veri tasarrufu istediğinde ya da bağlantı yavaşken devreye girer.",
+    intro: "Yavaş ya da kotalı bağlantılar için daha küçük afişler; diğer sekmeler de arka planda değil, açtığında yüklenir. Otomatik seçeneği, cihaz veri tasarrufu istediğinde ya da bağlantı yavaşken devreye girer.",
     options: { auto: "Otomatik", on: "Açık", off: "Kapalı" },
     savingNow: "Şu an veri tasarrufu yapılıyor.",
     cantDetect: "Bu tarayıcı bağlantı hızını paylaşmıyor, bu yüzden Otomatik burada devreye girmez. Veri tasarrufu için “Açık” seçeneğini seç.",

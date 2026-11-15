@@ -14,6 +14,7 @@ import { Intro } from "@/components/intro";
 import { MotionEffects } from "@/components/motion-effects";
 import { OfflineChip } from "@/components/offline-chip";
 import { PartnerPeek } from "@/components/partner-peek";
+import { CoupleSync } from "@/components/list-sync";
 import { AppBadge, PwaSetup } from "@/components/pwa";
 import { WarmUp } from "@/components/warm-up";
 import { countNewAlerts } from "@/lib/alerts";
@@ -149,6 +150,7 @@ async function AccountNav() {
           {profile.couple_id && <WarmUp />}
           {profile.couple_id && <AppBadge count={badge} />}
           {profile.couple_id && <PartnerPeek coupleId={profile.couple_id} language={language} />}
+          {profile.couple_id && <CoupleSync coupleId={profile.couple_id} myId={profile.id} />}
         </>
       )}
     </>

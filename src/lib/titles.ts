@@ -1,4 +1,5 @@
 import "server-only";
+import { inBackground } from "./background";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/database.types";
 import { createAdminClient } from "./supabase/admin";
@@ -18,6 +19,10 @@ import {
 import { titleKey, type Availability, type MediaType, type Provider, type TitleRef } from "./watch";
 
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/** A page shows availability up to this old at once and re-checks it after the response (getAvailability). */
+const SHOW_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Titles this server is re-checking after a response, so pages loading together don't check one twice. */
+const recheckingAvailability = new Set<string>();
 /** More seasons than this means they're numbered by year (talk shows): no per-season counts then. */
 const MAX_SEASONS = 100;
 
@@ -150,7 +155,9 @@ function pickTrailer(videos: MovieDetails["videos"], language: string) {
 
 /**
  * A film or series in the viewer's locale (e.g. "en-GB"), or null if TMDB doesn't know it.
- * Served from the Supabase cache and refreshed from TMDB when older than a day.
+ * Served from the Supabase cache. When the cached copy is older than a day it is still served at once and
+ * refreshed from TMDB after the response (inBackground), so a stale title never holds up a page; only a title
+ * never cached in this locale (or cached before Sprint 22, without origin countries) waits for TMDB.
  */
 export async function getTitle(ref: TitleRef, locale: string): Promise<Title | null> {
   const supabase = await createClient();
@@ -163,16 +170,28 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     .maybeSingle();
   const cachedText = cached?.title_texts[0];
   // Rows cached before Sprint 22 have no origin countries yet: refreshing once fills them in.
-  if (
-    cached &&
-    cachedText &&
-    cached.origin_countries !== null &&
-    isFresh(cached.refreshed_at) &&
-    isFresh(cachedText.refreshed_at)
-  ) {
+  if (cached && cachedText && cached.origin_countries !== null) {
+    if (!isFresh(cached.refreshed_at) || !isFresh(cachedText.refreshed_at)) {
+      // Plain key: refs may be whole search results with extra fields.
+      const key = { media_type: ref.media_type, tmdb_id: ref.tmdb_id };
+      void inBackground(`Refreshing ${titleKey(ref)}`, () => fetchTitle(key, locale));
+    }
     return toTitle(cached, cachedText);
   }
 
+  try {
+    return await fetchTitle(ref, locale);
+  } catch (error) {
+    if (cached && cachedText) {
+      console.error(`Refreshing ${titleKey(ref)} from TMDB failed`, error);
+      return toTitle(cached, cachedText);
+    }
+    throw error;
+  }
+}
+
+/** Fetches a title from TMDB and caches it (titles + title_texts). Null when TMDB doesn't know it. */
+async function fetchTitle(ref: TitleRef, locale: string): Promise<Title | null> {
   let details: MovieDetails | TvDetails;
   try {
     details = await tmdbGet<MovieDetails | TvDetails>(`/${ref.media_type}/${ref.tmdb_id}`, {
@@ -182,10 +201,6 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     });
   } catch (error) {
     if (error instanceof TmdbError && error.status === 404) return null;
-    if (cached && cachedText) {
-      console.error(`Refreshing ${titleKey(ref)} from TMDB failed`, error);
-      return toTitle(cached, cachedText);
-    }
     throw error;
   }
 
@@ -240,6 +255,8 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
     refreshed_at: refreshedAt,
   };
 
+  // Awaited: callers add list rows, nights and sends that point at this row straight after. (A stale
+  // refresh already runs after the response, see getTitle.)
   const admin = createAdminClient();
   if (admin) {
     const { error } = await admin.from("titles").upsert(row);
@@ -254,13 +271,20 @@ export async function getTitle(ref: TitleRef, locale: string): Promise<Title | n
  * and refreshed from TMDB when older than a day. One TMDB call per stale title covers every country.
  * Never throws: titles that can't be checked come back with the countries missing.
  *
- * Reads the cache as the signed-in user unless given another `client` (the daily check passes the admin
- * client). `maxAgeMs` overrides how old a cached check may be.
+ * For a page, a check older than a day but under a week (SHOW_STALE_MS) is shown at once and re-checked
+ * after the response (so the first visit of the day isn't held up by TMDB); only titles never checked, or
+ * checked over a week ago, wait for TMDB. The daily check passes its own `client` and always waits for fresh
+ * data, and so does `fresh` (alert baselines). Reads the cache as the signed-in user unless given another
+ * `client`. `maxAgeMs` overrides how old a cached check may be.
  */
 export async function getAvailability(
   titles: TitleRef[],
   regions: string[],
-  { client, maxAgeMs = MAX_AGE_MS }: { client?: SupabaseClient<Database>; maxAgeMs?: number } = {},
+  {
+    client,
+    maxAgeMs = MAX_AGE_MS,
+    fresh = false,
+  }: { client?: SupabaseClient<Database>; maxAgeMs?: number; fresh?: boolean } = {},
 ): Promise<Record<string, Availability>> {
   // A title or country twice in one upsert would fail it (both partners are in one country during a visit).
   const refs = [...new Map(titles.map((ref) => [titleKey(ref), ref])).values()];
@@ -302,14 +326,49 @@ export async function getAvailability(
     });
   }
 
-  const stale = refs.filter((ref) =>
+  const olderThan = (ref: TitleRef, ms: number) =>
     countries.some((country) => {
       const checked = result[titleKey(ref)][country];
-      return !checked || !isFresh(checked.checked_at, maxAgeMs);
-    }),
-  );
+      return !checked || !isFresh(checked.checked_at, ms);
+    });
+  const stale = refs.filter((ref) => olderThan(ref, maxAgeMs));
   if (stale.length === 0 || !isTmdbConfigured()) return result;
 
+  if (!client && !fresh) {
+    // A page: show what's cached if it's under a week old and re-check it after the response.
+    const aging = stale.filter((ref) => !olderThan(ref, SHOW_STALE_MS) && !recheckingAvailability.has(titleKey(ref)));
+    const now = stale.filter((ref) => olderThan(ref, SHOW_STALE_MS));
+    if (aging.length > 0) {
+      // Plain keys: refs may be whole search results with extra fields.
+      const keys = aging.map((ref) => ({ media_type: ref.media_type, tmdb_id: ref.tmdb_id }));
+      for (const ref of keys) recheckingAvailability.add(titleKey(ref));
+      void inBackground("Re-checking availability", async () => {
+        try {
+          await checkAvailability(keys, countries, {});
+        } finally {
+          for (const ref of keys) recheckingAvailability.delete(titleKey(ref));
+        }
+      });
+    }
+    if (now.length === 0) return result;
+    Object.assign(result, await checkAvailability(now, countries, {}));
+    return result;
+  }
+  Object.assign(result, await checkAvailability(stale, countries, { client }));
+  return result;
+}
+
+/**
+ * Checks titles against TMDB in every country and caches the result (availability, availability_checks).
+ * Returns each title's availability; titles TMDB couldn't answer for are left out. With a `client` (the daily
+ * check) it waits for the cache write; otherwise the write happens after the response.
+ */
+async function checkAvailability(
+  stale: TitleRef[],
+  countries: string[],
+  { client }: { client?: SupabaseClient<Database> },
+): Promise<Record<string, Availability>> {
+  const result: Record<string, Availability> = {};
   const checkedAt = new Date().toISOString();
   const fetched = await settleLimited(stale, 20, (ref) =>
     tmdbGet<TitleProviders>(`/${ref.media_type}/${ref.tmdb_id}/watch/providers`),
@@ -339,7 +398,7 @@ export async function getAvailability(
         })),
       ).sort((a, b) => a.display_priority - b.display_priority);
 
-      result[titleKey(ref)][country] = { providers, link: offers?.link ?? null, checked_at: checkedAt };
+      (result[titleKey(ref)] ??= {})[country] = { providers, link: offers?.link ?? null, checked_at: checkedAt };
       newChecks.push({ ...key, country, link: offers?.link ?? null, checked_at: checkedAt });
       newRows.push(
         ...providers.map((p) => ({
@@ -357,7 +416,7 @@ export async function getAvailability(
 
   const admin = createAdminClient();
   if (admin && refreshed.length > 0) {
-    try {
+    const write = async () => {
       // Replace the previous snapshot for these titles and countries.
       const deletes = await Promise.all(
         refreshed.map((ref) =>
@@ -377,9 +436,16 @@ export async function getAvailability(
       }
       const { error } = await admin.from("availability_checks").upsert(newChecks);
       if (error) throw error;
-    } catch (error) {
-      console.error("Caching availability failed", error);
-    }
+    };
+    // A page has what it needs, so it writes the cache after the response. The daily check (which passes its
+    // own client) waits for the write, as it compares snapshots straight after.
+    if (client) {
+      try {
+        await write();
+      } catch (error) {
+        console.error("Caching availability failed", error);
+      }
+    } else void inBackground("Caching availability", write);
   }
   return result;
 }

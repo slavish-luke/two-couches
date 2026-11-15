@@ -35,7 +35,7 @@ async function Search({ searchParams }: Pick<PageProps<"/search">, "searchParams
     <div className="grid gap-6">
       <h1 className="display -rotate-1 text-[clamp(2.4rem,5vw,3.6rem)]">{t.list.search.heading}</h1>
       <SearchBox query={query} autoFocus={!query} language={language} />
-      {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
+      {profile.couple_id && <ListSync />}
       <Suspense fallback={<SearchResultsSkeleton />}>
         <Results
           query={query}

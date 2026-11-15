@@ -272,7 +272,7 @@ async function OurList({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       </aside>
 
       <div className="flex min-w-0 flex-col lg:col-span-7 lg:block xl:col-span-8">
-        <ListSync coupleId={profile.couple_id} />
+        <ListSync />
         {/* Below the list on phones (Sprint 24); above it beside the aside. */}
         <div className="order-last mt-8 empty:hidden lg:mt-0">
           <NextEpisodes />

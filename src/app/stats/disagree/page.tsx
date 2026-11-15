@@ -51,7 +51,7 @@ async function Disagree() {
 
   return (
     <div className="grid gap-9">
-      <ListSync coupleId={profile.couple_id} />
+      <ListSync />
       <div className="grid gap-3">
         <Link
           href="/stats"

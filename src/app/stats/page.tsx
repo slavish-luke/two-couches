@@ -87,7 +87,7 @@ async function Stats({ searchParams }: Pick<PageProps<"/stats">, "searchParams">
 
   return (
     <div className="grid gap-9">
-      <ListSync coupleId={profile.couple_id} />
+      <ListSync />
       {/* Numbers roll in once per visit (Sprint 28), again for another year. */}
       <RollIn key={String(period)} />
       <div className="grid gap-4">

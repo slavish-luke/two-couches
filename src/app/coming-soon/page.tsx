@@ -145,7 +145,7 @@ async function ComingSoon({ searchParams }: Pick<PageProps<"/coming-soon">, "sea
 
   return (
     <div className="grid gap-8">
-      <ListSync coupleId={coupleId} />
+      <ListSync />
       {/* Sprint 26: Films / Series deal the new cards in (the release rows have their own, as they stream in later). */}
       <DealIn scope="upcoming" tab={type} />
       {newCount > 0 && <MarkAlertsSeen />}

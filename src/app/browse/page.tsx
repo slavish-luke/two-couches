@@ -239,7 +239,7 @@ async function Browse({ searchParams }: Pick<PageProps<"/browse">, "searchParams
           ))}
         </ul>
       </nav>
-      {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
+      {profile.couple_id && <ListSync />}
 
       {/* The catalogue leads; For you and the strands run down a rail beside it on wide screens and come first on phones. */}
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-[auto_1fr] lg:gap-x-10 xl:grid-cols-[minmax(0,1fr)_27rem]">

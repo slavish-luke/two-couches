@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { isSavingData, onConnectionChange } from "@/lib/data-saver";
 import { flightTypes } from "@/lib/flight";
 import { getMessages } from "@/lib/i18n";
 
@@ -187,6 +188,7 @@ function usePill(listRef: RefObject<HTMLUListElement | null>, pillRef: RefObject
  */
 export function AppNav({ newAlerts, language }: { newAlerts: number; language: string }) {
   const pathname = usePathname();
+  const savingData = useSavingData();
   const t = getMessages(language).common.nav;
   const current = (href: string) => (isCurrent(pathname, href) ? "page" : undefined);
   const index = SECTIONS.findIndex(({ href }) => isCurrent(pathname, href));
@@ -221,8 +223,12 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
           <li ref={barPill} aria-hidden data-nav-pill className={pill} style={{ opacity: 0 }} />
           {SECTIONS.map(({ key, href }, i) => (
             <li key={key}>
+              {/* Full prefetch: each section's whole page loads in the background when the app opens, so a tap
+                  shows it at once (next.config.ts, partialPrefetching). CoupleSync keeps the copies fresh.
+                  Not the page you're on (it would only render it again), and not with Data saver on. */}
               <Link
                 href={href}
+                prefetch={pathname === href || savingData ? false : true}
                 data-section-link
                 aria-current={current(href)}
                 transitionTypes={flightTypes(index, i)}
@@ -255,6 +261,7 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
             <li key={key}>
               <Link
                 href={href}
+                prefetch={pathname === href || savingData ? false : true}
                 data-section-link
                 aria-current={current(href)}
                 transitionTypes={flightTypes(index, i)}
@@ -273,4 +280,12 @@ export function AppNav({ newAlerts, language }: { newAlerts: number; language: s
       </nav>
     </>
   );
+}
+
+/**
+ * Whether this device saves data (Settings → Data saver), so the tab bar doesn't load every section in the
+ * background. Before hydration (and on the server) it says yes, so nothing is prefetched until it's known.
+ */
+function useSavingData() {
+  return useSyncExternalStore(onConnectionChange, () => isSavingData(), () => true);
 }

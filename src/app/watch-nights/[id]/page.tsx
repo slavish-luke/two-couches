@@ -48,7 +48,7 @@ async function EditWatchNight({ params }: Pick<PageProps<"/watch-nights/[id]">, 
 
   return (
     <div className="grid gap-6">
-      <ListSync coupleId={profile.couple_id} />
+      <ListSync />
       <div className="grid gap-3">
         <Link href="/watch-nights" className="group inline-flex items-center gap-1.5 justify-self-start font-bold underline underline-offset-4">
           <BackIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:-translate-x-1" /> {t.nights.form.back}

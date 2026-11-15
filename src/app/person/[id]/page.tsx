@@ -104,7 +104,7 @@ async function PersonView({ params }: Pick<PageProps<"/person/[id]">, "params">)
 
   return (
     <div className="grid gap-12">
-      {profile.couple_id && <ListSync coupleId={profile.couple_id} />}
+      {profile.couple_id && <ListSync />}
       <div className="grid gap-x-9 gap-y-6 sm:grid-cols-[auto_minmax(0,1fr)]">
         <div className="w-[200px] justify-self-center sm:w-[240px] sm:justify-self-start">
           <PersonPhoto

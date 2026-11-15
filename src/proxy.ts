@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isKeepWarmSecret, KEEP_WARM_HEADER } from "@/lib/keep-warm";
 
 // The cron route checks its own secret, and calendar feeds their token; the service worker, manifest and offline
 // page are fetched by the browser itself.
@@ -7,6 +8,10 @@ const PUBLIC_PATHS = ["/login", "/auth", "/api/cron", "/calendar", "/sw.js", "/m
 
 /** Refreshes the Supabase session cookie on every request and sends signed-out visitors to /login. */
 export async function proxy(request: NextRequest) {
+  // The keep-warm job (every 5 minutes): straight through, no session. The page renders signed out and
+  // redirects to /login, which is all it's for.
+  if (isKeepWarmSecret(request.headers.get(KEEP_WARM_HEADER))) return NextResponse.next();
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

@@ -2,13 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  partialPrefetching: true,
+  // Off on purpose: the tab bar's links use <Link prefetch={true}>, which (without Partial Prefetching) loads
+  // each section's whole page in the background as soon as the app opens, so a tap shows it at once. With
+  // Partial Prefetching on, links fetch only the App Shell, and per-user data (everything here reads the
+  // session) can't be in it: the prefetch render stops before any database call returns (tried 2026-11-15).
+  // Other links still prefetch only the static shell. Next 17 will force Partial Prefetching on: revisit then.
+  partialPrefetching: false,
   experimental: {
     // Holds navigations and Server Actions while the network is down and retries them (useOffline()).
     useOffline: true,
-    // Going back to a page seen in the last 30 s shows it straight away. Live sync and Server Actions
-    // refresh it, and <ListSync> refreshes whenever the app comes back to the foreground.
-    staleTimes: { dynamic: 30 },
+    // Going back to a page seen in the last 2 minutes shows it straight away. Server Actions (refresh()) and
+    // live changes (<CoupleSync>) clear it at once, and list pages refresh when the app comes back to the
+    // foreground. The tab bar's prefetched pages follow staleTimes.static (5 minutes), cleared the same way.
+    staleTimes: { dynamic: 120 },
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "image.tmdb.org", pathname: "/t/p/**" }],

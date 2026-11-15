@@ -46,7 +46,7 @@ async function Questions() {
 
   return (
     <div className="grid gap-9">
-      <ListSync coupleId={profile.couple_id} />
+      <ListSync />
       <div className="grid gap-3">
         <Link href="/" className="tap-area group inline-flex items-center gap-1.5 justify-self-start font-bold underline underline-offset-4">
           <BackIcon className="size-4 transition-transform duration-200 ease-(--ease-spring) group-hover:-translate-x-1" /> {t.common.nav.list}

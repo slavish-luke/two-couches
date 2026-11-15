@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { ListStatus } from "./list-rules";
 import { getPartner, type Profile } from "./session";
 import { createClient } from "./supabase/server";
@@ -69,6 +70,13 @@ function toItem(row: {
  * that has one (each person's own language is cached when a title is added), else the original title.
  */
 export async function getList(coupleId: string, locales: string[]): Promise<ListEntry[]> {
+  // Memoised per request (Home, Pick and For you each ask for it; React's cache() compares arguments by
+  // identity, so the locales go in as one string, in order: the first is preferred). Each caller gets its own array.
+  return [...(await loadList(coupleId, locales.join(",")))];
+}
+
+const loadList = cache(async (coupleId: string, localeKey: string): Promise<ListEntry[]> => {
+  const locales = localeKey.split(",");
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("list_items")
@@ -88,7 +96,7 @@ export async function getList(coupleId: string, locales: string[]): Promise<List
     runtime: row.titles.runtime,
     episodes: row.titles.episodes,
   }));
-}
+});
 
 /** This title's entry on the couple's list, or null if it isn't on it. */
 export async function getListItem(coupleId: string, ref: TitleRef): Promise<ListItem | null> {
