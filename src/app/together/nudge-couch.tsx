@@ -130,7 +130,9 @@ export function NudgeCouch(props: {
         onClick={() => setOpen((o) => !o)}
         className="nudge-target relative block rounded-control transition-transform duration-150 ease-(--ease-spring) hover:-rotate-3 active:scale-95"
       >
-        <span key={reaction?.key ?? 0} data-reacting={reaction ? "" : undefined} className="nudge-hop flex">
+        {/* Keys are prefixed: this and the floating sticker below are siblings, and siblings sharing a key make
+            React lose track of them, leaving a stray couch behind after every reaction. */}
+        <span key={`hop-${reaction?.key ?? 0}`} data-reacting={reaction ? "" : undefined} className="nudge-hop flex">
           <Couch who="partner" size={58} mood={props.mood} />
         </span>
         {/* The hint that it's a button: a little heart on its corner. */}
@@ -138,7 +140,7 @@ export function NudgeCouch(props: {
           <NudgeSticker kind="heart" className="size-4" />
         </span>
         {reaction && (
-          <span key={reaction.key} aria-hidden className="nudge-float pointer-events-none absolute left-1/2 top-0">
+          <span key={`float-${reaction.key}`} aria-hidden className="nudge-float pointer-events-none absolute left-1/2 top-0">
             <NudgeSticker kind={reaction.kind} className="size-9" />
           </span>
         )}
