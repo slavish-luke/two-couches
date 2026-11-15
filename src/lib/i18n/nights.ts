@@ -303,6 +303,10 @@ const en = {
     connecting: "Connecting…",
     failed: "Not connected, so you aren't in step right now. Trying again…",
     delay: (name: string, seconds: string) => `Delay to ${name}: ${seconds} s`,
+    log: {
+      download: "Download sync log",
+      note: "What this screen's sync did and why (positions and timings, never your chat), for sorting out a night that didn't stay in step.",
+    },
     played: (name: string) => `${name} pressed play`,
     paused: (name: string) => `${name} paused`,
     jumped: (name: string, at: string) => `${name} jumped to ${at}`,
@@ -702,6 +706,10 @@ const tr: typeof en = {
     connecting: "Bağlanıyor…",
     failed: "Bağlantı yok, şu an eş zamanlı değilsiniz. Yeniden deneniyor…",
     delay: (name: string, seconds: string) => `Gecikme (${name}): ${seconds} sn`,
+    log: {
+      download: "Eşitleme kaydını indir",
+      note: "Bu ekrandaki eşitlemenin ne yaptığı ve neden: yalnızca konumlar ve zamanlar, sohbet yazıları değil. Eşit gitmeyen bir geceyi çözmek için.",
+    },
     played: (name: string) => `Oynatan: ${name}`,
     paused: (name: string) => `Duraklatan: ${name}`,
     jumped: (name: string, at: string) => `${at} noktasına atlayan: ${name}`,

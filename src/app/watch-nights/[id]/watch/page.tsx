@@ -80,6 +80,7 @@ async function Room({ params }: Pick<PageProps<"/watch-nights/[id]/watch">, "par
       </div>
       <WatchRoom
         nightId={night.id}
+        coupleId={profile.couple_id}
         me={{ id: profile.id, name: t.common.you }}
         partner={partner && { id: partner.id, name: partner.display_name || t.common.yourPartner }}
         language={language}

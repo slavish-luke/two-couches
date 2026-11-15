@@ -54,6 +54,7 @@ import {
   type Wait,
   type WaitReason,
 } from "@/lib/room-rules";
+import { bufferedAhead, r, RoomLog, SEND_MS } from "@/lib/room-log";
 import { createClient } from "@/lib/supabase/client";
 import { finishEpisode } from "./actions";
 import { RoomChat, type ChatMessage } from "./room-chat";
@@ -109,6 +110,7 @@ const noSubscribe = () => () => {};
  */
 export function WatchRoom({
   nightId,
+  coupleId,
   me,
   partner,
   language,
@@ -116,6 +118,7 @@ export function WatchRoom({
   series,
 }: {
   nightId: string;
+  coupleId: string;
   me: Person;
   partner: Person | null;
   language: string;
@@ -129,6 +132,8 @@ export function WatchRoom({
 }) {
   const t = getMessages(language).nights;
   const text = t.room;
+  /** What this screen's sync did and why (src/lib/room-log.ts), for working out a bad night afterwards. */
+  const [log] = useState(() => new RoomLog(nightId));
   const partnerId = partner?.id ?? null;
   const partnerName = partner?.name ?? getMessages(language).common.yourPartner;
   const video = useRef<HTMLVideoElement>(null);
@@ -216,11 +221,21 @@ export function WatchRoom({
   /** The latest `episode` handler, for the channel (which is set up once per join). */
   const onEpisode = useRef<(payload: unknown) => void>(() => {});
 
-  const send = useCallback((event: string, payload: Record<string, unknown>) => {
-    // Only over the joined socket: while (re)joining, a message is out of date by the time it would land.
-    if (channel.current?.state !== "joined") return;
-    void channel.current.send({ type: "broadcast", event, payload });
-  }, []);
+  const send = useCallback(
+    (event: string, payload: Record<string, unknown>) => {
+      // Only over the joined socket: while (re)joining, a message is out of date by the time it would land.
+      if (channel.current?.state !== "joined") {
+        if (event !== "ping" && event !== "pong") log.add("tx-dropped", { e: event, ch: channel.current?.state ?? null });
+        return;
+      }
+      if (event === "state") {
+        log.add("tx", { kind: payload.kind, pos: r(payload.position as number), play: payload.playing, auto: payload.auto, wait: payload.wait });
+      } else if (event === "status") log.add("tx-status", { buffering: payload.buffering });
+      else if (event === "hello" || event === "episode") log.add(`tx-${event}`);
+      void channel.current.send({ type: "broadcast", event, payload });
+    },
+    [log],
+  );
 
   const stateNow = useCallback(
     (kind: RoomState["kind"]): RoomState | null => {
@@ -258,6 +273,7 @@ export function WatchRoom({
     (reason: WaitReason) => {
       const v = video.current;
       if (!v) return;
+      log.add("hold", { reason, pos: r(v.currentTime), wasPlaying: !v.paused });
       if (!v.paused) {
         quiet.current.pause = Date.now() + QUIET_MS;
         v.pause();
@@ -268,25 +284,27 @@ export function WatchRoom({
       const state = stateNow("pause");
       if (state) send("state", { ...state, playing: false, auto: true, wait: reason });
     },
-    [send, stateNow],
+    [send, stateNow, log],
   );
 
   /** The partner is ready: play again, on both screens, since it was our wait that paused them. */
   const resumeNow = useCallback(() => {
     const v = video.current;
     if (!v || !v.paused) return;
+    log.add("resume", { pos: r(v.currentTime) });
     quiet.current.play = Date.now() + QUIET_MS;
     v.play().then(
       () => setBlocked(false),
       () => {
         delete quiet.current.play;
+        log.add("play-refused", { by: "resume" });
         setBlocked(true);
       },
     );
     lastAction.current = Date.now();
     const state = stateNow("play");
     if (state) send("state", { ...state, playing: true, auto: true });
-  }, [send, stateNow]);
+  }, [send, stateNow, log]);
 
   /** Hold or resume as waitStep() says, after anything that changes who's ready or whether we play. */
   const evaluate = useCallback(() => {
@@ -299,13 +317,14 @@ export function WatchRoom({
     }
     const reason = reasonNow();
     const step = waitStep(wait.current, reason, !v.paused);
+    if (reason !== waitWhy.current) log.add("wait-reason", { reason, holding: step.wait.holding });
     wait.current = step.wait;
     waitWhy.current = reason;
     if (step.action === "hold" && reason) holdNow(reason);
     else if (step.action === "resume") resumeNow();
     const holding = step.wait.holding;
     setWaitView((w) => (w.reason === reason && w.holding === holding ? w : { reason, holding }));
-  }, [holdNow, reasonNow, resumeNow]);
+  }, [holdNow, reasonNow, resumeNow, log]);
 
   /** Follow the partner's player. */
   const apply = useCallback(
@@ -325,12 +344,31 @@ export function WatchRoom({
         }
       }
 
+      // One log line per message: what came in, how long it took, and what we did about it.
+      const entry: Record<string, unknown> = {
+        kind: state.kind,
+        from: state.by === me.id ? "me" : state.by === partnerId ? "partner" : "other",
+        pos: r(state.position),
+        play: state.playing,
+        transit: offset.current.roundTrip === Infinity ? null : Math.round(Date.now() - (state.at - offset.current.ms)),
+      };
+      if (state.auto) entry.auto = state.wait ?? true;
       const v = video.current;
-      if (!v || !v.currentSrc || v.readyState < HTMLMediaElement.HAVE_METADATA) return;
+      if (!v || !v.currentSrc || v.readyState < HTMLMediaElement.HAVE_METADATA) {
+        log.add("rx", { ...entry, skip: "no-video" });
+        return;
+      }
+      entry.mine = r(v.currentTime);
       if (state.kind === "tick") {
         // Only the leader's, only once the clocks are compared, and not late or older than our own action.
-        if (state.by !== leader.current || offset.current.roundTrip === Infinity) return;
-        if (!tickUsable(state, Date.now(), offset.current.ms, lastAction.current)) return;
+        if (state.by !== leader.current || offset.current.roundTrip === Infinity) {
+          log.add("rx", { ...entry, skip: offset.current.roundTrip === Infinity ? "no-clock" : "not-leader" });
+          return;
+        }
+        if (!tickUsable(state, Date.now(), offset.current.ms, lastAction.current)) {
+          log.add("rx", { ...entry, skip: state.at - offset.current.ms <= lastAction.current ? "before-our-action" : "late" });
+          return;
+        }
       } else if (
         state.kind === "sync" &&
         leader.current === me.id &&
@@ -338,6 +376,7 @@ export function WatchRoom({
         lastAction.current > (state.actedAt ?? 0) - offset.current.ms
       ) {
         // Back from a disconnection, both of us think we're in charge: we acted last, so they follow us.
+        log.add("rx", { ...entry, skip: "we-acted-last" });
         const mine = stateNow("sync");
         if (mine) send("state", { ...mine, actedAt: lastAction.current });
         return;
@@ -350,9 +389,12 @@ export function WatchRoom({
       const end = Number.isFinite(v.duration) ? v.duration : Infinity;
       const target = Math.min(targetPosition(state, Date.now(), offset.current.ms), end);
       const drift = v.currentTime - target;
+      entry.drift = r(drift);
       const seek = () => {
         quiet.current.seeked = Date.now() + QUIET_MS;
         v.currentTime = target;
+        entry.did = "seek";
+        entry.to = r(target);
       };
       if (state.kind === "tick" && state.playing && !v.paused) {
         const fix = correction(drift, TICK_MS / 1000, far.current);
@@ -362,31 +404,39 @@ export function WatchRoom({
         } else {
           far.current = fix.far;
           v.playbackRate = fix.rate;
+          entry.did = fix.rate === 1 ? "none" : "rate";
+          entry.rate = r(fix.rate, 3);
+          if (fix.far) entry.far = true;
         }
       } else {
         far.current = false;
         if (Math.abs(drift) > NUDGE_AT_S) seek();
+        else entry.did = "none";
         v.playbackRate = 1;
       }
 
       // While we hold for the partner, only a deliberate play (play anyway) starts us again.
       if (state.playing && v.paused && !wait.current.holding) {
+        entry.then = "play";
         quiet.current.play = Date.now() + QUIET_MS;
         v.play().then(
           () => setBlocked(false),
           () => {
             // Browsers can refuse to play with sound until this page has had a tap.
             delete quiet.current.play;
+            log.add("play-refused", { by: "follow" });
             setBlocked(true);
           },
         );
       } else if (!state.playing && !v.paused) {
+        entry.then = "pause";
         quiet.current.pause = Date.now() + QUIET_MS;
         v.pause();
-      }
+      } else if (state.playing && v.paused) entry.then = "held";
+      log.add("rx", entry);
       evaluate();
     },
-    [me.id, partnerId, send, stateNow, toast, evaluate],
+    [me.id, partnerId, send, stateNow, toast, evaluate, log],
   );
 
   /** Tell the partner whether our player is stuck (repeated while it is, so a lost "unstuck" expires). */
@@ -394,9 +444,11 @@ export function WatchRoom({
     (now: boolean) => {
       if (now === buffering.current) return;
       buffering.current = now;
+      const v = video.current;
+      log.add("stuck", { now, pos: r(v?.currentTime), rs: v?.readyState ?? null, ahead: v ? bufferedAhead(v) : null });
       send("status", { by: me.id, buffering: now });
     },
-    [me.id, send],
+    [me.id, send, log],
   );
 
   // Join the room, and join again whenever the channel closes. The client rejoins by itself after errors
@@ -435,6 +487,7 @@ export function WatchRoom({
 
     const later = () => {
       if (cancelled || retry !== undefined) return;
+      log.add("rejoin-in", { ms: rejoinDelay(attempt), attempt });
       retry = setTimeout(() => {
         retry = undefined;
         attempt += 1;
@@ -458,6 +511,7 @@ export function WatchRoom({
         // Which episode we're on first, in case they missed us moving on (it only ever moves forward).
         if (lastMove.current) send("episode", { ...lastMove.current, by: me.id });
         const state = stateNow("sync");
+        log.add("rx-hello", { answer: state !== null });
         if (!state) return;
         leader.current = me.id;
         send("state", { ...state, actedAt: lastAction.current });
@@ -468,12 +522,14 @@ export function WatchRoom({
       ch.on("broadcast", { event: "pong" }, ({ payload }) => {
         if (payload.to !== me.id) return;
         const sample = clockOffset(payload.sentAt, payload.theirs, Date.now());
+        log.add("pong", { rtt: sample.roundTrip, offset: Math.round(sample.offset), best: Number.isFinite(offset.current.roundTrip) ? offset.current.roundTrip : null });
         setDelay(sample.roundTrip);
         if (sample.roundTrip <= offset.current.roundTrip) offset.current = { ms: sample.offset, roundTrip: sample.roundTrip };
       });
       // The partner's player is stuck (or not any more).
       ch.on("broadcast", { event: "status" }, ({ payload }) => {
         if (!partnerId || payload.by !== partnerId) return;
+        if (payload.buffering !== partnerBuffer.current?.buffering) log.add("rx-status", { buffering: payload.buffering === true });
         partnerBuffer.current = { buffering: payload.buffering === true, at: Date.now() };
         evaluate();
       });
@@ -497,8 +553,15 @@ export function WatchRoom({
         if (allowed.ok) float(payload.kind, false);
       });
       ch.on("presence", { event: "sync" }, () => {
-        const entry = partnerId ? ch.presenceState()[partnerId]?.[0] : undefined;
+        const everyone = ch.presenceState();
+        const entry = partnerId ? everyone[partnerId]?.[0] : undefined;
         const info = entry ? readFileInfo(entry) : null;
+        // How many screens each of you has in the room: a second one (a phone left open) is worth knowing.
+        log.add("presence", {
+          partner: partnerId ? (everyone[partnerId]?.length ?? 0) : null,
+          me: everyone[me.id]?.length ?? 0,
+          theirs: info && { secs: info.seconds, name: info.name, size: info.size },
+        });
         partnerFile.current = info;
         setTheirs((old) => (info === null ? null : sameFileInfo(old, info) ? old : info));
         const here = info !== null;
@@ -524,8 +587,9 @@ export function WatchRoom({
       channel.current = ch;
 
       try {
-        ch.subscribe(async (state) => {
+        ch.subscribe(async (state, error) => {
           if (cancelled || current !== ch) return;
+          log.add("channel", { state, error: error?.message ?? null });
           if (state === "SUBSCRIBED") {
             attempt = 0;
             clearTimeout(retry);
@@ -564,7 +628,8 @@ export function WatchRoom({
     }
 
     // Back online, or back to this tab: if the room isn't joined or joining, rejoin now.
-    const check = () => {
+    const check = (e: Event) => {
+      log.add(e.type === "online" ? "online" : "visibility", { state: document.visibilityState, onLine: navigator.onLine });
       if (cancelled || busy || document.visibilityState !== "visible") return;
       if (current && current.state !== "closed" && current.state !== "errored") return;
       clearTimeout(retry);
@@ -572,7 +637,9 @@ export function WatchRoom({
       attempt = 0;
       void reopen();
     };
+    const offline = () => log.add("offline");
     window.addEventListener("online", check);
+    window.addEventListener("offline", offline);
     document.addEventListener("visibilitychange", check);
     void reopen();
 
@@ -582,7 +649,12 @@ export function WatchRoom({
         ping();
       } else if (Date.now() - lastPing >= PING_MS) ping();
     }, PING_BURST_MS);
+    let lastRun = Date.now();
     const tick = setInterval(() => {
+      // A timer firing late means this tab was throttled or the computer was busy: ticks went out late too.
+      const now = Date.now();
+      if (now - lastRun - TICK_MS > 1000) log.add("timer-late", { ms: now - lastRun - TICK_MS, vis: document.visibilityState });
+      lastRun = now;
       // Paused too, so a pause that got lost on the way still reaches the other screen.
       if (leader.current === me.id) {
         const state = stateNow("tick");
@@ -610,11 +682,12 @@ export function WatchRoom({
       clearInterval(pinger);
       clearInterval(tick);
       window.removeEventListener("online", check);
+      window.removeEventListener("offline", offline);
       document.removeEventListener("visibilitychange", check);
       channel.current = null;
       if (current) void supabase.removeChannel(current);
     };
-  }, [nightId, me.id, partnerId, apply, send, stateNow, evaluate, toast, float]);
+  }, [nightId, me.id, partnerId, apply, send, stateNow, evaluate, toast, float, log]);
 
   // Share your file's length, name and size while you're in the room: when they change, and not more
   // than once a second (Realtime disconnects a client that updates its presence too often).
@@ -632,6 +705,64 @@ export function WatchRoom({
     return () => clearTimeout(id);
   }, [seconds, fileName, fileSize, status]);
 
+  // The sync log: earlier visits' entries from this device, what this computer is, a health sample every
+  // 10 s (position, speed, frames dropped since the last sample, how much is loaded ahead), and the new
+  // entries sent to the database every SEND_MS and whenever the page is hidden or closed.
+  useEffect(() => {
+    const supabase = createClient();
+    log.restore();
+    const nav = navigator as Navigator & { connection?: { effectiveType?: string; rtt?: number; downlink?: number }; deviceMemory?: number };
+    log.add("open", {
+      session: log.session,
+      ua: navigator.userAgent,
+      cores: navigator.hardwareConcurrency ?? null,
+      memory: nav.deviceMemory ?? null,
+      net: nav.connection ? { type: nav.connection.effectiveType, rtt: nav.connection.rtt, down: nav.connection.downlink } : null,
+      screen: `${screen.width}x${screen.height}@${devicePixelRatio}`,
+      vis: document.visibilityState,
+    });
+    let frames = { dropped: 0, total: 0 };
+    const sample = setInterval(() => {
+      const v = video.current;
+      if (!v || !v.currentSrc) return;
+      const quality = v.getVideoPlaybackQuality?.();
+      const now = quality ? { dropped: quality.droppedVideoFrames, total: quality.totalVideoFrames } : frames;
+      log.add("health", {
+        pos: r(v.currentTime),
+        play: !v.paused,
+        rate: r(v.playbackRate, 3),
+        rs: v.readyState,
+        ahead: bufferedAhead(v),
+        dropped: now.dropped - frames.dropped,
+        frames: now.total - frames.total,
+        leader: leader.current === me.id ? "me" : leader.current === null ? null : "partner",
+        offset: Math.round(offset.current.ms),
+        rtt: Number.isFinite(offset.current.roundTrip) ? offset.current.roundTrip : null,
+        vis: document.visibilityState,
+        fs: !!document.fullscreenElement,
+      });
+      frames = now;
+    }, 10_000);
+    const flush = () => {
+      log.save();
+      void log.send(supabase, coupleId);
+    };
+    const upload = setInterval(flush, SEND_MS);
+    const hidden = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      clearInterval(sample);
+      clearInterval(upload);
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", flush);
+      log.add("close");
+      flush();
+    };
+  }, [log, coupleId, me.id]);
+
   // The partner's "waiting for you" stands while they keep repeating it.
   useEffect(() => {
     if (!heldBy) return;
@@ -646,11 +777,12 @@ export function WatchRoom({
   }, [chatVisible]);
   useEffect(() => {
     const seen = () => {
+      log.add("fullscreen", { on: !!document.fullscreenElement });
       if (!document.fullscreenElement && chatShown.current) setUnread(0);
     };
     document.addEventListener("fullscreenchange", seen);
     return () => document.removeEventListener("fullscreenchange", seen);
-  }, []);
+  }, [log]);
 
   // Let go of the files when leaving.
   useEffect(() => {
@@ -683,6 +815,7 @@ export function WatchRoom({
     clearTimeout(bufferTimer.current);
     bufferTimer.current = undefined;
     if (buffering.current) reportBuffering(false);
+    log.add("file", { name: f.name, size: f.size, type: f.type });
     setFile({ url: hold(f), name: f.name, size: f.size });
     setHash(null);
     void Promise.all([f.slice(0, HASH_CHUNK).arrayBuffer(), f.slice(Math.max(0, f.size - HASH_CHUNK)).arrayBuffer()]).then(
@@ -723,6 +856,7 @@ export function WatchRoom({
    * waited for. Presence follows by itself (no file yet).
    */
   function startEpisode(next: Progress | null) {
+    log.add("episode", { next });
     setOffer(false);
     setMoving(false);
     setNextError(undefined);
@@ -800,10 +934,15 @@ export function WatchRoom({
     const until = quiet.current[type];
     if (until !== undefined) {
       delete quiet.current[type];
-      if (Date.now() < until) return;
+      if (Date.now() < until) {
+        // The echo of something we did to follow the partner.
+        log.add("echo", { type, pos: r(video.current?.currentTime) });
+        return;
+      }
     }
     const state = stateNow(type === "seeked" ? "seek" : type);
     if (!state) return;
+    log.add("local", { type, pos: r(state.position) });
     const kind = type === "seeked" ? "seek" : type;
     leader.current = me.id;
     lastAction.current = Date.now();
@@ -834,6 +973,7 @@ export function WatchRoom({
     if (Number.isFinite(v.duration)) setSeconds(Math.round(v.duration));
     // No picture (e.g. HEVC without hardware support), or Safari can play none of the sound tracks.
     const found = problemOnLoad(v);
+    log.add("loaded", { secs: r(v.duration), w: v.videoWidth, h: v.videoHeight, problem: found ?? null });
     if (found) setProblem((p) => p ?? found);
     // Ask where your partner is, now that there's something to follow with.
     send("hello", {});
@@ -845,10 +985,19 @@ export function WatchRoom({
     if (!v || audioChecked.current || v.currentTime < SOUND_CHECK_AFTER_S) return;
     audioChecked.current = true;
     // Chrome and Edge play a file whose sound they can't decode (AC3, DTS) silently; say so.
-    if (silentWhilePlaying(v)) setProblem((p) => p ?? "noSound");
+    if (silentWhilePlaying(v)) {
+      log.add("problem", { problem: "noSound" });
+      setProblem((p) => p ?? "noSound");
+    }
   }
 
   /** The player ran out of data: if it stays stuck for a moment, the partner waits for us. */
+  /** The player's own events, logged with where it was and how much it had loaded ahead. */
+  function playerEvent(type: string) {
+    const v = video.current;
+    log.add(`player-${type}`, v ? { pos: r(v.currentTime), rs: v.readyState, ahead: bufferedAhead(v) } : undefined);
+  }
+
   function onStuck() {
     if (bufferTimer.current !== undefined || buffering.current) return;
     bufferTimer.current = setTimeout(() => {
@@ -1007,7 +1156,10 @@ export function WatchRoom({
                     : "aspect-video w-full rounded-panel border-[3px] border-outline bg-black"
                 }
                 onLoadedMetadata={onLoaded}
-                onError={() => setProblem("unplayable")}
+                onError={() => {
+                  log.add("player-error", { code: video.current?.error?.code ?? null, message: video.current?.error?.message ?? null });
+                  setProblem("unplayable");
+                }}
                 onTimeUpdate={onTimeUpdate}
                 onPlay={() => onLocal("play")}
                 onPause={(e) => {
@@ -1015,12 +1167,26 @@ export function WatchRoom({
                   // Stopped at the end (ours, or the partner's file ending first): offer the next episode.
                   if (series && episode && !allDone && atEnd(e.currentTarget.currentTime, e.currentTarget.duration)) setOffer(true);
                 }}
-                onSeeked={() => onLocal("seeked")}
-                onWaiting={onStuck}
-                onStalled={onStuck}
-                onPlaying={onUnstuck}
+                onSeeking={() => playerEvent("seeking")}
+                onSeeked={() => {
+                  playerEvent("seeked");
+                  onLocal("seeked");
+                }}
+                onWaiting={() => {
+                  playerEvent("waiting");
+                  onStuck();
+                }}
+                onStalled={() => {
+                  playerEvent("stalled");
+                  onStuck();
+                }}
+                onPlaying={() => {
+                  playerEvent("playing");
+                  onUnstuck();
+                }}
                 onCanPlay={onUnstuck}
                 onEnded={() => {
+                  playerEvent("ended");
                   if (series && episode && !allDone) setOffer(true);
                 }}
                 onDoubleClick={(e) => {
@@ -1241,6 +1407,20 @@ export function WatchRoom({
               {text.failed}
             </p>
           )}
+          <button
+            type="button"
+            onClick={() =>
+              log.download(`two-couches-room-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.txt`, {
+                night: nightId,
+                me: me.id,
+                ua: navigator.userAgent,
+              })
+            }
+            title={text.log.note}
+            className="tap-area justify-self-start text-xs font-semibold text-muted underline underline-offset-4"
+          >
+            {text.log.download}
+          </button>
         </aside>
         {!fullscreen && chat(false)}
       </div>

@@ -863,6 +863,32 @@ isOneToOne: false
       referencedColumns: ["id","couple_id"]
     }
                   ]
+                },"room_logs": {
+                  Row: {
+                    "couple_id": string,"created_at": string,"entries": NonNullable<Json>,"id": string,"part": number,"profile_id": string,"session": string,"watch_night_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "couple_id": string,"created_at"?: string,"entries": NonNullable<Json>,"id"?: string,"part": number,"profile_id"?: string,"session": string,"watch_night_id": string
+                  }
+                  Update: {
+                    "couple_id"?: string,"created_at"?: string,"entries"?: NonNullable<Json>,"id"?: string,"part"?: number,"profile_id"?: string,"session"?: string,"watch_night_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "room_logs_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "room_logs_watch_night_id_couple_id_fkey"
+      columns: ["watch_night_id","couple_id"]
+isOneToOne: false
+      referencedRelation: "watch_nights"
+      referencedColumns: ["id","couple_id"]
+    }
+                  ]
                 },"season_ratings": {
                   Row: {
                     "couple_id": string,"created_at": string,"list_item_id": string,"profile_id": string,"rating": number,"season": number,"updated_at": string
@@ -1197,6 +1223,9 @@ isOneToOne: false
 { Args: { "p_name": string }; Returns: boolean
                            },
 "request_daily_check":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"request_keep_warm":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "request_night_reminders":
