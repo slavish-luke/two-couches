@@ -6,8 +6,9 @@
  * browser back and forward are told apart with the Navigation API (popstate counts as back where it's
  * missing). Anything else goes by the paths: up to a parent page (/watch-nights/new to /watch-nights, or
  * anywhere to Home) peels, everything else whooshes. Only transform and opacity animate. Nothing runs with
- * reduced motion.
+ * reduced motion; at Calm the pages just crossfade.
  */
+import { isCalm } from "./motion";
 
 /** The old and new page's view-transition pseudo-elements, as React hands them to a <ViewTransition>. */
 type Pseudo = { animate(keyframes: Keyframe[], options: KeyframeAnimationOptions): Animation };
@@ -85,6 +86,17 @@ function planFor(types: string[]): Plan | null {
 const STEP = { whoosh: 75, peel: 80 };
 
 /**
+ * Every timing here runs at this fraction of the design lab's (2026-11-15): at full length a tab change took
+ * 0.5–0.7 s to settle although the new page was ready in under 0.1 s, which made the app feel slow.
+ */
+const PACE = 0.55;
+const ms = (n: number) => Math.round(n * PACE);
+
+/** Calm: the old page fades out and the new one in, quickly; no skids, sheets or speed lines. */
+const CALM_OUT = 110;
+const CALM_IN = 150;
+
+/**
  * Marks the flight on <html> for its duration: globals.css stacks the pages and the flight layer by it
  * (the old sheet on top when peeling) and draws the peeling sheet's paper.
  */
@@ -97,13 +109,17 @@ function mark(kind: Plan["kind"]) {
 export function flightOut(instance: TransitionInstance, types: string[]) {
   const plan = planFor(types);
   if (!plan) return;
+  if (isCalm()) {
+    const out = instance.old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: CALM_OUT, easing: "ease-out", fill: "forwards" });
+    return () => out.cancel();
+  }
   if (plan.kind === "whoosh") {
     const out = instance.old.animate(
       [
         { transform: "none", opacity: 1 },
         { transform: "translateX(-55%) skewX(9deg)", opacity: 0 },
       ],
-      { duration: 260, easing: "cubic-bezier(.55,0,.85,.35)", fill: "forwards" },
+      { duration: ms(260), easing: "cubic-bezier(.55,0,.85,.35)", fill: "forwards" },
     );
     return () => out.cancel();
   }
@@ -123,7 +139,7 @@ export function flightOut(instance: TransitionInstance, types: string[]) {
         { transform: "translateX(-1.5%) rotate(-.4deg)", offset: 0.15 },
         { transform: "translateX(112%) rotate(3deg)" },
       ],
-      { duration: plan.passed.length ? 300 : 360, easing: "cubic-bezier(.5,0,.75,.4)", fill: "forwards" },
+      { duration: ms(plan.passed.length ? 300 : 360), easing: "cubic-bezier(.5,0,.75,.4)", fill: "forwards" },
     ),
   ];
   return () => {
@@ -136,6 +152,10 @@ export function flightOut(instance: TransitionInstance, types: string[]) {
 export function flightIn(instance: TransitionInstance, types: string[]) {
   const plan = planFor(types);
   if (!plan) return;
+  if (isCalm()) {
+    const fade = instance.new.animate([{ opacity: 0 }, { opacity: 1 }], { duration: CALM_IN, easing: "ease-out", fill: "both" });
+    return () => fade.cancel();
+  }
   const n = plan.passed.length;
   const unmark = mark(plan.kind);
   const animations: Animation[] = [];
@@ -148,7 +168,7 @@ export function flightIn(instance: TransitionInstance, types: string[]) {
           { opacity: 1, offset: 0.35 },
           { transform: "none", opacity: 1 },
         ],
-        { duration: 440, delay: n ? 90 + STEP.whoosh * n : 70, easing: "cubic-bezier(.22,1.2,.36,1)", fill: "both" },
+        { duration: ms(440), delay: ms(n ? 90 + STEP.whoosh * n : 70), easing: "cubic-bezier(.22,1.2,.36,1)", fill: "both" },
       ),
     );
   } else {
@@ -158,7 +178,7 @@ export function flightIn(instance: TransitionInstance, types: string[]) {
           { transform: "translateX(-3%) scale(.965)", opacity: 0.85 },
           { transform: "none", opacity: 1 },
         ],
-        { duration: 460 + STEP.peel * n, easing: "cubic-bezier(.2,.9,.3,1)", fill: "both" },
+        { duration: ms(460 + STEP.peel * n), easing: "cubic-bezier(.2,.9,.3,1)", fill: "both" },
       ),
     );
   }
@@ -185,7 +205,7 @@ function flyDeck({ kind, passed }: Plan): Animation[] {
           { opacity: 1, offset: 0.3 },
           { opacity: 0, transform: "translateX(-40%) scaleX(1)" },
         ],
-        { duration: 380 + 90 * n, easing: "ease-out" },
+        { duration: ms(380 + 90 * n), easing: "ease-out" },
       ),
     );
   }
@@ -203,7 +223,7 @@ function flyDeck({ kind, passed }: Plan): Animation[] {
               { transform: "translateX(10%) skewX(-3deg)", opacity: 1, offset: 0.4 },
               { transform: "translateX(-60%) skewX(8deg)", opacity: 0 },
             ],
-            { duration: 240, delay: 90 + STEP.whoosh * j, easing: "cubic-bezier(.45,.05,.55,.95)", fill: "both" },
+            { duration: ms(240), delay: ms(90 + STEP.whoosh * j), easing: "cubic-bezier(.45,.05,.55,.95)", fill: "both" },
           )
         : ghost.animate(
             [
@@ -211,7 +231,7 @@ function flyDeck({ kind, passed }: Plan): Animation[] {
               { transform: "translateX(-1.5%) rotate(-.4deg)", opacity: 1, offset: 0.15 },
               { transform: "translateX(112%) rotate(3deg)", opacity: 1 },
             ],
-            { duration: 300, delay: STEP.peel * (j + 1), easing: "cubic-bezier(.5,0,.75,.4)", fill: "both" },
+            { duration: ms(300), delay: ms(STEP.peel * (j + 1)), easing: "cubic-bezier(.5,0,.75,.4)", fill: "both" },
           ),
     );
   });

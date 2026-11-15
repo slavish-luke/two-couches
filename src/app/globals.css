@@ -816,6 +816,12 @@
   pointer-events: none;
 }
 
+/* The rest of the screen (the ground, the footer) crossfades at the page transitions' pace (flight.ts PACE). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 150ms;
+}
+
 ::view-transition-group(site-header),
 ::view-transition-group(tab-bar) {
   animation: none;
@@ -861,7 +867,8 @@ html[data-flight="peel"]::view-transition-old(.page-out) {
 /* A poster moving between the list and its title page. */
 ::view-transition-group(.morph) {
   z-index: 6;
-  animation-duration: 420ms;
+  /* At the page transitions' pace (src/lib/flight.ts PACE; was 420ms). */
+  animation-duration: 260ms;
   animation-timing-function: var(--ease-spring);
 }
 
