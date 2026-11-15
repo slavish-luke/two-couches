@@ -93,6 +93,14 @@ const LEFT_AFTER_MS = 4000;
 /** Reactions coming in faster than this are dropped, whatever the other screen sends. */
 const INCOMING_REACTIONS = { max: 12, windowMs: 3000 };
 const SUBTITLE_TYPES = ".srt,.vtt";
+/**
+ * Full screen: the film fills the screen and the reactions bar floats over it, in the black band under a
+ * widescreen film when there's room above the player's own controls (about CONTROLS_PX tall), else just
+ * above them, hiding after BAR_IDLE_MS without the mouse moving.
+ */
+const CONTROLS_PX = 64;
+const BAR_PX = 40;
+const BAR_IDLE_MS = 3000;
 
 function subscribeFullscreen(onChange: () => void) {
   document.addEventListener("fullscreenchange", onChange);
@@ -175,6 +183,10 @@ export function WatchRoom({
   );
   // iPhones can only put the <video> itself full screen (its own controls then; no reactions over it).
   const canFullscreen = useSyncExternalStore(noSubscribe, () => document.fullscreenEnabled, () => false);
+  const screenBox = useRef<HTMLDivElement>(null);
+  /** Full screen: the black band under the picture (px), and whether the mouse has been still a while. */
+  const [band, setBand] = useState(0);
+  const [idle, setIdle] = useState(false);
 
   // Sync bookkeeping changes many times a minute and draws nothing, so it lives in refs.
   /** Who acted last: they send the ticks, and only their ticks are followed. */
@@ -776,6 +788,49 @@ export function WatchRoom({
     };
   }, [log, coupleId, me.id]);
 
+  // Full screen: measure the black band under the picture (object-contain), so the bar can sit in it.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const box = screenBox.current;
+    const v = video.current;
+    if (!box || !v) return;
+    const measure = () => {
+      const { clientWidth: w, clientHeight: h } = box;
+      const ratio = v.videoWidth && v.videoHeight ? v.videoHeight / v.videoWidth : 0;
+      setBand(ratio ? Math.max(0, Math.floor((h - w * ratio) / 2)) : 0);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    v.addEventListener("loadedmetadata", measure);
+    return () => {
+      observer.disconnect();
+      v.removeEventListener("loadedmetadata", measure);
+    };
+  }, [fullscreen, file]);
+
+  // Full screen: the bar shows while the mouse moves and hides after a moment (unless it sits in the band).
+  useEffect(() => {
+    const el = stage.current;
+    if (!fullscreen || !el) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const wake = () => {
+      setIdle(false);
+      clearTimeout(timer);
+      timer = setTimeout(() => setIdle(true), BAR_IDLE_MS);
+    };
+    wake();
+    el.addEventListener("pointermove", wake);
+    el.addEventListener("pointerdown", wake);
+    el.addEventListener("keydown", wake);
+    return () => {
+      clearTimeout(timer);
+      el.removeEventListener("pointermove", wake);
+      el.removeEventListener("pointerdown", wake);
+      el.removeEventListener("keydown", wake);
+    };
+  }, [fullscreen]);
+
   // The partner's "waiting for you" stands while they keep repeating it.
   useEffect(() => {
     if (!heldBy) return;
@@ -1124,6 +1179,72 @@ export function WatchRoom({
     />
   );
 
+  // Full screen: in the black band under a widescreen film when it fits above the player's controls, else
+  // just above them (hiding while the mouse is still).
+  const fits = band >= CONTROLS_PX + BAR_PX + 8;
+  const barBottom = fits ? CONTROLS_PX + Math.floor((band - CONTROLS_PX - BAR_PX) / 2) : CONTROLS_PX;
+  const barHidden = fullscreen && !fits && idle;
+  const bar = file && (
+    <div
+      data-room-bar
+      style={fullscreen ? { bottom: barBottom } : undefined}
+      className={
+        fullscreen
+          ? `absolute inset-x-0 z-10 flex items-center justify-between gap-3 px-4 transition-opacity duration-300 focus-within:opacity-100 ${barHidden ? "pointer-events-none opacity-0" : "opacity-100"}`
+          : "flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
+      }
+    >
+      <div role="group" aria-label={text.reactions.label} className="flex flex-wrap gap-1.5">
+        {REACTIONS.map((kind) => (
+          <button
+            key={kind}
+            type="button"
+            onClick={() => sendReaction(kind)}
+            aria-label={text.reactions.kinds[kind]}
+            title={text.reactions.kinds[kind]}
+            className="btn-quiet size-10 rounded-full p-0"
+          >
+            <ReactionSticker kind={kind} className="size-7" />
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-1.5">
+        {fullscreen && (
+          <button
+            type="button"
+            onClick={() => {
+              setScreenChat((v) => !v);
+              setUnread(0);
+            }}
+            aria-pressed={screenChat}
+            aria-label={screenChat ? text.chat.hide : text.chat.show}
+            title={screenChat ? text.chat.hide : text.chat.show}
+            className="btn-quiet relative size-10 rounded-full p-0 aria-pressed:bg-accent aria-pressed:text-on-accent"
+          >
+            <ChatIcon className="size-5" />
+            {!screenChat && unread > 0 && (
+              <span className="absolute -right-2 -top-2 grid h-6 min-w-6 place-items-center rounded-full border-2 border-outline bg-accent px-1 text-xs font-bold text-on-accent">
+                <span aria-hidden>{unread}</span>
+                <span className="sr-only">{text.chat.unread(unread)}</span>
+              </span>
+            )}
+          </button>
+        )}
+        {canFullscreen && (
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={fullscreen ? text.exitFullscreen : text.fullscreen}
+            title={fullscreen ? text.exitFullscreen : text.fullscreen}
+            className="btn-quiet size-10 rounded-full p-0"
+          >
+            <FullscreenIcon exit={fullscreen} className="size-5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
       <div
@@ -1148,11 +1269,11 @@ export function WatchRoom({
           }}
           className={
             fullscreen
-              ? `grid h-full gap-3 bg-black p-3 grid-rows-[minmax(0,1fr)_auto] ${screenChat ? "grid-cols-[minmax(0,1fr)_minmax(15rem,22rem)]" : "grid-cols-1"}`
+              ? `grid h-full bg-black grid-rows-[minmax(0,1fr)_auto] ${screenChat ? "grid-cols-[minmax(0,1fr)_minmax(15rem,22rem)]" : "grid-cols-1"}`
               : "grid gap-3"
           }
         >
-          <div data-room-screen className={`@container relative min-w-0 rounded-panel ${fullscreen ? "min-h-0" : ""}`}>
+          <div ref={screenBox} data-room-screen className={`@container relative min-w-0 ${fullscreen ? "min-h-0" : "rounded-panel"}`}>
             {file ? (
               /* Native controls: they work with the keyboard and on phones. Their own full-screen button is
                  swapped for ours where the stage can go full screen. */
@@ -1250,6 +1371,7 @@ export function WatchRoom({
               onBurstDone={(id) => setBursts((all) => all.filter((b) => b.id !== id))}
               waiting={waiting}
             />
+            {fullscreen && bar}
           </div>
 
           {file && offer && series && episode && (
@@ -1267,60 +1389,9 @@ export function WatchRoom({
             />
           )}
 
-          {file && (
-            <div data-room-bar className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              <div role="group" aria-label={text.reactions.label} className="flex flex-wrap gap-1.5">
-                {REACTIONS.map((kind) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    onClick={() => sendReaction(kind)}
-                    aria-label={text.reactions.kinds[kind]}
-                    title={text.reactions.kinds[kind]}
-                    className="btn-quiet size-10 rounded-full p-0"
-                  >
-                    <ReactionSticker kind={kind} className="size-7" />
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-1.5">
-                {fullscreen && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScreenChat((v) => !v);
-                      setUnread(0);
-                    }}
-                    aria-pressed={screenChat}
-                    aria-label={screenChat ? text.chat.hide : text.chat.show}
-                    title={screenChat ? text.chat.hide : text.chat.show}
-                    className="btn-quiet relative size-10 rounded-full p-0 aria-pressed:bg-accent aria-pressed:text-on-accent"
-                  >
-                    <ChatIcon className="size-5" />
-                    {!screenChat && unread > 0 && (
-                      <span className="absolute -right-2 -top-2 grid h-6 min-w-6 place-items-center rounded-full border-2 border-outline bg-accent px-1 text-xs font-bold text-on-accent">
-                        <span aria-hidden>{unread}</span>
-                        <span className="sr-only">{text.chat.unread(unread)}</span>
-                      </span>
-                    )}
-                  </button>
-                )}
-                {canFullscreen && (
-                  <button
-                    type="button"
-                    onClick={toggleFullscreen}
-                    aria-label={fullscreen ? text.exitFullscreen : text.fullscreen}
-                    title={fullscreen ? text.exitFullscreen : text.fullscreen}
-                    className="btn-quiet size-10 rounded-full p-0"
-                  >
-                    <FullscreenIcon exit={fullscreen} className="size-5" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+          {!fullscreen && bar}
 
-          {fullscreen && screenChat && <div className="row-span-2 row-start-1 col-start-2 min-h-0">{chat(true)}</div>}
+          {fullscreen && screenChat && <div className="row-span-2 row-start-1 col-start-2 min-h-0 py-3 pr-3">{chat(true)}</div>}
         </div>
 
         {file && (
