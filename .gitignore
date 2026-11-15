@@ -45,13 +45,11 @@ next-env.d.ts
 supabase/.temp
 supabase/.branches
 
-# planning notes (kept local)
+# Kept local, not public: planning notes, project instructions, product and design docs, design labs
 two-couches-plan.html
 CLAUDE.local.md
-
-# Impeccable working files (screenshots, decision pages); DESIGN.md, PRODUCT.md and .impeccable/surfaces are kept
-.impeccable/review/
-.impeccable/questions/
-.impeccable/build/
-.impeccable/mocks/
-.impeccable/live/
+CLAUDE.md
+PRODUCT.md
+DESIGN.md
+/.impeccable/
+/design/labs/

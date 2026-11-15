@@ -121,8 +121,6 @@ transitions.
 | **Extras** | Web push (VAPID), OpenSubtitles (optional, for the watch room) |
 | **Hosting** | Vercel Hobby + Supabase Free: it runs entirely on free tiers |
 
-See [`CLAUDE.md`](CLAUDE.md) for the rules, data model and roadmap, and [`DESIGN.md`](DESIGN.md) for the design system.
-
 ## Run it locally
 
 Needs Node 24+ and Docker Desktop running.
