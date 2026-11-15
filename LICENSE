@@ -1,0 +1,10 @@
+Copyright (c) 2026 Luke Kradolfer. All rights reserved.
+
+This repository is public so it can be read. No licence is granted to copy,
+modify, distribute, sublicense, host or sell this software or any part of it,
+in source or compiled form, without the copyright holder's prior written
+permission.
+
+Third-party material in this repository stays under its own licence, including
+the fonts in src/app/fonts (SIL Open Font License 1.1 or Apache License 2.0;
+see src/app/fonts/README.md).

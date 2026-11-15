@@ -2,7 +2,7 @@
 
 A private shared watchlist and movie-night calendar for two people who live in different countries. For any film or series it shows which streaming services carry it in each person's country, and highlights titles both people can watch.
 
-This repo is public. Never commit personal details: real names, emails, which countries or cities the two users live in, or anything from `CLAUDE.local.md` or `two-couches-plan.html` (both local-only and git-ignored). Use neutral examples in code, tests and docs (`one@example.com`, `GB`, `NZ`). If `two-couches-plan.html` exists locally, read it before starting a new sprint.
+This repo is public. Never commit personal details: real names (except the owner's name in `LICENSE`, which the commit history already shows), emails, which countries or cities the two users live in, or anything from `CLAUDE.local.md` or `two-couches-plan.html` (both local-only and git-ignored). Use neutral examples in code, tests and docs (`one@example.com`, `GB`, `NZ`). If `two-couches-plan.html` exists locally, read it before starting a new sprint.
 
 ## Status
 
