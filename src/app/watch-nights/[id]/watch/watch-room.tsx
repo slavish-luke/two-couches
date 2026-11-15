@@ -33,10 +33,10 @@ import {
   NUDGE_AT_S,
   openSubtitlesHash,
   partnerBuffering,
+  partnerFileInfo,
   REACTION_LIMIT,
   REACTIONS,
   readEpisodeEvent,
-  readFileInfo,
   rejoinDelay,
   roomTopic,
   sameEpisode,
@@ -166,6 +166,8 @@ export function WatchRoom({
   const [hash, setHash] = useState<string | null>(null);
   /** The latest round trip to the partner's screen (ms), shown so a slow connection is visible. */
   const [delay, setDelay] = useState<number | null>(null);
+  /** The room is open on another screen of yours too (a forgotten tab): your partner can't tell which to follow. */
+  const [twice, setTwice] = useState(false);
   const fullscreen = useSyncExternalStore(
     subscribeFullscreen,
     () => document.fullscreenElement?.hasAttribute("data-room-stage") ?? false,
@@ -329,6 +331,11 @@ export function WatchRoom({
   /** Follow the partner's player. */
   const apply = useCallback(
     (state: RoomState) => {
+      // Our own other screen (the room open in another tab): never followed, or two tabs fight.
+      if (state.by === me.id) {
+        log.add("rx", { kind: state.kind, from: "me", pos: r(state.position), skip: "my-other-screen" });
+        return;
+      }
       const deliberate = !state.auto && (state.kind === "play" || state.kind === "pause" || state.kind === "seek");
       if (state.auto) {
         const reason: WaitReason = state.wait === "noFile" || state.wait === "away" ? state.wait : "buffering";
@@ -470,7 +477,7 @@ export function WatchRoom({
 
     const ping = () => {
       lastPing = Date.now();
-      send("ping", { sentAt: lastPing, from: me.id });
+      send("ping", { sentAt: lastPing, from: me.id, screen: log.session });
     };
 
     // Just (re)joined: measure the clocks quickly, and whoever's in charge says where they are; anyone
@@ -481,7 +488,7 @@ export function WatchRoom({
       if (lastMove.current) send("episode", { ...lastMove.current, by: me.id });
       const mine = leader.current === me.id ? stateNow("sync") : null;
       if (mine) send("state", { ...mine, actedAt: lastAction.current });
-      else send("hello", {});
+      else send("hello", { by: me.id });
       if (buffering.current) send("status", { by: me.id, buffering: true });
     };
 
@@ -507,7 +514,9 @@ export function WatchRoom({
       });
       ch.on("broadcast", { event: "state" }, ({ payload }) => apply(payload as RoomState));
       // Someone came in, came back or opened their file: tell them where we are. They'll follow us.
-      ch.on("broadcast", { event: "hello" }, () => {
+      ch.on("broadcast", { event: "hello" }, ({ payload }) => {
+        // Our own other screen asking: it isn't the partner, so it doesn't make us the one in charge.
+        if (payload?.by === me.id) return;
         // Which episode we're on first, in case they missed us moving on (it only ever moves forward).
         if (lastMove.current) send("episode", { ...lastMove.current, by: me.id });
         const state = stateNow("sync");
@@ -517,10 +526,14 @@ export function WatchRoom({
         send("state", { ...state, actedAt: lastAction.current });
       });
       ch.on("broadcast", { event: "ping" }, ({ payload }) => {
-        send("pong", { sentAt: payload.sentAt, theirs: Date.now(), to: payload.from });
+        // Not our own other screen: its clock is ours, and answering made the partner's look 2.6 s off.
+        if (payload.from === me.id) return;
+        send("pong", { sentAt: payload.sentAt, theirs: Date.now(), to: payload.from, screen: payload.screen, by: me.id });
       });
       ch.on("broadcast", { event: "pong" }, ({ payload }) => {
         if (payload.to !== me.id) return;
+        // Only the partner's answer to this screen's ping (older screens send neither field).
+        if ((payload.by !== undefined && payload.by !== partnerId) || (payload.screen !== undefined && payload.screen !== log.session)) return;
         const sample = clockOffset(payload.sentAt, payload.theirs, Date.now());
         log.add("pong", { rtt: sample.roundTrip, offset: Math.round(sample.offset), best: Number.isFinite(offset.current.roundTrip) ? offset.current.roundTrip : null });
         setDelay(sample.roundTrip);
@@ -554,8 +567,8 @@ export function WatchRoom({
       });
       ch.on("presence", { event: "sync" }, () => {
         const everyone = ch.presenceState();
-        const entry = partnerId ? everyone[partnerId]?.[0] : undefined;
-        const info = entry ? readFileInfo(entry) : null;
+        const info = partnerId ? partnerFileInfo(everyone[partnerId]) : null;
+        setTwice((everyone[me.id]?.length ?? 0) > 1);
         // How many screens each of you has in the room: a second one (a phone left open) is worth knowing.
         log.add("presence", {
           partner: partnerId ? (everyone[partnerId]?.length ?? 0) : null,
@@ -976,7 +989,7 @@ export function WatchRoom({
     log.add("loaded", { secs: r(v.duration), w: v.videoWidth, h: v.videoHeight, problem: found ?? null });
     if (found) setProblem((p) => p ?? found);
     // Ask where your partner is, now that there's something to follow with.
-    send("hello", {});
+    send("hello", { by: me.id });
     evaluate();
   }
 
@@ -1405,6 +1418,11 @@ export function WatchRoom({
           {status === "failed" && (
             <p role="alert" className="font-semibold text-danger">
               {text.failed}
+            </p>
+          )}
+          {twice && (
+            <p role="alert" className="font-semibold text-danger">
+              {text.twice}
             </p>
           )}
           <button

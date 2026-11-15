@@ -250,6 +250,17 @@ export function readFileInfo(entry: unknown): FileInfo {
   };
 }
 
+/**
+ * One person's file when they have the room open on more than one screen (a forgotten tab): the screen
+ * with a file, else any. Taking the first entry made the other screen wait for a tab with no file
+ * ("Waiting for {name} to open their copy…") on the 2026-11-15 night. Null when they aren't in the room.
+ */
+export function partnerFileInfo(entries: unknown[] | undefined): FileInfo | null {
+  if (!entries || entries.length === 0) return null;
+  const infos = entries.map(readFileInfo);
+  return infos.find((info) => info.seconds !== null) ?? infos[0];
+}
+
 /** Whether two presence entries say the same thing (so presence is only sent when something changed). */
 export function sameFileInfo(a: FileInfo | null, b: FileInfo | null) {
   return !!a && !!b && a.seconds === b.seconds && a.name === b.name && a.size === b.size;

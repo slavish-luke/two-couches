@@ -303,6 +303,7 @@ const en = {
     connecting: "Connecting…",
     failed: "Not connected, so you aren't in step right now. Trying again…",
     delay: (name: string, seconds: string) => `Delay to ${name}: ${seconds} s`,
+    twice: "This room is open in another tab or window too. Close the others, so your partner's screen follows this one.",
     log: {
       download: "Download sync log",
       note: "What this screen's sync did and why (positions and timings, never your chat), for sorting out a night that didn't stay in step.",
@@ -706,6 +707,7 @@ const tr: typeof en = {
     connecting: "Bağlanıyor…",
     failed: "Bağlantı yok, şu an eş zamanlı değilsiniz. Yeniden deneniyor…",
     delay: (name: string, seconds: string) => `Gecikme (${name}): ${seconds} sn`,
+    twice: "Bu oda başka bir sekmede ya da pencerede de açık. Diğerlerini kapat ki eşinin ekranı bunu izlesin.",
     log: {
       download: "Eşitleme kaydını indir",
       note: "Bu ekrandaki eşitlemenin ne yaptığı ve neden: yalnızca konumlar ve zamanlar, sohbet yazıları değil. Eşit gitmeyen bir geceyi çözmek için.",
